@@ -1,0 +1,74 @@
+/**
+ * Binary writer for FL Studio .flp files
+ * Uses smart-buffer for binary writing and protobufjs for VarInt encoding
+ */
+export declare class BinaryWriter {
+    private sb;
+    constructor();
+    /**
+     * Returns current write position (total bytes written)
+     */
+    tell(): number;
+    /**
+     * Writes an unsigned 8-bit integer
+     */
+    writeU8(value: number): void;
+    /**
+     * Writes a signed 8-bit integer
+     */
+    writeI8(value: number): void;
+    /**
+     * Writes an unsigned 16-bit integer (little-endian)
+     */
+    writeU16LE(value: number): void;
+    /**
+     * Writes a signed 16-bit integer (little-endian)
+     */
+    writeI16LE(value: number): void;
+    /**
+     * Writes an unsigned 32-bit integer (little-endian)
+     */
+    writeU32LE(value: number): void;
+    /**
+     * Writes a signed 32-bit integer (little-endian)
+     */
+    writeI32LE(value: number): void;
+    /**
+     * Writes a 32-bit float (little-endian)
+     */
+    writeF32LE(value: number): void;
+    /**
+     * Writes a 64-bit float (little-endian)
+     */
+    writeF64LE(value: number): void;
+    /**
+     * Writes raw bytes
+     */
+    writeBytes(data: Buffer): void;
+    /**
+     * Writes a VarInt (variable-length integer) using protobufjs
+     * FL Studio uses this encoding for TEXT and DATA event sizes
+     */
+    writeVarInt(value: number): void;
+    /**
+     * Writes an ASCII string (null-terminated)
+     */
+    writeAsciiString(str: string): void;
+    /**
+     * Writes a UTF-16LE string (null-terminated)
+     */
+    writeUtf16LEString(str: string): void;
+    /**
+     * Gets the final buffer
+     */
+    toBuffer(): Buffer;
+}
+/**
+ * Encodes a VarInt to a Buffer using protobufjs (standalone utility)
+ */
+export declare function encodeVarInt(value: number): Buffer;
+/**
+ * Calculates the byte size needed for a VarInt
+ */
+export declare function varIntSize(value: number): number;
+//# sourceMappingURL=BinaryWriter.d.ts.map

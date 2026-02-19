@@ -1,0 +1,30 @@
+{
+  "name": "@jsr/std__yaml",
+  "version": "1.0.11",
+  "homepage": "https://jsr.io/@std/yaml",
+  "type": "module",
+  "dependencies": {},
+  "exports": {
+    ".": {
+      "types": "./_dist/mod.d.ts",
+      "default": "./mod.js"
+    },
+    "./parse": {
+      "types": "./_dist/parse.d.ts",
+      "default": "./parse.js"
+    },
+    "./stringify": {
+      "types": "./_dist/stringify.d.ts",
+      "default": "./stringify.js"
+    },
+    "./unstable-stringify": {
+      "types": "./_dist/unstable_stringify.d.ts",
+      "default": "./unstable_stringify.js"
+    },
+    "./unstable-parse": {
+      "types": "./_dist/unstable_parse.d.ts",
+      "default": "./unstable_parse.js"
+    }
+  },
+  "_jsr_revision": 11
+}

@@ -1,0 +1,83 @@
+/**
+ * High-level API for reading and modifying FL Studio project files
+ * Provides typed access to project metadata, samples, plugins, and time info
+ */
+import { type ParsedFlp } from "../parser/FlpParser.js";
+/**
+ * Project metadata (name, description, artist, genre, BPM)
+ */
+export interface ProjectMeta {
+    name: string | null;
+    description: string | null;
+    artist: string | null;
+    genre: string | null;
+    bpm: number | null;
+}
+/**
+ * Reads project metadata from a parsed FLP
+ */
+export declare function readProjectMeta(parsed: ParsedFlp): ProjectMeta;
+/**
+ * Writes project metadata to a parsed FLP
+ * Only modifies fields that are provided (non-undefined)
+ */
+export declare function writeProjectMeta(parsed: ParsedFlp, meta: Partial<ProjectMeta>): ParsedFlp;
+/**
+ * Project creation date and work time
+ */
+export interface ProjectTimeInfo {
+    creationDate: Date | null;
+    workTimeSeconds: number | null;
+}
+/**
+ * Reads project time info from a parsed FLP
+ * Timestamp event contains: Float64 created_on (days), Float64 time_spent (days)
+ */
+export declare function readProjectTimeInfo(parsed: ParsedFlp): ProjectTimeInfo;
+/**
+ * Writes project time info to a parsed FLP
+ * Only modifies fields that are provided (non-undefined)
+ *
+ * If `creationDate` or `workTimeSeconds` is set to `null`, the final value will be set on `0` (Delphi epoch)
+ */
+export declare function writeProjectTimeInfo(parsed: ParsedFlp, info: Partial<ProjectTimeInfo>): ParsedFlp;
+/**
+ * Reference to a sample in the project
+ */
+export interface SampleRef {
+    /** Index of the event in the events array */
+    eventIndex: number;
+    /** File path of the sample */
+    path: string;
+}
+/**
+ * Lists all samples in the project
+ */
+export declare function listSamples(parsed: ParsedFlp): SampleRef[];
+/**
+ * Rewrites sample paths using a mapper function
+ */
+export declare function rewriteSamplePaths(parsed: ParsedFlp, mapper: (oldPath: string) => string): ParsedFlp;
+/**
+ * Reference to a plugin in the project
+ */
+export interface PluginRef {
+    /** Plugin name (may be null if not available) */
+    name: string | null;
+    /** Plugin vendor/provider (may be null if not stored in file) */
+    vendor: string | null;
+}
+/**
+ * Lists all plugins (VST and native) in the project
+ * Returns plugin name and vendor where available
+ */
+export declare function listPlugins(parsed: ParsedFlp): PluginRef[];
+/**
+ * Gets the FL Studio version string from the project
+ */
+export declare function getFlVersion(parsed: ParsedFlp): string;
+/**
+ * Gets the PPQ (Pulses Per Quarter note) from the header
+ */
+export declare function getPPQ(parsed: ParsedFlp): number;
+//# sourceMappingURL=ProjectApi.d.ts.map

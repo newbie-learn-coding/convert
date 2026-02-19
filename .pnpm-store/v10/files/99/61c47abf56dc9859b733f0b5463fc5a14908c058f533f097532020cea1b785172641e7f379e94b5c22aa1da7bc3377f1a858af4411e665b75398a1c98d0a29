@@ -1,0 +1,922 @@
+'use strict';
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+const VERSION_NUMBER = "0.2.1";
+const PATHSCAN_COMBINED_LOOKUP = [
+  [[-1, -1, -1, -1], [-1, -1, -1, -1], [-1, -1, -1, -1], [-1, -1, -1, -1]],
+  [[0, 1, 0, -1], [-1, -1, -1, -1], [-1, -1, -1, -1], [0, 2, -1, 0]],
+  [[-1, -1, -1, -1], [-1, -1, -1, -1], [0, 1, 0, -1], [0, 0, 1, 0]],
+  [[0, 0, 1, 0], [-1, -1, -1, -1], [0, 2, -1, 0], [-1, -1, -1, -1]],
+  [[-1, -1, -1, -1], [0, 0, 1, 0], [0, 3, 0, 1], [-1, -1, -1, -1]],
+  [[13, 3, 0, 1], [13, 2, -1, 0], [7, 1, 0, -1], [7, 0, 1, 0]],
+  [[-1, -1, -1, -1], [0, 1, 0, -1], [-1, -1, -1, -1], [0, 3, 0, 1]],
+  [[0, 3, 0, 1], [0, 2, -1, 0], [-1, -1, -1, -1], [-1, -1, -1, -1]],
+  [[0, 3, 0, 1], [0, 2, -1, 0], [-1, -1, -1, -1], [-1, -1, -1, -1]],
+  [[-1, -1, -1, -1], [0, 1, 0, -1], [-1, -1, -1, -1], [0, 3, 0, 1]],
+  [[11, 1, 0, -1], [14, 0, 1, 0], [14, 3, 0, 1], [11, 2, -1, 0]],
+  [[-1, -1, -1, -1], [0, 0, 1, 0], [0, 3, 0, 1], [-1, -1, -1, -1]],
+  [[0, 0, 1, 0], [-1, -1, -1, -1], [0, 2, -1, 0], [-1, -1, -1, -1]],
+  [[-1, -1, -1, -1], [-1, -1, -1, -1], [0, 1, 0, -1], [0, 0, 1, 0]],
+  [[0, 1, 0, -1], [-1, -1, -1, -1], [-1, -1, -1, -1], [0, 2, -1, 0]],
+  [[-1, -1, -1, -1], [-1, -1, -1, -1], [-1, -1, -1, -1], [-1, -1, -1, -1]]
+];
+const SPECPALETTE = [
+  { r: 0, g: 0, b: 0, a: 255 },
+  { r: 128, g: 128, b: 128, a: 255 },
+  { r: 0, g: 0, b: 128, a: 255 },
+  { r: 64, g: 64, b: 128, a: 255 },
+  { r: 192, g: 192, b: 192, a: 255 },
+  { r: 255, g: 255, b: 255, a: 255 },
+  { r: 128, g: 128, b: 192, a: 255 },
+  { r: 0, g: 0, b: 192, a: 255 },
+  { r: 128, g: 0, b: 0, a: 255 },
+  { r: 128, g: 64, b: 64, a: 255 },
+  { r: 128, g: 0, b: 128, a: 255 },
+  { r: 168, g: 168, b: 168, a: 255 },
+  { r: 192, g: 128, b: 128, a: 255 },
+  { r: 192, g: 0, b: 0, a: 255 },
+  { r: 255, g: 255, b: 255, a: 255 },
+  { r: 0, g: 128, b: 0, a: 255 }
+];
+const GKS = [
+  [0.27901, 0.44198, 0.27901],
+  [0.135336, 0.228569, 0.272192, 0.228569, 0.135336],
+  [0.086776, 0.136394, 0.178908, 0.195843, 0.178908, 0.136394, 0.086776],
+  [0.063327, 0.093095, 0.122589, 0.144599, 0.152781, 0.144599, 0.122589, 0.093095, 0.063327],
+  [0.049692, 0.069304, 0.089767, 0.107988, 0.120651, 0.125194, 0.120651, 0.107988, 0.089767, 0.069304, 0.049692]
+];
+
+const OPTION_PRESETS = {
+  default: {
+    corsenabled: false,
+    ltres: 1,
+    qtres: 1,
+    pathomit: 8,
+    rightangleenhance: true,
+    colorsampling: 2,
+    numberofcolors: 16,
+    mincolorratio: 0,
+    colorquantcycles: 3,
+    layering: 0,
+    strokewidth: 1,
+    linefilter: false,
+    scale: 1,
+    roundcoords: 1,
+    viewbox: false,
+    desc: false,
+    lcpr: 0,
+    qcpr: 0,
+    blurradius: 0,
+    blurdelta: 20
+  },
+  posterized1: { colorsampling: 0, numberofcolors: 2 },
+  posterized2: { numberofcolors: 4, blurradius: 5 },
+  curvy: { ltres: 0.01, linefilter: true, rightangleenhance: false },
+  sharp: { qtres: 0.01, linefilter: false },
+  detailed: { pathomit: 0, roundcoords: 2, ltres: 0.5, qtres: 0.5, numberofcolors: 64 },
+  smoothed: { blurradius: 5, blurdelta: 64 },
+  grayscale: { colorsampling: 0, colorquantcycles: 1, numberofcolors: 7 },
+  fixedpalette: { colorsampling: 0, colorquantcycles: 1, numberofcolors: 27 },
+  randomsampling1: { colorsampling: 1, numberofcolors: 8 },
+  randomsampling2: { colorsampling: 1, numberofcolors: 64 },
+  artistic1: { colorsampling: 0, colorquantcycles: 1, pathomit: 0, blurradius: 5, blurdelta: 64, ltres: 0.01, linefilter: true, numberofcolors: 16, strokewidth: 2 },
+  artistic2: { qtres: 0.01, colorsampling: 0, colorquantcycles: 1, numberofcolors: 4, strokewidth: 0 },
+  artistic3: { qtres: 10, ltres: 10, numberofcolors: 8 },
+  artistic4: { qtres: 10, ltres: 10, numberofcolors: 64, blurradius: 5, blurdelta: 256, strokewidth: 2 },
+  posterized3: {
+    ltres: 1,
+    qtres: 1,
+    pathomit: 20,
+    rightangleenhance: true,
+    colorsampling: 0,
+    numberofcolors: 3,
+    mincolorratio: 0,
+    colorquantcycles: 3,
+    blurradius: 3,
+    blurdelta: 20,
+    strokewidth: 0,
+    linefilter: false,
+    roundcoords: 1,
+    pal: [{ r: 0, g: 0, b: 100, a: 255 }, { r: 255, g: 255, b: 255, a: 255 }]
+  }
+};
+
+function generatePalette(numberOfColors) {
+  const palette = [];
+  let rcnt;
+  let gcnt;
+  let bcnt;
+  if (numberOfColors < 8) {
+    const graystep = Math.floor(255 / (numberOfColors - 1));
+    for (let i = 0; i < numberOfColors; i++)
+      palette.push({ r: i * graystep, g: i * graystep, b: i * graystep, a: 255 });
+  } else {
+    const colorqnum = Math.floor(Math.pow(numberOfColors, 1 / 3));
+    const colorstep = Math.floor(255 / (colorqnum - 1));
+    const rndnum = numberOfColors - colorqnum * colorqnum * colorqnum;
+    for (rcnt = 0; rcnt < colorqnum; rcnt++) {
+      for (gcnt = 0; gcnt < colorqnum; gcnt++) {
+        for (bcnt = 0; bcnt < colorqnum; bcnt++)
+          palette.push({ r: rcnt * colorstep, g: gcnt * colorstep, b: bcnt * colorstep, a: 255 });
+      }
+    }
+    for (rcnt = 0; rcnt < rndnum; rcnt++)
+      palette.push({ r: Math.floor(Math.random() * 255), g: Math.floor(Math.random() * 255), b: Math.floor(Math.random() * 255), a: Math.floor(Math.random() * 255) });
+  }
+  return palette;
+}
+function samplePalette(numberOfColors, imageData) {
+  let idx;
+  const palette = [];
+  for (let i = 0; i < numberOfColors; i++) {
+    idx = Math.floor(Math.random() * imageData.data.length / 4) * 4;
+    palette.push({ r: imageData.data[idx], g: imageData.data[idx + 1], b: imageData.data[idx + 2], a: imageData.data[idx + 3] });
+  }
+  return palette;
+}
+function samplePaletteByGrid(numberOfColors, imageData) {
+  let idx;
+  const palette = [];
+  const ni = Math.ceil(Math.sqrt(numberOfColors));
+  const nj = Math.ceil(numberOfColors / ni);
+  const vx = imageData.width / (ni + 1);
+  const vy = imageData.height / (nj + 1);
+  for (let j = 0; j < nj; j++) {
+    for (let i = 0; i < ni; i++) {
+      if (palette.length === numberOfColors) {
+        break;
+      } else {
+        idx = Math.floor((j + 1) * vy * imageData.width + (i + 1) * vx) * 4;
+        palette.push({ r: imageData.data[idx], g: imageData.data[idx + 1], b: imageData.data[idx + 2], a: imageData.data[idx + 3] });
+      }
+    }
+  }
+  return palette;
+}
+
+function blur(imageData, radius, delta) {
+  let i, j, k, d, idx, racc, gacc, bacc, aacc, wacc;
+  const imageData2 = new ImageData(imageData.width, imageData.height);
+  radius = Math.floor(radius);
+  if (radius < 1)
+    return imageData;
+  if (radius > 5)
+    radius = 5;
+  delta = Math.abs(delta);
+  if (delta > 1024)
+    delta = 1024;
+  const thisgk = GKS[radius - 1];
+  for (j = 0; j < imageData.height; j++) {
+    for (i = 0; i < imageData.width; i++) {
+      racc = 0;
+      gacc = 0;
+      bacc = 0;
+      aacc = 0;
+      wacc = 0;
+      for (k = -radius; k < radius + 1; k++) {
+        if (i + k > 0 && i + k < imageData.width) {
+          idx = (j * imageData.width + i + k) * 4;
+          racc += imageData.data[idx] * thisgk[k + radius];
+          gacc += imageData.data[idx + 1] * thisgk[k + radius];
+          bacc += imageData.data[idx + 2] * thisgk[k + radius];
+          aacc += imageData.data[idx + 3] * thisgk[k + radius];
+          wacc += thisgk[k + radius];
+        }
+      }
+      idx = (j * imageData.width + i) * 4;
+      imageData2.data[idx] = Math.floor(racc / wacc);
+      imageData2.data[idx + 1] = Math.floor(gacc / wacc);
+      imageData2.data[idx + 2] = Math.floor(bacc / wacc);
+      imageData2.data[idx + 3] = Math.floor(aacc / wacc);
+    }
+  }
+  const himageData = new Uint8ClampedArray(imageData2.data);
+  for (j = 0; j < imageData.height; j++) {
+    for (i = 0; i < imageData.width; i++) {
+      racc = 0;
+      gacc = 0;
+      bacc = 0;
+      aacc = 0;
+      wacc = 0;
+      for (k = -radius; k < radius + 1; k++) {
+        if (j + k > 0 && j + k < imageData.height) {
+          idx = ((j + k) * imageData.width + i) * 4;
+          racc += himageData[idx] * thisgk[k + radius];
+          gacc += himageData[idx + 1] * thisgk[k + radius];
+          bacc += himageData[idx + 2] * thisgk[k + radius];
+          aacc += himageData[idx + 3] * thisgk[k + radius];
+          wacc += thisgk[k + radius];
+        }
+      }
+      idx = (j * imageData.width + i) * 4;
+      imageData2.data[idx] = Math.floor(racc / wacc);
+      imageData2.data[idx + 1] = Math.floor(gacc / wacc);
+      imageData2.data[idx + 2] = Math.floor(bacc / wacc);
+      imageData2.data[idx + 3] = Math.floor(aacc / wacc);
+    }
+  }
+  for (j = 0; j < imageData.height; j++) {
+    for (i = 0; i < imageData.width; i++) {
+      idx = (j * imageData.width + i) * 4;
+      d = Math.abs(imageData2.data[idx] - imageData.data[idx]) + Math.abs(imageData2.data[idx + 1] - imageData.data[idx + 1]) + Math.abs(imageData2.data[idx + 2] - imageData.data[idx + 2]) + Math.abs(imageData2.data[idx + 3] - imageData.data[idx + 3]);
+      if (d > delta) {
+        imageData2.data[idx] = imageData.data[idx];
+        imageData2.data[idx + 1] = imageData.data[idx + 1];
+        imageData2.data[idx + 2] = imageData.data[idx + 2];
+        imageData2.data[idx + 3] = imageData.data[idx + 3];
+      }
+    }
+  }
+  return imageData2;
+}
+
+function getDirection(x1, y1, x2, y2) {
+  let result = 8;
+  if (x1 < x2) {
+    if (y1 < y2)
+      result = 1;
+    else if (y1 > y2)
+      result = 7;
+    else
+      result = 0;
+  } else if (x1 > x2) {
+    if (y1 < y2)
+      result = 3;
+    else if (y1 > y2)
+      result = 5;
+    else
+      result = 4;
+  } else {
+    if (y1 < y2)
+      result = 2;
+    else if (y1 > y2)
+      result = 6;
+    else
+      result = 8;
+  }
+  return result;
+}
+const roundToDec = (val, places = void 0) => +val.toFixed(places);
+function colorQuantization(imageData, options) {
+  const arr = [];
+  let idx = 0;
+  let cd;
+  let cdl;
+  let ci;
+  const paletteacc = [];
+  const pixelnum = imageData.width * imageData.height;
+  let i;
+  let j;
+  let k;
+  let cnt;
+  let palette;
+  let imageDataCache = imageData.data;
+  if (imageDataCache.length < pixelnum * 4) {
+    const newImageData = new Uint8ClampedArray(pixelnum * 4);
+    for (let pxcnt = 0; pxcnt < pixelnum; pxcnt++) {
+      newImageData[pxcnt * 4] = imageDataCache[pxcnt * 3];
+      newImageData[pxcnt * 4 + 1] = imageDataCache[pxcnt * 3 + 1];
+      newImageData[pxcnt * 4 + 2] = imageDataCache[pxcnt * 3 + 2];
+      newImageData[pxcnt * 4 + 3] = 255;
+    }
+    imageDataCache = newImageData;
+  }
+  for (j = 0; j < imageData.height + 2; j++) {
+    arr[j] = [];
+    for (i = 0; i < imageData.width + 2; i++)
+      arr[j][i] = -1;
+  }
+  if (options.pal)
+    palette = options.pal;
+  else if (options.colorsampling === 0)
+    palette = generatePalette(options.numberofcolors);
+  else if (options.colorsampling === 1)
+    palette = samplePalette(options.numberofcolors, imageData);
+  else
+    palette = samplePaletteByGrid(options.numberofcolors, imageData);
+  if (options.blurradius > 0)
+    imageData = blur(imageData, options.blurradius, options.blurdelta);
+  for (cnt = 0; cnt < options.colorquantcycles; cnt++) {
+    if (cnt > 0) {
+      for (k = 0; k < palette.length; k++) {
+        if (paletteacc[k].n > 0) {
+          palette[k] = {
+            r: Math.floor(paletteacc[k].r / paletteacc[k].n),
+            g: Math.floor(paletteacc[k].g / paletteacc[k].n),
+            b: Math.floor(paletteacc[k].b / paletteacc[k].n),
+            a: Math.floor(paletteacc[k].a / paletteacc[k].n)
+          };
+        }
+        if (paletteacc[k].n / pixelnum < options.mincolorratio && cnt < options.colorquantcycles - 1) {
+          palette[k] = {
+            r: Math.floor(Math.random() * 255),
+            g: Math.floor(Math.random() * 255),
+            b: Math.floor(Math.random() * 255),
+            a: Math.floor(Math.random() * 255)
+          };
+        }
+      }
+    }
+    for (i = 0; i < palette.length; i++)
+      paletteacc[i] = { r: 0, g: 0, b: 0, a: 0, n: 0 };
+    for (j = 0; j < imageData.height; j++) {
+      for (i = 0; i < imageData.width; i++) {
+        idx = (j * imageData.width + i) * 4;
+        ci = 0;
+        cdl = 1024;
+        for (k = 0; k < palette.length; k++) {
+          cd = (palette[k].r > imageDataCache[idx] ? palette[k].r - imageDataCache[idx] : imageDataCache[idx] - palette[k].r) + (palette[k].g > imageDataCache[idx + 1] ? palette[k].g - imageDataCache[idx + 1] : imageDataCache[idx + 1] - palette[k].g) + (palette[k].b > imageDataCache[idx + 2] ? palette[k].b - imageDataCache[idx + 2] : imageDataCache[idx + 2] - palette[k].b) + (palette[k].a > imageDataCache[idx + 3] ? palette[k].a - imageDataCache[idx + 3] : imageDataCache[idx + 3] - palette[k].a);
+          if (cd < cdl) {
+            cdl = cd;
+            ci = k;
+          }
+        }
+        paletteacc[ci].r += imageDataCache[idx];
+        paletteacc[ci].g += imageDataCache[idx + 1];
+        paletteacc[ci].b += imageDataCache[idx + 2];
+        paletteacc[ci].a += imageDataCache[idx + 3];
+        paletteacc[ci].n++;
+        arr[j + 1][i + 1] = ci;
+      }
+    }
+  }
+  return { array: arr, palette };
+}
+const toRgbaStr = (c) => `rgba(${c.r},${c.g},${c.b},${c.a})`;
+
+function svgPathString(tracedata, lnum, pathnum, options) {
+  const layer = tracedata.layers[lnum];
+  const smp = layer[pathnum];
+  let str = "";
+  let pcnt;
+  if (options.linefilter && smp.segments.length < 3)
+    return str;
+  str = `<path ${options.desc ? `desc="l ${lnum} p ${pathnum}" ` : ""}${toSvgColorStr(tracedata.palette[lnum], options)}d="`;
+  if (options.roundcoords === -1) {
+    str += `M ${smp.segments[0].x1 * options.scale} ${smp.segments[0].y1 * options.scale} `;
+    for (pcnt = 0; pcnt < smp.segments.length; pcnt++) {
+      str += `${smp.segments[pcnt].type} ${smp.segments[pcnt].x2 * options.scale} ${smp.segments[pcnt].y2 * options.scale} `;
+      if (smp.segments[pcnt].hasOwnProperty("x3"))
+        str += `${smp.segments[pcnt].x3 * options.scale} ${smp.segments[pcnt].y3 * options.scale} `;
+    }
+    str += "Z ";
+  } else {
+    str += `M ${roundToDec(smp.segments[0].x1 * options.scale, options.roundcoords)} ${roundToDec(smp.segments[0].y1 * options.scale, options.roundcoords)} `;
+    for (pcnt = 0; pcnt < smp.segments.length; pcnt++) {
+      str += `${smp.segments[pcnt].type} ${roundToDec(smp.segments[pcnt].x2 * options.scale, options.roundcoords)} ${roundToDec(smp.segments[pcnt].y2 * options.scale, options.roundcoords)} `;
+      if (smp.segments[pcnt].hasOwnProperty("x3"))
+        str += `${roundToDec(smp.segments[pcnt].x3 * options.scale, options.roundcoords)} ${roundToDec(smp.segments[pcnt].y3 * options.scale, options.roundcoords)} `;
+    }
+    str += "Z ";
+  }
+  for (let hcnt = 0; hcnt < smp.holechildren.length; hcnt++) {
+    const hsmp = layer[smp.holechildren[hcnt]];
+    if (options.roundcoords === -1) {
+      if (hsmp.segments[hsmp.segments.length - 1].hasOwnProperty("x3"))
+        str += `M ${hsmp.segments[hsmp.segments.length - 1].x3 * options.scale} ${hsmp.segments[hsmp.segments.length - 1].y3 * options.scale} `;
+      else
+        str += `M ${hsmp.segments[hsmp.segments.length - 1].x2 * options.scale} ${hsmp.segments[hsmp.segments.length - 1].y2 * options.scale} `;
+      for (pcnt = hsmp.segments.length - 1; pcnt >= 0; pcnt--) {
+        str += `${hsmp.segments[pcnt].type} `;
+        if (hsmp.segments[pcnt].hasOwnProperty("x3"))
+          str += `${hsmp.segments[pcnt].x2 * options.scale} ${hsmp.segments[pcnt].y2 * options.scale} `;
+        str += `${hsmp.segments[pcnt].x1 * options.scale} ${hsmp.segments[pcnt].y1 * options.scale} `;
+      }
+    } else {
+      if (hsmp.segments[hsmp.segments.length - 1].hasOwnProperty("x3"))
+        str += `M ${roundToDec(hsmp.segments[hsmp.segments.length - 1].x3 * options.scale)} ${roundToDec(hsmp.segments[hsmp.segments.length - 1].y3 * options.scale)} `;
+      else
+        str += `M ${roundToDec(hsmp.segments[hsmp.segments.length - 1].x2 * options.scale)} ${roundToDec(hsmp.segments[hsmp.segments.length - 1].y2 * options.scale)} `;
+      for (pcnt = hsmp.segments.length - 1; pcnt >= 0; pcnt--) {
+        str += `${hsmp.segments[pcnt].type} `;
+        if (hsmp.segments[pcnt].hasOwnProperty("x3"))
+          str += `${roundToDec(hsmp.segments[pcnt].x2 * options.scale)} ${roundToDec(hsmp.segments[pcnt].y2 * options.scale)} `;
+        str += `${roundToDec(hsmp.segments[pcnt].x1 * options.scale)} ${roundToDec(hsmp.segments[pcnt].y1 * options.scale)} `;
+      }
+    }
+    str += "Z ";
+  }
+  str += '" />';
+  if (options.lcpr || options.qcpr) {
+    for (pcnt = 0; pcnt < smp.segments.length; pcnt++) {
+      if (smp.segments[pcnt].hasOwnProperty("x3") && options.qcpr) {
+        str += `<circle cx="${smp.segments[pcnt].x2 * options.scale}" cy="${smp.segments[pcnt].y2 * options.scale}" r="${options.qcpr}" fill="cyan" stroke-width="${options.qcpr * 0.2}" stroke="black" />`;
+        str += `<circle cx="${smp.segments[pcnt].x3 * options.scale}" cy="${smp.segments[pcnt].y3 * options.scale}" r="${options.qcpr}" fill="white" stroke-width="${options.qcpr * 0.2}" stroke="black" />`;
+        str += `<line x1="${smp.segments[pcnt].x1 * options.scale}" y1="${smp.segments[pcnt].y1 * options.scale}" x2="${smp.segments[pcnt].x2 * options.scale}" y2="${smp.segments[pcnt].y2 * options.scale}" stroke-width="${options.qcpr * 0.2}" stroke="cyan" />`;
+        str += `<line x1="${smp.segments[pcnt].x2 * options.scale}" y1="${smp.segments[pcnt].y2 * options.scale}" x2="${smp.segments[pcnt].x3 * options.scale}" y2="${smp.segments[pcnt].y3 * options.scale}" stroke-width="${options.qcpr * 0.2}" stroke="cyan" />`;
+      }
+      if (!smp.segments[pcnt].hasOwnProperty("x3") && options.lcpr)
+        str += `<circle cx="${smp.segments[pcnt].x2 * options.scale}" cy="${smp.segments[pcnt].y2 * options.scale}" r="${options.lcpr}" fill="white" stroke-width="${options.lcpr * 0.2}" stroke="black" />`;
+    }
+    for (let hcnt = 0; hcnt < smp.holechildren.length; hcnt++) {
+      const hsmp = layer[smp.holechildren[hcnt]];
+      for (pcnt = 0; pcnt < hsmp.segments.length; pcnt++) {
+        if (hsmp.segments[pcnt].hasOwnProperty("x3") && options.qcpr) {
+          str += `<circle cx="${hsmp.segments[pcnt].x2 * options.scale}" cy="${hsmp.segments[pcnt].y2 * options.scale}" r="${options.qcpr}" fill="cyan" stroke-width="${options.qcpr * 0.2}" stroke="black" />`;
+          str += `<circle cx="${hsmp.segments[pcnt].x3 * options.scale}" cy="${hsmp.segments[pcnt].y3 * options.scale}" r="${options.qcpr}" fill="white" stroke-width="${options.qcpr * 0.2}" stroke="black" />`;
+          str += `<line x1="${hsmp.segments[pcnt].x1 * options.scale}" y1="${hsmp.segments[pcnt].y1 * options.scale}" x2="${hsmp.segments[pcnt].x2 * options.scale}" y2="${hsmp.segments[pcnt].y2 * options.scale}" stroke-width="${options.qcpr * 0.2}" stroke="cyan" />`;
+          str += `<line x1="${hsmp.segments[pcnt].x2 * options.scale}" y1="${hsmp.segments[pcnt].y2 * options.scale}" x2="${hsmp.segments[pcnt].x3 * options.scale}" y2="${hsmp.segments[pcnt].y3 * options.scale}" stroke-width="${options.qcpr * 0.2}" stroke="cyan" />`;
+        }
+        if (!hsmp.segments[pcnt].hasOwnProperty("x3") && options.lcpr)
+          str += `<circle cx="${hsmp.segments[pcnt].x2 * options.scale}" cy="${hsmp.segments[pcnt].y2 * options.scale}" r="${options.lcpr}" fill="white" stroke-width="${options.lcpr * 0.2}" stroke="black" />`;
+      }
+    }
+  }
+  return str;
+}
+function toSvgColorStr(c, options) {
+  return `fill="rgb(${c.r},${c.g},${c.b})" stroke="rgb(${c.r},${c.g},${c.b})" stroke-width="${options.strokewidth}" opacity="${c.a / 255}" `;
+}
+function fitSeq(path, ltres, qtres, seqstart, seqend) {
+  if (seqend > path.points.length || seqend < 0)
+    return [];
+  let errorpoint = seqstart;
+  let errorval = 0;
+  let curvepass = true;
+  let px;
+  let py;
+  let dist2;
+  let tl = seqend - seqstart;
+  if (tl < 0)
+    tl += path.points.length;
+  const vx = (path.points[seqend].x - path.points[seqstart].x) / tl;
+  const vy = (path.points[seqend].y - path.points[seqstart].y) / tl;
+  let pcnt = (seqstart + 1) % path.points.length;
+  let pl;
+  while (pcnt !== seqend) {
+    pl = pcnt - seqstart;
+    if (pl < 0)
+      pl += path.points.length;
+    px = path.points[seqstart].x + vx * pl;
+    py = path.points[seqstart].y + vy * pl;
+    dist2 = (path.points[pcnt].x - px) * (path.points[pcnt].x - px) + (path.points[pcnt].y - py) * (path.points[pcnt].y - py);
+    if (dist2 > ltres)
+      curvepass = false;
+    if (dist2 > errorval) {
+      errorpoint = pcnt;
+      errorval = dist2;
+    }
+    pcnt = (pcnt + 1) % path.points.length;
+  }
+  if (curvepass)
+    return [{ type: "L", x1: path.points[seqstart].x, y1: path.points[seqstart].y, x2: path.points[seqend].x, y2: path.points[seqend].y }];
+  const fitpoint = errorpoint;
+  curvepass = true;
+  errorval = 0;
+  let t = (fitpoint - seqstart) / tl;
+  let t1 = (1 - t) * (1 - t);
+  let t2 = 2 * (1 - t) * t;
+  let t3 = t * t;
+  const cpx = (t1 * path.points[seqstart].x + t3 * path.points[seqend].x - path.points[fitpoint].x) / -t2;
+  const cpy = (t1 * path.points[seqstart].y + t3 * path.points[seqend].y - path.points[fitpoint].y) / -t2;
+  pcnt = seqstart + 1;
+  while (pcnt !== seqend) {
+    t = (pcnt - seqstart) / tl;
+    t1 = (1 - t) * (1 - t);
+    t2 = 2 * (1 - t) * t;
+    t3 = t * t;
+    px = t1 * path.points[seqstart].x + t2 * cpx + t3 * path.points[seqend].x;
+    py = t1 * path.points[seqstart].y + t2 * cpy + t3 * path.points[seqend].y;
+    dist2 = (path.points[pcnt].x - px) * (path.points[pcnt].x - px) + (path.points[pcnt].y - py) * (path.points[pcnt].y - py);
+    if (dist2 > qtres)
+      curvepass = false;
+    if (dist2 > errorval) {
+      errorpoint = pcnt;
+      errorval = dist2;
+    }
+    pcnt = (pcnt + 1) % path.points.length;
+  }
+  if (curvepass)
+    return [{ type: "Q", x1: path.points[seqstart].x, y1: path.points[seqstart].y, x2: cpx, y2: cpy, x3: path.points[seqend].x, y3: path.points[seqend].y }];
+  const splitpoint = fitpoint;
+  return fitSeq(path, ltres, qtres, seqstart, splitpoint).concat(fitSeq(path, ltres, qtres, splitpoint, seqend));
+}
+function boundingBoxIncludes(parentbbox, childbbox) {
+  return parentbbox[0] < childbbox[0] && parentbbox[1] < childbbox[1] && parentbbox[2] > childbbox[2] && parentbbox[3] > childbbox[3];
+}
+function pointInPoly(p, pa) {
+  let isin = false;
+  for (let i = 0, j = pa.length - 1; i < pa.length; j = i++) {
+    isin = pa[i].y > p.y !== pa[j].y > p.y && p.x < (pa[j].x - pa[i].x) * (p.y - pa[i].y) / (pa[j].y - pa[i].y) + pa[i].x ? !isin : isin;
+  }
+  return isin;
+}
+function getSvgString(tracedata, options) {
+  const w = tracedata.width * options.scale;
+  const h = tracedata.height * options.scale;
+  let svgstr = `<svg ${options.viewbox ? `viewBox="0 0 ${w} ${h}" ` : `width="${w}" height="${h}" `}version="1.1" xmlns="http://www.w3.org/2000/svg" desc="Created with imagetracer.js version ${VERSION_NUMBER}" >`;
+  for (let lcnt = 0; lcnt < tracedata.layers.length; lcnt++) {
+    for (let pcnt = 0; pcnt < tracedata.layers[lcnt].length; pcnt++) {
+      if (!tracedata.layers[lcnt][pcnt].isholepath)
+        svgstr += svgPathString(tracedata, lcnt, pcnt, options);
+    }
+  }
+  svgstr += "</svg>";
+  return svgstr;
+}
+
+function testRightAngle(path, idx1, idx2, idx3, idx4, idx5) {
+  return path.points[idx3].x === path.points[idx1].x && path.points[idx3].x === path.points[idx2].x && path.points[idx3].y === path.points[idx4].y && path.points[idx3].y === path.points[idx5].y || path.points[idx3].y === path.points[idx1].y && path.points[idx3].y === path.points[idx2].y && path.points[idx3].x === path.points[idx4].x && path.points[idx3].x === path.points[idx5].x;
+}
+function pathScan(arr, pathomit) {
+  const paths = [];
+  let pacnt = 0;
+  let pcnt = 0;
+  let px = 0;
+  let py = 0;
+  const w = arr[0].length;
+  const h = arr.length;
+  let dir = 0;
+  let pathfinished = true;
+  let holepath = false;
+  let lookuprow;
+  for (let j = 0; j < h; j++) {
+    for (let i = 0; i < w; i++) {
+      if (arr[j][i] === 4 || arr[j][i] === 11) {
+        px = i;
+        py = j;
+        paths[pacnt] = {};
+        paths[pacnt].points = [];
+        paths[pacnt].boundingbox = [px, py, px, py];
+        paths[pacnt].holechildren = [];
+        pathfinished = false;
+        pcnt = 0;
+        holepath = arr[j][i] === 11;
+        dir = 1;
+        while (!pathfinished) {
+          paths[pacnt].points[pcnt] = {};
+          paths[pacnt].points[pcnt].x = px - 1;
+          paths[pacnt].points[pcnt].y = py - 1;
+          paths[pacnt].points[pcnt].t = arr[py][px];
+          if (px - 1 < paths[pacnt].boundingbox[0])
+            paths[pacnt].boundingbox[0] = px - 1;
+          if (px - 1 > paths[pacnt].boundingbox[2])
+            paths[pacnt].boundingbox[2] = px - 1;
+          if (py - 1 < paths[pacnt].boundingbox[1])
+            paths[pacnt].boundingbox[1] = py - 1;
+          if (py - 1 > paths[pacnt].boundingbox[3])
+            paths[pacnt].boundingbox[3] = py - 1;
+          lookuprow = PATHSCAN_COMBINED_LOOKUP[arr[py][px]][dir];
+          arr[py][px] = lookuprow[0];
+          dir = lookuprow[1];
+          px += lookuprow[2];
+          py += lookuprow[3];
+          if (px - 1 === paths[pacnt].points[0].x && py - 1 === paths[pacnt].points[0].y) {
+            pathfinished = true;
+            if (paths[pacnt].points.length < pathomit) {
+              paths.pop();
+            } else {
+              paths[pacnt].isholepath = !!holepath;
+              if (holepath) {
+                let parentidx = 0;
+                let parentbbox = [-1, -1, w + 1, h + 1];
+                for (let parentcnt = 0; parentcnt < pacnt; parentcnt++) {
+                  if (!paths[parentcnt].isholepath && boundingBoxIncludes(paths[parentcnt].boundingbox, paths[pacnt].boundingbox) && boundingBoxIncludes(parentbbox, paths[parentcnt].boundingbox) && pointInPoly(paths[pacnt].points[0], paths[parentcnt].points)) {
+                    parentidx = parentcnt;
+                    parentbbox = paths[parentcnt].boundingbox;
+                  }
+                }
+                paths[parentidx].holechildren.push(pacnt);
+              }
+              pacnt++;
+            }
+          }
+          pcnt++;
+        }
+      }
+    }
+  }
+  return paths;
+}
+function batchPathScan(layers, pathomit) {
+  const bpaths = [];
+  for (let k = 0; k < layers.length; k++)
+    bpaths[k] = pathScan(layers[k], pathomit);
+  return bpaths;
+}
+function tracePath(path, ltres, qtres) {
+  let pcnt = 0;
+  let segtype1;
+  let segtype2;
+  let seqend;
+  const smp = {
+    segments: [],
+    boundingbox: path.boundingbox,
+    holechildren: path.holechildren,
+    isholepath: path.isholepath
+  };
+  while (pcnt < path.points.length) {
+    segtype1 = path.points[pcnt].linesegment;
+    segtype2 = -1;
+    seqend = pcnt + 1;
+    while ((path.points[seqend].linesegment === segtype1 || path.points[seqend].linesegment === segtype2 || segtype2 === -1) && seqend < path.points.length - 1) {
+      if (path.points[seqend].linesegment !== segtype1 && segtype2 === -1)
+        segtype2 = path.points[seqend].linesegment;
+      seqend++;
+    }
+    if (seqend === path.points.length - 1)
+      seqend = 0;
+    smp.segments = smp.segments.concat(fitSeq(path, ltres, qtres, pcnt, seqend));
+    if (seqend > 0)
+      pcnt = seqend;
+    else
+      pcnt = path.points.length;
+  }
+  return smp;
+}
+function batchTracePaths(internodepaths, ltres, qtres) {
+  const btracedpaths = [];
+  for (let k = 0; k < internodepaths.length; k++)
+    btracedpaths.push(tracePath(internodepaths[k], ltres, qtres));
+  return btracedpaths;
+}
+
+function batchInterNodes(bpaths, options) {
+  const binternodes = [];
+  for (let k = 0; k < bpaths.length; k++)
+    binternodes[k] = interNodes(bpaths[k], options);
+  return binternodes;
+}
+function interNodes(paths, options) {
+  const ins = [];
+  let palen = 0;
+  let nextidx = 0;
+  let nextidx2 = 0;
+  let previdx = 0;
+  let previdx2 = 0;
+  let pacnt;
+  let pcnt;
+  for (pacnt = 0; pacnt < paths.length; pacnt++) {
+    ins[pacnt] = {};
+    ins[pacnt].points = [];
+    ins[pacnt].boundingbox = paths[pacnt].boundingbox;
+    ins[pacnt].holechildren = paths[pacnt].holechildren;
+    ins[pacnt].isholepath = paths[pacnt].isholepath;
+    palen = paths[pacnt].points.length;
+    for (pcnt = 0; pcnt < palen; pcnt++) {
+      nextidx = (pcnt + 1) % palen;
+      nextidx2 = (pcnt + 2) % palen;
+      previdx = (pcnt - 1 + palen) % palen;
+      previdx2 = (pcnt - 2 + palen) % palen;
+      if (options.rightangleenhance && testRightAngle(paths[pacnt], previdx2, previdx, pcnt, nextidx, nextidx2)) {
+        if (ins[pacnt].points.length > 0) {
+          ins[pacnt].points[ins[pacnt].points.length - 1].linesegment = getDirection(ins[pacnt].points[ins[pacnt].points.length - 1].x, ins[pacnt].points[ins[pacnt].points.length - 1].y, paths[pacnt].points[pcnt].x, paths[pacnt].points[pcnt].y);
+        }
+        ins[pacnt].points.push({
+          x: paths[pacnt].points[pcnt].x,
+          y: paths[pacnt].points[pcnt].y,
+          linesegment: getDirection(paths[pacnt].points[pcnt].x, paths[pacnt].points[pcnt].y, (paths[pacnt].points[pcnt].x + paths[pacnt].points[nextidx].x) / 2, (paths[pacnt].points[pcnt].y + paths[pacnt].points[nextidx].y) / 2)
+        });
+      }
+      ins[pacnt].points.push({
+        x: (paths[pacnt].points[pcnt].x + paths[pacnt].points[nextidx].x) / 2,
+        y: (paths[pacnt].points[pcnt].y + paths[pacnt].points[nextidx].y) / 2,
+        linesegment: getDirection((paths[pacnt].points[pcnt].x + paths[pacnt].points[nextidx].x) / 2, (paths[pacnt].points[pcnt].y + paths[pacnt].points[nextidx].y) / 2, (paths[pacnt].points[nextidx].x + paths[pacnt].points[nextidx2].x) / 2, (paths[pacnt].points[nextidx].y + paths[pacnt].points[nextidx2].y) / 2)
+      });
+    }
+  }
+  return ins;
+}
+
+function batchTraceLayers(binternodes, ltres, qtres) {
+  const btbis = [];
+  for (let k = 0; k < binternodes.length; k++)
+    btbis[k] = batchTracePaths(binternodes[k], ltres, qtres);
+  return btbis;
+}
+function layering(ii) {
+  const layers = [];
+  let val = 0;
+  const ah = ii.array.length;
+  const aw = ii.array[0].length;
+  let n1;
+  let n2;
+  let n3;
+  let n4;
+  let n5;
+  let n6;
+  let n7;
+  let n8;
+  let i;
+  let j;
+  let k;
+  for (k = 0; k < ii.palette.length; k++) {
+    layers[k] = [];
+    for (j = 0; j < ah; j++) {
+      layers[k][j] = [];
+      for (i = 0; i < aw; i++)
+        layers[k][j][i] = 0;
+    }
+  }
+  for (j = 1; j < ah - 1; j++) {
+    for (i = 1; i < aw - 1; i++) {
+      val = ii.array[j][i];
+      n1 = ii.array[j - 1][i - 1] === val ? 1 : 0;
+      n2 = ii.array[j - 1][i] === val ? 1 : 0;
+      n3 = ii.array[j - 1][i + 1] === val ? 1 : 0;
+      n4 = ii.array[j][i - 1] === val ? 1 : 0;
+      n5 = ii.array[j][i + 1] === val ? 1 : 0;
+      n6 = ii.array[j + 1][i - 1] === val ? 1 : 0;
+      n7 = ii.array[j + 1][i] === val ? 1 : 0;
+      n8 = ii.array[j + 1][i + 1] === val ? 1 : 0;
+      layers[val][j + 1][i + 1] = 1 + n5 * 2 + n8 * 4 + n7 * 8;
+      if (!n4)
+        layers[val][j + 1][i] = 0 + 2 + n7 * 4 + n6 * 8;
+      if (!n2)
+        layers[val][j][i + 1] = 0 + n3 * 2 + n5 * 4 + 8;
+      if (!n1)
+        layers[val][j][i] = 0 + n2 * 2 + 4 + n4 * 8;
+    }
+  }
+  return layers;
+}
+function layeringStep(ii, cnum) {
+  const layer = [];
+  const ah = ii.array.length;
+  const aw = ii.array[0].length;
+  let i;
+  let j;
+  for (j = 0; j < ah; j++) {
+    layer[j] = [];
+    for (i = 0; i < aw; i++)
+      layer[j][i] = 0;
+  }
+  for (j = 1; j < ah; j++) {
+    for (i = 1; i < aw; i++) {
+      layer[j][i] = (ii.array[j - 1][i - 1] === cnum ? 1 : 0) + (ii.array[j - 1][i] === cnum ? 2 : 0) + (ii.array[j][i - 1] === cnum ? 8 : 0) + (ii.array[j][i] === cnum ? 4 : 0);
+    }
+  }
+  return layer;
+}
+function drawLayers(layers, palette, scale = 1, parentid) {
+  let w, h, i, j;
+  let div;
+  if (parentid) {
+    div = document.getElementById(parentid);
+    if (!div) {
+      div = document.createElement("div");
+      div.id = parentid;
+      document.body.appendChild(div);
+    }
+  } else {
+    div = document.createElement("div");
+    document.body.appendChild(div);
+  }
+  for (const layer of layers) {
+    w = layer[0].length;
+    h = layer.length;
+    const canvas = document.createElement("canvas");
+    canvas.width = w * scale;
+    canvas.height = h * scale;
+    const context = canvas.getContext("2d");
+    for (j = 0; j < h; j++) {
+      for (i = 0; i < w; i++) {
+        context.fillStyle = toRgbaStr(palette[layer[j][i] % palette.length]);
+        context.fillRect(i * scale, j * scale, scale, scale);
+      }
+    }
+    div.appendChild(canvas);
+  }
+}
+
+class ImageTracer {
+  constructor() {
+    this.versionnumber = VERSION_NUMBER;
+    this.optionpresets = OPTION_PRESETS;
+  }
+  checkOptions(options) {
+    if (options === void 0)
+      return { ...this.optionpresets.default };
+    if (typeof options === "string") {
+      const presetName = options;
+      const preset = this.optionpresets[presetName];
+      return { ...this.optionpresets.default, ...preset || {} };
+    }
+    if (typeof options === "object") {
+      return { ...this.optionpresets.default, ...options };
+    }
+    throw new Error(`Unknown Option Type: ${typeof options}`);
+  }
+  async imageToSVG(url, options) {
+    options = this.checkOptions(options);
+    const canvas = await this.loadImage(url, options);
+    return this.imageDataToSVG(this.getImgdata(canvas), options);
+  }
+  getImgdata(canvas) {
+    const context = canvas.getContext("2d");
+    return context.getImageData(0, 0, canvas.width, canvas.height);
+  }
+  loadImage(url, options) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      if (options && options.corsenabled)
+        img.crossOrigin = "Anonymous";
+      img.src = url;
+      img.onload = function() {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const context = canvas.getContext("2d");
+        context?.drawImage(img, 0, 0);
+        resolve(canvas);
+      };
+    });
+  }
+  imageDataToSVG(imgd, options) {
+    options = this.checkOptions(options);
+    const td = this.imageDataToTracedata(imgd, options);
+    return getSvgString(td, options);
+  }
+  async imageToTracedata(url, options) {
+    options = this.checkOptions(options);
+    const canvas = await this.loadImage(url, options);
+    return this.imageDataToTracedata(this.getImgdata(canvas), options);
+  }
+  imageDataToTracedata(imgd, options) {
+    options = this.checkOptions(options);
+    let tracedata;
+    const ii = colorQuantization(imgd, options);
+    if (options.layering === 0) {
+      tracedata = {
+        layers: [],
+        palette: ii.palette,
+        width: ii.array[0].length - 2,
+        height: ii.array.length - 2
+      };
+      for (let colornum = 0; colornum < ii.palette.length; colornum++) {
+        const tracedlayer = batchTracePaths(interNodes(pathScan(layeringStep(ii, colornum), options.pathomit), options), options.ltres, options.qtres);
+        tracedata.layers.push(tracedlayer);
+      }
+    } else {
+      const ls = layering(ii);
+      if (options.layercontainerid)
+        drawLayers(ls, SPECPALETTE, options.scale, options.layercontainerid);
+      const bps = batchPathScan(ls, options.pathomit);
+      const bis = batchInterNodes(bps, options);
+      tracedata = {
+        layers: batchTraceLayers(bis, options.ltres, options.qtres),
+        palette: ii.palette,
+        width: imgd.width,
+        height: imgd.height
+      };
+    }
+    return tracedata;
+  }
+  appendSVGString(svgstr, parentid) {
+    let div;
+    if (parentid) {
+      div = document.getElementById(parentid);
+      if (!div) {
+        div = document.createElement("div");
+        div.id = parentid;
+        document.body.appendChild(div);
+      }
+    } else {
+      div = document.createElement("div");
+      document.body.appendChild(div);
+    }
+    div.innerHTML += svgstr;
+  }
+}
+const imageTracer = new ImageTracer();
+
+var Colorsampling = /* @__PURE__ */ ((Colorsampling2) => {
+  Colorsampling2[Colorsampling2["DISABLED"] = 0] = "DISABLED";
+  Colorsampling2[Colorsampling2["RANDOM_SAMPLING"] = 1] = "RANDOM_SAMPLING";
+  Colorsampling2[Colorsampling2["DETERMINISTIC_SAMPLING"] = 2] = "DETERMINISTIC_SAMPLING";
+  return Colorsampling2;
+})(Colorsampling || {});
+
+exports.Colorsampling = Colorsampling;
+exports.GKS = GKS;
+exports.ImageTracer = ImageTracer;
+exports.OPTION_PRESETS = OPTION_PRESETS;
+exports.PATHSCAN_COMBINED_LOOKUP = PATHSCAN_COMBINED_LOOKUP;
+exports.SPECPALETTE = SPECPALETTE;
+exports.VERSION_NUMBER = VERSION_NUMBER;
+exports.batchInterNodes = batchInterNodes;
+exports.batchPathScan = batchPathScan;
+exports.batchTraceLayers = batchTraceLayers;
+exports.batchTracePaths = batchTracePaths;
+exports.boundingBoxIncludes = boundingBoxIncludes;
+exports.colorQuantization = colorQuantization;
+exports.drawLayers = drawLayers;
+exports.fitSeq = fitSeq;
+exports.generatePalette = generatePalette;
+exports.getDirection = getDirection;
+exports.getSvgString = getSvgString;
+exports.imageTracer = imageTracer;
+exports.interNodes = interNodes;
+exports.layering = layering;
+exports.layeringStep = layeringStep;
+exports.pathScan = pathScan;
+exports.pointInPoly = pointInPoly;
+exports.roundToDec = roundToDec;
+exports.samplePalette = samplePalette;
+exports.samplePaletteByGrid = samplePaletteByGrid;
+exports.svgPathString = svgPathString;
+exports.testRightAngle = testRightAngle;
+exports.toRgbaStr = toRgbaStr;
+exports.toSvgColorStr = toSvgColorStr;
+exports.tracePath = tracePath;

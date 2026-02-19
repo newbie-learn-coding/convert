@@ -19,6 +19,116 @@ interface CategoryAdaptiveCost {
     cost: number; // Cost to apply when a conversion involves all of the specified categories in sequence.
 }
 
+interface CacheEntry {
+    path: ConvertPathNode[];
+    timestamp: number;
+    hits: number;
+}
+
+interface PerformanceMetrics {
+    cacheHits: number;
+    cacheMisses: number;
+    totalSearches: number;
+    averageSearchTime: number;
+    timeoutCount: number;
+    longestSearch: number;
+}
+
+// LRU Cache implementation for conversion paths
+class PathCache {
+    private cache: Map<string, CacheEntry> = new Map();
+    private maxSize: number;
+    private metrics: PerformanceMetrics = {
+        cacheHits: 0,
+        cacheMisses: 0,
+        totalSearches: 0,
+        averageSearchTime: 0,
+        timeoutCount: 0,
+        longestSearch: 0
+    };
+
+    constructor(maxSize: number = 1000) {
+        this.maxSize = maxSize;
+    }
+
+    private generateKey(fromMime: string, toMime: string, simpleMode: boolean): string {
+        return `${fromMime}|${toMime}|${simpleMode}`;
+    }
+
+    get(fromMime: string, toMime: string, simpleMode: boolean): ConvertPathNode[] | null {
+        const key = this.generateKey(fromMime, toMime, simpleMode);
+        const entry = this.cache.get(key);
+
+        if (entry) {
+            entry.hits++;
+            // Move to end (most recently used)
+            this.cache.delete(key);
+            this.cache.set(key, entry);
+            this.metrics.cacheHits++;
+            return entry.path;
+        }
+
+        this.metrics.cacheMisses++;
+        return null;
+    }
+
+    set(fromMime: string, toMime: string, simpleMode: boolean, path: ConvertPathNode[]): void {
+        const key = this.generateKey(fromMime, toMime, simpleMode);
+
+        // Evict oldest entry if at capacity
+        if (this.cache.size >= this.maxSize) {
+            const firstKey = this.cache.keys().next().value;
+            if (firstKey) this.cache.delete(firstKey);
+        }
+
+        this.cache.set(key, {
+            path,
+            timestamp: Date.now(),
+            hits: 1
+        });
+    }
+
+    recordSearch(duration: number, timedOut: boolean): void {
+        this.metrics.totalSearches++;
+        this.metrics.averageSearchTime =
+            (this.metrics.averageSearchTime * (this.metrics.totalSearches - 1) + duration) /
+            this.metrics.totalSearches;
+
+        if (duration > this.metrics.longestSearch) {
+            this.metrics.longestSearch = duration;
+        }
+
+        if (timedOut) {
+            this.metrics.timeoutCount++;
+        }
+    }
+
+    getMetrics(): PerformanceMetrics {
+        return { ...this.metrics };
+    }
+
+    getCacheSize(): number {
+        return this.cache.size;
+    }
+
+    clear(): void {
+        this.cache.clear();
+        this.metrics = {
+            cacheHits: 0,
+            cacheMisses: 0,
+            totalSearches: 0,
+            averageSearchTime: 0,
+            timeoutCount: 0,
+            longestSearch: 0
+        };
+    }
+
+    getHitRate(): number {
+        const total = this.metrics.cacheHits + this.metrics.cacheMisses;
+        return total > 0 ? this.metrics.cacheHits / total : 0;
+    }
+}
+
 
 // Parameters for pathfinding algorithm.
 const DEPTH_COST: number = 1; // Base cost for each conversion step. Higher values will make the algorithm prefer shorter paths more strongly.
@@ -28,6 +138,8 @@ const HANDLER_PRIORITY_COST : number = 0.2; // Cost multiplier for handler prior
 const FORMAT_PRIORITY_COST : number = 0.05; // Cost multiplier for format priority. Higher values will make the algorithm prefer formats with higher priority more strongly.
 
 const LOG_FREQUENCY = 1000;
+const DEFAULT_TIMEOUT_MS = 5000;
+const MAX_CACHE_SIZE = 1000;
 
 export interface Node {
     mime: string;
@@ -41,6 +153,8 @@ export interface Edge {
     cost: number;
 };
 
+export type { PerformanceMetrics };
+
 export class TraversionGraph {
     constructor(disableSafeChecks: boolean = false) {
         this.disableSafeChecks = disableSafeChecks;
@@ -50,6 +164,8 @@ export class TraversionGraph {
     private edges: Edge[] = [];
     private nodeIndexMap: Map<string, number> = new Map();
     private handlerMap: Map<string, FormatHandler> = new Map();
+    private pathCache: PathCache = new PathCache(MAX_CACHE_SIZE);
+    private searchTimeout: number = DEFAULT_TIMEOUT_MS;
     private categoryChangeCosts: CategoryChangeCost[] = [
         {from: "image", to: "video", cost: 0.2}, // Almost lossless
         {from: "video", to: "image", cost: 0.4}, // Potentially lossy and more complex
@@ -129,6 +245,7 @@ export class TraversionGraph {
         this.edges.length = 0;
         this.nodeIndexMap.clear();
         this.handlerMap.clear();
+        this.pathCache.clear();
 
         console.log("Initializing traversion graph...");
         const startTime = performance.now();
@@ -306,6 +423,44 @@ export class TraversionGraph {
     }
 
     public async* searchPath(from: ConvertPathNode, to: ConvertPathNode, simpleMode: boolean): AsyncGenerator<ConvertPathNode[]> {
+        const fromIndex = this.nodeIndexMap.get(from.format.mime);
+        const toIndex = this.nodeIndexMap.get(to.format.mime);
+
+        if (fromIndex === undefined || toIndex === undefined) {
+            return;
+        }
+
+        // Check cache first for direct conversions (common case optimization)
+        if (fromIndex === toIndex) {
+            yield [from];
+            return;
+        }
+
+        const startTime = performance.now();
+        const cacheKey = `${from.format.mime}|${to.format.mime}|${simpleMode}`;
+
+        // Check cache for existing path
+        const cachedPath = this.pathCache.get(from.format.mime, to.format.mime, simpleMode);
+        if (cachedPath) {
+            if (process.env.NODE_ENV !== 'production') {
+                console.log(`Cache HIT for ${cacheKey}`);
+            }
+            yield cachedPath;
+            return;
+        }
+
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`Cache MISS for ${cacheKey}`);
+        }
+
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+            timedOut = true;
+            if (process.env.NODE_ENV !== 'production') {
+                console.warn(`Path search from ${from.format.mime} to ${to.format.mime} timed out after ${this.searchTimeout}ms`);
+            }
+        }, this.searchTimeout);
+
         const queue = new PriorityQueue<QueueNode>(
             1000,
             (a: QueueNode, b: QueueNode) => a.cost - b.cost
@@ -313,13 +468,6 @@ export class TraversionGraph {
 
         const visitedSet = new Set<number>();
         const visited: number[] = [];
-
-        const fromIndex = this.nodeIndexMap.get(from.format.mime);
-        const toIndex = this.nodeIndexMap.get(to.format.mime);
-
-        if (fromIndex === undefined || toIndex === undefined) {
-            return;
-        }
 
         queue.add({ index: fromIndex, cost: 0, path: [from], visitedBorder: 0 });
 
@@ -329,10 +477,22 @@ export class TraversionGraph {
 
         let iterations = 0;
         let pathsFound = 0;
+        let bestPath: ConvertPathNode[] | null = null;
+        let bestCost = Infinity;
+        const directPaths: ConvertPathNode[][] = [];
 
-        while (queue.size() > 0) {
+        // Early exit flag for simple mode
+        let shouldExit = false;
+
+        while (queue.size() > 0 && !timedOut && !shouldExit) {
             iterations++;
             const current = queue.poll()!;
+
+            // Timeout check
+            if (performance.now() - startTime > this.searchTimeout) {
+                timedOut = true;
+                break;
+            }
 
             if (current.index !== fromIndex && visitedSet.has(current.index)) {
                 this.dispatchEvent("skipped", current.path);
@@ -373,12 +533,28 @@ export class TraversionGraph {
 
                 const lastNode = current.path[current.path.length - 1];
                 if (simpleMode || !to.handler || to.handler.name === lastNode?.handler.name) {
+                    // Prioritize shorter, lower-cost paths
+                    if (current.cost < bestCost) {
+                        bestCost = current.cost;
+                        bestPath = current.path;
+                    }
+
+                    // Track direct conversions (1 step) separately
+                    if (current.path.length === 2) {
+                        directPaths.push(current.path);
+                    }
+
                     if (process.env.NODE_ENV !== 'production') {
                         console.log(`Yielding path at iteration ${iterations}`);
                     }
                     this.dispatchEvent("found", current.path);
                     yield current.path;
                     pathsFound++;
+
+                    // Early termination for simple mode after finding first valid path
+                    if (simpleMode && current.path.length === 2) {
+                        shouldExit = true;
+                    }
                 } else {
                     this.dispatchEvent("skipped", current.path);
                 }
@@ -414,9 +590,62 @@ export class TraversionGraph {
             }
         }
 
-        if (process.env.NODE_ENV !== 'production') {
-            console.log(`Path search completed. Total iterations: ${iterations}, Total paths found: ${pathsFound}`);
+        clearTimeout(timeoutId);
+
+        const searchDuration = performance.now() - startTime;
+
+        // Cache best path found
+        if (bestPath) {
+            // Prefer direct paths for caching
+            const pathToCache = directPaths.length > 0 ? directPaths[0] : bestPath;
+            this.pathCache.set(from.format.mime, to.format.mime, simpleMode, pathToCache);
         }
+
+        // Record metrics
+        this.pathCache.recordSearch(searchDuration, timedOut);
+
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`Path search completed. Total iterations: ${iterations}, Total paths found: ${pathsFound}, Duration: ${searchDuration.toFixed(2)}ms${timedOut ? ' (TIMED OUT)' : ''}`);
+            this.logPerformanceMetrics();
+        }
+    }
+
+    /**
+     * Get current performance metrics for the path cache.
+     */
+    public getPerformanceMetrics(): PerformanceMetrics {
+        return this.pathCache.getMetrics();
+    }
+
+    /**
+     * Get cache statistics including hit rate and size.
+     */
+    public getCacheStats(): { hitRate: number; size: number; metrics: PerformanceMetrics } {
+        return {
+            hitRate: this.pathCache.getHitRate(),
+            size: this.pathCache.getCacheSize(),
+            metrics: this.pathCache.getMetrics()
+        };
+    }
+
+    /**
+     * Set the search timeout in milliseconds.
+     */
+    public setSearchTimeout(timeoutMs: number): void {
+        this.searchTimeout = timeoutMs;
+    }
+
+    /**
+     * Clear the path cache.
+     */
+    public clearPathCache(): void {
+        this.pathCache.clear();
+    }
+
+    private logPerformanceMetrics(): void {
+        const stats = this.getCacheStats();
+        console.log(`[Perf] Cache Hit Rate: ${(stats.hitRate * 100).toFixed(1)}%, Size: ${stats.size}/${MAX_CACHE_SIZE}`);
+        console.log(`[Perf] Avg Search Time: ${stats.metrics.averageSearchTime.toFixed(2)}ms, Longest: ${stats.metrics.longestSearch.toFixed(2)}ms, Timeouts: ${stats.metrics.timeoutCount}`);
     }
 
     private calculateAdaptiveCost(path: ConvertPathNode[]): number {

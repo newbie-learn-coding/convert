@@ -1,0 +1,90 @@
+/**
+ * FL Studio .flp file parser and serializer
+ * Conservative patch approach: preserves all unknown data byte-for-byte
+ */
+/**
+ * Represents a single event in an FLP file
+ * Stores raw bytes to enable conservative patching
+ */
+export interface FlpEvent {
+    /** Event ID (0-255) */
+    id: number;
+    /** Data type classification */
+    kind: "u8" | "i8" | "u16" | "i16" | "u32" | "i32" | "f32" | "text" | "data" | "unknown";
+    /** Original header bytes (ID + size for variable-length events) */
+    header: Buffer;
+    /** Event payload data */
+    payload: Buffer;
+}
+/**
+ * Represents a parsed FLP file
+ * Contains all data needed for conservative round-trip
+ */
+export interface ParsedFlp {
+    /** FLhd chunk (header) - 14 bytes total */
+    headerChunkBytes: Buffer;
+    /** FLdt chunk header (magic + size placeholder) - 8 bytes */
+    fldtHeaderBytes: Buffer;
+    /** All events from the FLdt chunk */
+    events: FlpEvent[];
+    /** Any trailing bytes after events (should be empty) */
+    trailingBytes: Buffer | undefined;
+    /** Detected FL version for string encoding */
+    flVersion: string;
+    /** Whether to use UTF-16LE for strings (FL >= 11.5) */
+    useUnicode: boolean;
+}
+/**
+ * Parses an FL Studio project file
+ *
+ * @param buffer - Raw file data
+ * @returns Parsed FLP structure
+ * @throws Error if file is corrupted or invalid
+ */
+export declare function parseFlp(buffer: Buffer): ParsedFlp;
+/**
+ * Serializes a parsed FLP back to a buffer
+ * Recalculates FLdt chunk size if events have changed
+ *
+ * @param parsed - Parsed FLP structure
+ * @returns Serialized buffer
+ */
+export declare function serializeFlp(parsed: ParsedFlp): Buffer;
+/**
+ * Creates a new event with the given ID and payload
+ */
+export declare function createEvent(id: number, payload: Buffer): FlpEvent;
+/**
+ * Applies a patcher function to all events
+ * Returns a new ParsedFlp with patched events
+ *
+ * @param parsed - Original parsed FLP
+ * @param patcher - Function that transforms each event
+ * @returns New ParsedFlp with patched events
+ */
+export declare function patchEvents(parsed: ParsedFlp, patcher: (event: FlpEvent, index: number) => FlpEvent): ParsedFlp;
+/**
+ * Finds all events with a specific ID
+ */
+export declare function findEvents(parsed: ParsedFlp, eventId: number): FlpEvent[];
+/**
+ * Finds the first event with a specific ID
+ */
+export declare function findFirstEvent(parsed: ParsedFlp, eventId: number): FlpEvent | undefined;
+/**
+ * Gets event payload as a string (handles encoding)
+ */
+export declare function getEventString(event: FlpEvent, useUnicode: boolean): string;
+/**
+ * Creates a text payload with proper encoding
+ */
+export declare function createTextPayload(text: string, useUnicode: boolean): Buffer;
+/**
+ * Gets event payload as a number
+ */
+export declare function getEventNumber(event: FlpEvent): number;
+/**
+ * Creates a numeric payload
+ */
+export declare function createNumberPayload(value: number, kind: "u8" | "i8" | "u16" | "i16" | "u32" | "i32" | "f32"): Buffer;
+//# sourceMappingURL=FlpParser.d.ts.map

@@ -1,0 +1,12 @@
+{
+    "name": "@types/meyda",
+    "version": "5.3.0",
+    "description": "Stub TypeScript definitions entry for meyda, which provides its own types definitions",
+    "main": "",
+    "scripts": {},
+    "license": "MIT",
+    "dependencies": {
+        "meyda": "*"
+    },
+    "deprecated": "This is a stub types definition. meyda provides its own type definitions, so you do not need this installed."
+}

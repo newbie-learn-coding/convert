@@ -2,6 +2,15 @@ import type { FileFormat, FileData, FormatHandler, ConvertPathNode } from "./For
 import normalizeMimeType from "./normalizeMimeType.js";
 import handlers from "./handlers";
 import { TraversionGraph } from "./TraversionGraph.js";
+import { initPWA } from "./pwa.js";
+import "./pwa.css";
+import { validateFileSignature, getFileExtension, type FileFormatInfo } from "./fileValidator.js";
+import { initPerformanceTracking } from "./performance.js";
+import { initLogging, log } from "./logging.js";
+
+/** Initialize logging and performance tracking early for accurate metrics */
+initLogging();
+initPerformanceTracking({ debug: true });
 
 /** Files currently selected for conversion */
 let selectedFiles: File[] = [];
@@ -111,8 +120,36 @@ function renderSelectedFiles(files: File[]) {
 }
 
 function updateConvertButtonState(): void {
-  const selectedInput = ui.inputList.querySelector("button.selected");
-  const selectedOutput = ui.outputList.querySelector("button.selected");
+  // Check for selection in original buttons (source of truth for virtual lists)
+  let selectedInput: HTMLButtonElement | null = null;
+  let selectedOutput: HTMLButtonElement | null = null;
+
+  // Check input list
+  const inputVirtual = virtualLists.get(ui.inputList);
+  if (inputVirtual) {
+    // For virtual lists, check original buttons
+    for (const [, btn] of inputVirtual["originalButtonsMap"]) {
+      if (btn.classList.contains("selected")) {
+        selectedInput = btn;
+        break;
+      }
+    }
+  } else {
+    selectedInput = ui.inputList.querySelector("button.selected");
+  }
+
+  // Check output list
+  const outputVirtual = virtualLists.get(ui.outputList);
+  if (outputVirtual) {
+    for (const [, btn] of outputVirtual["originalButtonsMap"]) {
+      if (btn.classList.contains("selected")) {
+        selectedOutput = btn;
+        break;
+      }
+    }
+  } else {
+    selectedOutput = ui.outputList.querySelector("button.selected");
+  }
 
   let disabledReason = "Ready to convert.";
   let enabled = true;
@@ -122,10 +159,10 @@ function updateConvertButtonState(): void {
     disabledReason = "Choose at least one file to continue.";
   } else if (!(selectedInput instanceof HTMLButtonElement)) {
     enabled = false;
-    disabledReason = "Select the source format in “Convert from”.";
+    disabledReason = "Select the source format in \"Convert from\".";
   } else if (!(selectedOutput instanceof HTMLButtonElement)) {
     enabled = false;
-    disabledReason = "Select the target format in “Convert to”.";
+    disabledReason = "Select the target format in \"Convert to\".";
   }
 
   ui.convertButton.disabled = !enabled;
@@ -135,11 +172,507 @@ function updateConvertButtonState(): void {
 }
 
 /**
+ * Creates a debounced function that delays invoking func until after wait milliseconds.
+ * @param func The function to debounce.
+ * @param wait The number of milliseconds to delay.
+ * @returns A new debounced function with cancel and flush methods.
+ */
+function debounce<T extends (...args: unknown[]) => unknown>(
+  func: T,
+  wait: number
+): ((...args: Parameters<T>) => void) & { cancel: () => void; flush: () => void } {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let lastArgs: Parameters<T> | null = null;
+
+  const debounced = (...args: Parameters<T>) => {
+    lastArgs = args;
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+    }
+    timeoutId = setTimeout(() => {
+      timeoutId = null;
+      func(...args);
+    }, wait);
+  };
+
+  debounced.cancel = () => {
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+  };
+
+  debounced.flush = () => {
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+      if (lastArgs !== null) {
+        func(...lastArgs);
+      }
+    }
+  };
+
+  return debounced as ReturnType<typeof debounce>;
+}
+
+/**
+ * Virtual list manager for format lists.
+ * Handles efficient rendering of large lists by only showing visible items.
+ * Supports 1000+ items with smooth 60fps scrolling.
+ */
+class VirtualFormatList {
+  private container: HTMLDivElement;
+  private itemHeight: number;
+  private bufferSize: number;
+  private originalButtons: HTMLButtonElement[] = [];
+  private filteredIndices: number[] = [];
+  private scrollTop: number = 0;
+  private pooledElements: HTMLButtonElement[] = [];
+  private resizeObserver: ResizeObserver | null = null;
+  private filterQuery: string = "";
+  private rafId: number | null = null;
+  private scrollContainer: HTMLDivElement | null = null;
+  private contentContainer: HTMLDivElement | null = null;
+  private spacer: HTMLDivElement | null = null;
+
+  // Store original buttons for selection sync by format-index
+  private originalButtonsMap = new Map<number, HTMLButtonElement>();
+
+  constructor(container: HTMLDivElement, itemHeight: number = 54, bufferSize: number = 4) {
+    this.container = container;
+    this.itemHeight = itemHeight;
+    this.bufferSize = bufferSize;
+
+    // Extract existing buttons before virtualization
+    this.originalButtons = Array.from(container.children).filter(
+      child => child instanceof HTMLButtonElement
+    ) as HTMLButtonElement[];
+
+    // Build map for quick lookup by format-index
+    this.originalButtons.forEach((btn) => {
+      const formatIndex = btn.getAttribute("format-index");
+      if (formatIndex) {
+        this.originalButtonsMap.set(Number.parseInt(formatIndex, 10), btn);
+      }
+    });
+
+    this.setupVirtualContainer();
+  }
+
+  private setupVirtualContainer(): void {
+    // Clear container and prepare for virtual scrolling
+    this.container.innerHTML = "";
+
+    // Create scroll container - this is what the user scrolls
+    this.scrollContainer = document.createElement("div");
+    this.scrollContainer.className = "virtual-list-scroll";
+    this.scrollContainer.style.cssText = `
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+      -webkit-overflow-scrolling: touch;
+      will-change: scroll-position;
+    `;
+
+    // Create spacer element to set total scrollable height
+    this.spacer = document.createElement("div");
+    this.spacer.className = "virtual-list-spacer";
+    this.spacer.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      pointer-events: none;
+      z-index: -1;
+      contain: strict;
+    `;
+
+    // Create content container for visible items
+    this.contentContainer = document.createElement("div");
+    this.contentContainer.className = "virtual-list-content";
+    this.contentContainer.style.cssText = `
+      position: relative;
+      width: 100%;
+      contain: layout style;
+    `;
+
+    this.scrollContainer.appendChild(this.spacer);
+    this.scrollContainer.appendChild(this.contentContainer);
+    this.container.appendChild(this.scrollContainer);
+
+    // Set up scroll listener with passive for better performance
+    this.scrollContainer.addEventListener("scroll", this.handleScroll.bind(this), { passive: true });
+
+    // Set up resize observer to handle viewport changes
+    this.resizeObserver = new ResizeObserver(() => {
+      this.scheduleUpdate();
+    });
+    this.resizeObserver.observe(this.scrollContainer);
+
+    // Initial render
+    this.updateFilteredIndices();
+    this.scheduleUpdate();
+  }
+
+  private handleScroll(): void {
+    if (!this.scrollContainer) return;
+    this.scrollTop = this.scrollContainer.scrollTop;
+    this.scheduleUpdate();
+  }
+
+  private scheduleUpdate(): void {
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+    }
+    this.rafId = requestAnimationFrame(() => {
+      this.rafId = null;
+      this.render();
+    });
+  }
+
+  private render(): void {
+    if (!this.scrollContainer || !this.spacer || !this.contentContainer) return;
+
+    const viewportHeight = this.scrollContainer.clientHeight;
+    const totalItems = this.filteredIndices.length;
+    const totalHeight = totalItems * this.itemHeight;
+
+    // Update spacer height for correct scroll bar
+    this.spacer.style.height = `${totalHeight}px`;
+
+    // Calculate visible range with buffer
+    const startIndex = Math.max(0, Math.floor(this.scrollTop / this.itemHeight) - this.bufferSize);
+    const endIndex = Math.min(totalItems, Math.ceil((this.scrollTop + viewportHeight) / this.itemHeight) + this.bufferSize);
+
+    // Track which indices are currently rendered
+    const renderedMap = new Map<number, HTMLButtonElement>();
+    for (const child of Array.from(this.contentContainer.children)) {
+      const idx = parseInt(child.getAttribute("data-virtual-index") || "-1", 10);
+      if (idx >= 0) {
+        renderedMap.set(idx, child as HTMLButtonElement);
+      }
+    }
+
+    // Remove elements that are no longer in visible range
+    for (const [idx, element] of renderedMap) {
+      if (idx < startIndex || idx >= endIndex) {
+        element.remove();
+        this.returnToPool(element);
+        renderedMap.delete(idx);
+      }
+    }
+
+    // Add elements that should be visible but aren't
+    for (let i = startIndex; i < endIndex; i++) {
+      if (!renderedMap.has(i)) {
+        const originalIndex = this.filteredIndices[i];
+        if (originalIndex === undefined) continue;
+
+        const button = this.getOrCreatePooledElement(originalIndex);
+        button.style.transform = `translateY(${i * this.itemHeight}px)`;
+        button.style.position = "absolute";
+        button.style.left = "0";
+        button.style.right = "0";
+        button.setAttribute("data-virtual-index", i.toString());
+        this.contentContainer.appendChild(button);
+      }
+    }
+  }
+
+  private getOrCreatePooledElement(originalIndex: number): HTMLButtonElement {
+    const originalButton = this.originalButtons[originalIndex];
+    if (!originalButton) {
+      const placeholder = document.createElement("button");
+      placeholder.type = "button";
+      placeholder.disabled = true;
+      placeholder.textContent = "Loading...";
+      return placeholder;
+    }
+
+    // Try to get from pool for reuse
+    let element = this.pooledElements.pop();
+
+    if (!element) {
+      element = document.createElement("button");
+      element.type = "button";
+    }
+
+    // Copy all attributes from original button
+    for (const attr of originalButton.attributes) {
+      if (attr.name !== "style" && attr.name !== "data-virtual-index") {
+        element.setAttribute(attr.name, attr.value);
+      }
+    }
+
+    // Copy inner HTML (the spans with labels)
+    element.innerHTML = originalButton.innerHTML;
+
+    // Sync selected state from original
+    const isSelected = originalButton.classList.contains("selected");
+    element.classList.toggle("selected", isSelected);
+
+    return element;
+  }
+
+  private returnToPool(element: HTMLButtonElement): void {
+    // Limit pool size to prevent unbounded memory growth
+    const maxPoolSize = 25;
+    if (this.pooledElements.length < maxPoolSize) {
+      // Clear inline styles before returning to pool
+      element.removeAttribute("style");
+      this.pooledElements.push(element);
+    }
+  }
+
+  private updateFilteredIndices(): void {
+    if (!this.filterQuery) {
+      // No filter - show all items
+      this.filteredIndices = this.originalButtons.map((_, i) => i);
+    } else {
+      // Filter by query
+      const query = this.filterQuery.toLowerCase();
+      this.filteredIndices = this.originalButtons
+        .map((button, i) => ({ button, index: i }))
+        .filter(({ button }) => {
+          const formatIndex = button.getAttribute("format-index");
+          let hasExtension = false;
+          if (formatIndex) {
+            const format = allOptions[Number.parseInt(formatIndex, 10)];
+            hasExtension = format?.format.extension.toLowerCase().includes(query) ?? false;
+          }
+          const hasText = button.textContent?.toLowerCase().includes(query) ?? false;
+          return hasExtension || hasText;
+        })
+        .map(({ index }) => index);
+    }
+
+    // Reset scroll position when filter changes
+    if (this.scrollContainer) {
+      this.scrollContainer.scrollTop = 0;
+      this.scrollTop = 0;
+    }
+  }
+
+  filter(query: string): void {
+    this.filterQuery = query;
+    this.updateFilteredIndices();
+    this.scheduleUpdate();
+  }
+
+  /**
+   * Get all currently rendered button elements.
+   */
+  private getRenderedButtons(): HTMLButtonElement[] {
+    if (!this.contentContainer) return [];
+    return Array.from(this.contentContainer.children).filter(
+      child => child instanceof HTMLButtonElement
+    ) as HTMLButtonElement[];
+  }
+
+  /**
+   * Handle keyboard navigation within the virtual list.
+   */
+  handleKeydown(event: KeyboardEvent): boolean {
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement)) return false;
+
+    const formatIndex = target.getAttribute("format-index");
+    if (!formatIndex) return false;
+
+    // Find current virtual index
+    const currentVirtualIndex = this.filteredIndices.findIndex(idx => {
+      const btn = this.originalButtons[idx];
+      return btn?.getAttribute("format-index") === formatIndex;
+    });
+
+    if (currentVirtualIndex === -1) return false;
+
+    let nextVirtualIndex = -1;
+
+    switch (event.key) {
+      case "ArrowDown":
+        event.preventDefault();
+        nextVirtualIndex = Math.min(currentVirtualIndex + 1, this.filteredIndices.length - 1);
+        break;
+      case "ArrowUp":
+        event.preventDefault();
+        nextVirtualIndex = Math.max(currentVirtualIndex - 1, 0);
+        break;
+      case "Home":
+        event.preventDefault();
+        nextVirtualIndex = 0;
+        break;
+      case "End":
+        event.preventDefault();
+        nextVirtualIndex = this.filteredIndices.length - 1;
+        break;
+      case "PageDown":
+        event.preventDefault();
+        if (this.scrollContainer) {
+          const viewportItems = Math.ceil(this.scrollContainer.clientHeight / this.itemHeight);
+          nextVirtualIndex = Math.min(currentVirtualIndex + viewportItems - 1, this.filteredIndices.length - 1);
+        }
+        break;
+      case "PageUp":
+        event.preventDefault();
+        if (this.scrollContainer) {
+          const viewportItems = Math.ceil(this.scrollContainer.clientHeight / this.itemHeight);
+          nextVirtualIndex = Math.max(currentVirtualIndex - viewportItems + 1, 0);
+        }
+        break;
+      default:
+        return false;
+    }
+
+    if (nextVirtualIndex !== -1 && nextVirtualIndex !== currentVirtualIndex) {
+      const nextOriginalIndex = this.filteredIndices[nextVirtualIndex];
+      const nextButton = this.originalButtons[nextOriginalIndex];
+
+      if (nextButton) {
+        // Trigger click on the next button (this will handle selection)
+        nextButton.click();
+
+        // Ensure the newly selected item is visible
+        this.scrollToFormat(
+          Number.parseInt(nextButton.getAttribute("format-index") || "0", 10),
+          "nearest"
+        );
+
+        // Focus the newly selected item in the virtual list
+        requestAnimationFrame(() => {
+          const renderedButtons = this.getRenderedButtons();
+          const focusedButton = renderedButtons.find(btn =>
+            btn.getAttribute("format-index") === nextButton.getAttribute("format-index")
+          );
+          if (focusedButton) {
+            focusedButton.focus();
+          }
+        });
+
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Sync selection state from original buttons to virtual display.
+   * Call this after selection changes to update the virtual display.
+   */
+  syncSelection(): void {
+    if (!this.contentContainer) return;
+
+    for (const child of Array.from(this.contentContainer.children)) {
+      if (!(child instanceof HTMLButtonElement)) continue;
+
+      const formatIndex = child.getAttribute("format-index");
+      if (formatIndex) {
+        const idx = Number.parseInt(formatIndex, 10);
+        const original = this.originalButtonsMap.get(idx);
+        if (original) {
+          const isSelected = original.classList.contains("selected");
+          child.classList.toggle("selected", isSelected);
+        }
+      }
+    }
+  }
+
+  /**
+   * Scroll to a specific item by format index.
+   * @param formatIndex The format-index attribute value
+   * @param alignment Where to position the item
+   */
+  scrollToFormat(formatIndex: number, alignment: "start" | "center" | "end" | "nearest" = "nearest"): void {
+    const virtualIndex = this.filteredIndices.findIndex(idx => {
+      const btn = this.originalButtons[idx];
+      return btn?.getAttribute("format-index") === formatIndex.toString();
+    });
+
+    if (virtualIndex === -1 || !this.scrollContainer) return;
+
+    const viewportHeight = this.scrollContainer.clientHeight;
+    let targetScroll = virtualIndex * this.itemHeight;
+
+    switch (alignment) {
+      case "center":
+        targetScroll -= viewportHeight / 2 - this.itemHeight / 2;
+        break;
+      case "end":
+        targetScroll -= viewportHeight - this.itemHeight;
+        break;
+      case "nearest":
+        if (targetScroll >= this.scrollTop && targetScroll + this.itemHeight <= this.scrollTop + viewportHeight) {
+          return; // Already visible
+        }
+        if (targetScroll < this.scrollTop) {
+          // Above viewport, scroll to top
+        } else {
+          // Below viewport, scroll to show at bottom
+          targetScroll -= viewportHeight - this.itemHeight;
+        }
+        break;
+    }
+
+    const maxScroll = Math.max(0, this.filteredIndices.length * this.itemHeight - viewportHeight);
+    targetScroll = Math.max(0, Math.min(targetScroll, maxScroll));
+
+    this.scrollContainer.scrollTo({ top: targetScroll, behavior: "smooth" });
+  }
+
+  /**
+   * Get the original button for a format index.
+   * This is used for querying selection state.
+   */
+  getOriginalButton(formatIndex: number): HTMLButtonElement | undefined {
+    return this.originalButtonsMap.get(formatIndex);
+  }
+
+  getFilteredCount(): number {
+    return this.filteredIndices.length;
+  }
+
+  destroy(): void {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
+
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
+
+    // Restore original buttons (for mode switching, etc.)
+    this.container.innerHTML = "";
+    for (const button of this.originalButtons) {
+      const clone = button.cloneNode(true) as HTMLButtonElement;
+      this.container.appendChild(clone);
+    }
+
+    this.pooledElements = [];
+    this.originalButtonsMap.clear();
+  }
+}
+
+// Map to store virtual list instances
+const virtualLists = new WeakMap<HTMLDivElement, VirtualFormatList>();
+
+/**
  * Filters a list of buttons to exclude those not matching a substring.
+ * Works with both virtualized and non-virtualized lists.
  * @param list Button list (div) to filter.
  * @param query Substring for which to search.
  */
 const filterButtonList = (list: HTMLDivElement, query: string) => {
+  const virtualList = virtualLists.get(list);
+  if (virtualList) {
+    virtualList.filter(query);
+    return;
+  }
+
+  // Fallback for non-virtualized lists
   for (const button of Array.from(list.children)) {
     if (!(button instanceof HTMLButtonElement)) continue;
     const formatIndex = button.getAttribute("format-index");
@@ -153,8 +686,39 @@ const filterButtonList = (list: HTMLDivElement, query: string) => {
   }
 };
 
+interface DebouncedSearchState {
+  debouncedSearch: ReturnType<typeof debounce>;
+  inputElement: HTMLInputElement;
+  targetList: HTMLDivElement;
+  isLoading: boolean;
+}
+
+const searchStates = new Map<HTMLInputElement, DebouncedSearchState>();
+
 /**
- * Handles search box input by filtering its parent container.
+ * Sets loading state on a search input.
+ */
+function setSearchLoading(inputElement: HTMLInputElement, isLoading: boolean): void {
+  inputElement.classList.toggle("search-loading", isLoading);
+  inputElement.setAttribute("aria-busy", isLoading ? "true" : "false");
+
+  const state = searchStates.get(inputElement);
+  if (state) {
+    state.isLoading = isLoading;
+  }
+}
+
+/**
+ * Executes the search filter operation.
+ */
+function executeSearch(inputElement: HTMLInputElement, targetList: HTMLDivElement): void {
+  const query = inputElement.value.toLowerCase();
+  filterButtonList(targetList, query);
+  setSearchLoading(inputElement, false);
+}
+
+/**
+ * Handles search box input with debouncing.
  * @param event Input event from an {@link HTMLInputElement}
  */
 const searchHandler = (event: Event) => {
@@ -164,13 +728,48 @@ const searchHandler = (event: Event) => {
   const targetParentList = target.parentElement?.querySelector(".format-list");
   if (!(targetParentList instanceof HTMLDivElement)) return;
 
-  const query = target.value.toLowerCase();
-  filterButtonList(targetParentList, query);
+  let state = searchStates.get(target);
+
+  if (!state) {
+    const debouncedSearch = debounce(
+      () => executeSearch(target, targetParentList),
+      250
+    );
+
+    state = {
+      debouncedSearch,
+      inputElement: target,
+      targetList: targetParentList,
+      isLoading: false
+    };
+    searchStates.set(target, state);
+  }
+
+  setSearchLoading(target, true);
+  state.debouncedSearch();
 };
 
-// Assign search handler to both search boxes
-ui.inputSearch.oninput = searchHandler;
-ui.outputSearch.oninput = searchHandler;
+/**
+ * Handles Enter key in search inputs for immediate search.
+ */
+const searchKeydownHandler = (event: KeyboardEvent) => {
+  if (event.key !== "Enter") return;
+
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement)) return;
+
+  const state = searchStates.get(target);
+  if (state?.isLoading) {
+    state.debouncedSearch.cancel();
+    executeSearch(target, state.targetList);
+  }
+};
+
+// Assign search handlers to both search boxes
+ui.inputSearch.addEventListener("input", searchHandler);
+ui.inputSearch.addEventListener("keydown", searchKeydownHandler);
+ui.outputSearch.addEventListener("input", searchHandler);
+ui.outputSearch.addEventListener("keydown", searchKeydownHandler);
 
 // Event delegation for format list button clicks
 function formatListClickHandler(event: Event) {
@@ -180,13 +779,74 @@ function formatListClickHandler(event: Event) {
     : (target instanceof HTMLElement ? target.closest("button") : null);
   if (!(button instanceof HTMLButtonElement)) return;
   const parent = button.parentElement;
-  const previous = parent?.querySelector("button.selected");
-  if (previous instanceof HTMLButtonElement) previous.classList.remove("selected");
-  button.classList.add("selected");
+
+  // Get the format-index from the clicked button
+  const formatIndex = button.getAttribute("format-index");
+  if (!formatIndex) return;
+
+  // Find and update the original button (source of truth)
+  const list = parent?.closest(".format-list") as HTMLDivElement | null;
+  if (!list) return;
+
+  const virtualList = virtualLists.get(list);
+  let originalButton: HTMLButtonElement | undefined;
+
+  if (virtualList) {
+    originalButton = virtualList.getOriginalButton(Number.parseInt(formatIndex, 10));
+  } else {
+    // Non-virtualized: find original button in list
+    originalButton = Array.from(list.children).find(
+      btn => btn instanceof HTMLButtonElement && btn.getAttribute("format-index") === formatIndex
+    ) as HTMLButtonElement | undefined;
+  }
+
+  // Update all original buttons in both lists to remove previous selection
+  for (const currentList of [ui.inputList, ui.outputList]) {
+    const vList = virtualLists.get(currentList);
+    if (vList) {
+      // For virtual lists, update the original buttons
+      for (const [, btn] of vList["originalButtonsMap"]) {
+        btn.classList.remove("selected");
+      }
+    } else {
+      // For non-virtual lists, update directly
+      const previous = currentList.querySelector("button.selected");
+      if (previous instanceof HTMLButtonElement) previous.classList.remove("selected");
+    }
+  }
+
+  // Set selected on the original button
+  if (originalButton) {
+    originalButton.classList.add("selected");
+  }
+
+  // Sync virtual display
+  if (virtualList) {
+    virtualList.syncSelection();
+  }
+
   updateConvertButtonState();
 }
+
+// Event delegation for format list keyboard navigation
+function formatListKeydownHandler(event: Event) {
+  const target = event.target;
+  if (!(target instanceof HTMLButtonElement)) return;
+
+  const parent = target.parentElement;
+  const list = parent?.closest(".format-list") as HTMLDivElement | null;
+  if (!list) return;
+
+  const virtualList = virtualLists.get(list);
+  if (virtualList && event instanceof KeyboardEvent) {
+    virtualList.handleKeydown(event);
+  }
+}
+
 ui.inputList.addEventListener("click", formatListClickHandler);
 ui.outputList.addEventListener("click", formatListClickHandler);
+ui.inputList.addEventListener("keydown", formatListKeydownHandler);
+ui.outputList.addEventListener("keydown", formatListKeydownHandler);
 
 // Map clicks in the file selection area to the file input element
 ui.fileSelectArea.onclick = () => {
@@ -340,12 +1000,41 @@ ui.fileSelectArea.addEventListener("dragleave", event => {
 });
 
 /**
+ * Validates file signatures to prevent MIME type spoofing attacks.
+ * Checks the actual file content against the declared extension.
+ * @param files Array of files to validate
+ * @returns Object with validation result and details
+ */
+async function validateFileSignatures(files: File[]): Promise<{ valid: boolean; errors: string[]; detectedFormats: FileFormatInfo[] }> {
+  const errors: string[] = [];
+  const detectedFormats: FileFormatInfo[] = [];
+
+  for (const file of files) {
+    const result = await validateFileSignature(file);
+
+    if (!result.valid) {
+      errors.push(`"${file.name}": ${result.error}`);
+    }
+
+    if (result.detectedFormat) {
+      detectedFormats.push(result.detectedFormat);
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    detectedFormats
+  };
+}
+
+/**
  * Validates and stores user selected files. Works for both manual
  * selection and file drag-and-drop.
  * @param event Either a file input element's "change" event,
  * or a "drop" event.
  */
-const fileSelectHandler = (event: Event) => {
+const fileSelectHandler = async (event: Event) => {
 
   let inputFiles;
 
@@ -370,9 +1059,36 @@ const fileSelectHandler = (event: Event) => {
     return;
   }
 
-  if (files.some(file => file.type !== files[0].type)) {
-    showErrorPopup("All input files must be of the same type.");
+  // Perform file signature validation to prevent MIME spoofing
+  showBusyPopup("Validating files", "Checking file signatures for security…");
+  const signatureValidation = await validateFileSignatures(files);
+
+  if (!signatureValidation.valid) {
+    const errorMessages = signatureValidation.errors.slice(0, 3).join("\n\n");
+    const additionalErrors = signatureValidation.errors.length > 3
+      ? `\n\n... and ${signatureValidation.errors.length - 3} more file(s)`
+      : "";
+    showErrorPopup(
+      `File validation failed:\n\n${errorMessages}${additionalErrors}`,
+      "Security check failed"
+    );
     return;
+  }
+
+  // Check that all files have matching detected formats
+  if (signatureValidation.detectedFormats.length > 0) {
+    const firstFormat = signatureValidation.detectedFormats[0];
+    const hasMismatch = signatureValidation.detectedFormats.some(format =>
+      format.mime !== firstFormat.mime && format.extension !== firstFormat.extension
+    );
+
+    if (hasMismatch) {
+      showErrorPopup(
+        "All input files must be of the same type. Please select files with matching formats.",
+        "Mixed file types detected"
+      );
+      return;
+    }
   }
 
   files.sort((a, b) => a.name === b.name ? 0 : (a.name < b.name ? -1 : 1));
@@ -380,34 +1096,74 @@ const fileSelectHandler = (event: Event) => {
 
   renderSelectedFiles(files);
 
-  // Common MIME type adjustments (to match "mime" library)
-  const mimeType = normalizeMimeType(files[0].type);
+  // Use detected MIME type from signature validation for accurate format detection
+  let mimeType = files[0].type;
+  let detectedExtension = getFileExtension(files[0].name);
+  if (signatureValidation.detectedFormats.length > 0) {
+    mimeType = signatureValidation.detectedFormats[0].mime;
+    detectedExtension = signatureValidation.detectedFormats[0].extension;
+  } else {
+    // Fallback to browser MIME type with normalization
+    mimeType = normalizeMimeType(files[0].type);
+  }
 
   // Find a button matching the input MIME type.
-  const buttonMimeType = Array.from(ui.inputList.children).find(button => {
-    if (!(button instanceof HTMLButtonElement)) return false;
-    return button.getAttribute("mime-type") === mimeType;
-  });
+  // Check both virtual and non-virtual lists
+  const inputVirtual = virtualLists.get(ui.inputList);
+  let buttonMimeType: HTMLButtonElement | undefined;
+
+  if (inputVirtual) {
+    // For virtual lists, search original buttons
+    for (const [, btn] of inputVirtual["originalButtonsMap"]) {
+      if (btn.getAttribute("mime-type") === mimeType) {
+        buttonMimeType = btn;
+        break;
+      }
+    }
+  } else {
+    // For non-virtual lists, search DOM
+    buttonMimeType = Array.from(ui.inputList.children).find(button => {
+      if (!(button instanceof HTMLButtonElement)) return false;
+      return button.getAttribute("mime-type") === mimeType;
+    }) as HTMLButtonElement | undefined;
+  }
+
   // Click button with matching MIME type.
-  if (mimeType && buttonMimeType instanceof HTMLButtonElement) {
+  if (mimeType && buttonMimeType) {
     buttonMimeType.click();
     ui.inputSearch.value = mimeType;
     filterButtonList(ui.inputList, ui.inputSearch.value);
+    if (inputVirtual) inputVirtual.syncSelection();
     updateConvertButtonState();
     return;
   }
 
-  // Fall back to matching format by file extension if MIME type wasn't found.
-  const fileExtension = files[0].name.split(".").pop()?.toLowerCase();
+  // Fall back to matching format by detected file extension if MIME type wasn't found.
+  const fileExtension = detectedExtension;
 
-  const buttonExtension = Array.from(ui.inputList.children).find(button => {
-    if (!(button instanceof HTMLButtonElement)) return false;
-    const formatIndex = button.getAttribute("format-index");
-    if (!formatIndex) return false;
-    const format = allOptions[Number.parseInt(formatIndex, 10)];
-    return format?.format.extension.toLowerCase() === fileExtension;
-  });
-  if (buttonExtension instanceof HTMLButtonElement) {
+  let buttonExtension: HTMLButtonElement | undefined;
+
+  if (inputVirtual) {
+    for (const [, btn] of inputVirtual["originalButtonsMap"]) {
+      const formatIndex = btn.getAttribute("format-index");
+      if (!formatIndex) continue;
+      const format = allOptions[Number.parseInt(formatIndex, 10)];
+      if (format?.format.extension.toLowerCase() === fileExtension) {
+        buttonExtension = btn;
+        break;
+      }
+    }
+  } else {
+    buttonExtension = Array.from(ui.inputList.children).find(button => {
+      if (!(button instanceof HTMLButtonElement)) return false;
+      const formatIndex = button.getAttribute("format-index");
+      if (!formatIndex) return false;
+      const format = allOptions[Number.parseInt(formatIndex, 10)];
+      return format?.format.extension.toLowerCase() === fileExtension;
+    }) as HTMLButtonElement | undefined;
+  }
+
+  if (buttonExtension) {
     buttonExtension.click();
     ui.inputSearch.value = buttonExtension.getAttribute("mime-type") || "";
   } else {
@@ -452,6 +1208,14 @@ async function buildOptionList() {
 
   showBusyPopup("Loading formats", "Preparing available conversion options…");
 
+  // Destroy any existing virtual lists before rebuilding
+  const existingInputVirtual = virtualLists.get(ui.inputList);
+  const existingOutputVirtual = virtualLists.get(ui.outputList);
+  if (existingInputVirtual) existingInputVirtual.destroy();
+  if (existingOutputVirtual) existingOutputVirtual.destroy();
+  virtualLists.delete(ui.inputList);
+  virtualLists.delete(ui.outputList);
+
   allOptions.length = 0;
   ui.inputList.innerHTML = "";
   ui.outputList.innerHTML = "";
@@ -463,20 +1227,23 @@ async function buildOptionList() {
 
   for (const handler of handlers) {
     if (!window.supportedFormatCache.has(handler.name)) {
-      console.warn(`Cache miss for formats of handler "${handler.name}".`);
+      log.debug("handler", `Cache miss for formats of handler "${handler.name}"`);
       try {
         await handler.init();
-      } catch {
+        log.trackHandler(handler.name, true);
+      } catch (initError) {
+        log.trackHandler(handler.name, false);
+        log.error("handler", `Initialization failed for "${handler.name}"`, initError instanceof Error ? initError : undefined);
         continue;
       }
       if (handler.supportedFormats) {
         window.supportedFormatCache.set(handler.name, handler.supportedFormats);
-        console.info(`Updated supported format cache for "${handler.name}".`);
+        log.debug("handler", `Updated supported format cache for "${handler.name}"`);
       }
     }
     const supportedFormats = window.supportedFormatCache.get(handler.name);
     if (!supportedFormats) {
-      console.warn(`Handler "${handler.name}" doesn't support any formats.`);
+      log.warn("handler", `Handler "${handler.name}" doesn't support any formats`);
       continue;
     }
     for (const format of supportedFormats) {
@@ -531,6 +1298,19 @@ async function buildOptionList() {
   ui.outputList.appendChild(outputFragment);
   window.traversionGraph.init(window.supportedFormatCache, handlers);
 
+  // Enable virtualization for both format lists if they have many items
+  // Threshold: virtualize if more than 30 items for better performance
+  const VIRTUALIZATION_THRESHOLD = 30;
+
+  if (ui.inputList.children.length > VIRTUALIZATION_THRESHOLD) {
+    const inputVirtual = new VirtualFormatList(ui.inputList);
+    virtualLists.set(ui.inputList, inputVirtual);
+  }
+  if (ui.outputList.children.length > VIRTUALIZATION_THRESHOLD) {
+    const outputVirtual = new VirtualFormatList(ui.outputList);
+    virtualLists.set(ui.outputList, outputVirtual);
+  }
+
   filterButtonList(ui.inputList, ui.inputSearch.value);
   filterButtonList(ui.outputList, ui.outputSearch.value);
   updateConvertButtonState();
@@ -538,6 +1318,9 @@ async function buildOptionList() {
   window.hidePopup();
 
 }
+
+// Initialize PWA
+void initPWA();
 
 (async () => {
   try {
@@ -566,9 +1349,15 @@ ui.modeToggleButton.addEventListener("click", () => {
   void buildOptionList();
 });
 
-async function attemptConvertPath(files: FileData[], path: ConvertPathNode[]): Promise<{ files: FileData[]; path: ConvertPathNode[] } | null> {
+async function attemptConvertPath(
+  files: FileData[],
+  path: ConvertPathNode[],
+  _inputFormat: FileFormat,
+  _outputFormat: FileFormat,
+  _startTime: number
+): Promise<{ files: FileData[]; path: ConvertPathNode[] } | null> {
   if (path.length < 2) {
-    console.error("Invalid path: requires at least 2 nodes");
+    log.error("conversion", "Invalid path: requires at least 2 nodes");
     return null;
   }
 
@@ -582,7 +1371,7 @@ async function attemptConvertPath(files: FileData[], path: ConvertPathNode[]): P
       const handler = nextNode.handler;
 
       if (!handler) {
-        console.error(`No handler found for path segment ${i}`);
+        log.error("conversion", `No handler found for path segment ${i}`, { pathIndex: i });
         return null;
       }
 
@@ -596,8 +1385,10 @@ async function attemptConvertPath(files: FileData[], path: ConvertPathNode[]): P
       if (!handler.ready) {
         try {
           await handler.init();
+          log.trackHandler(handler.name, true);
         } catch (initError) {
-          console.warn(`Handler "${handler.name}" initialization failed:`, initError);
+          log.trackHandler(handler.name, false);
+          log.warn("conversion", `Handler "${handler.name}" initialization failed at step ${i}`, { error: initError instanceof Error ? initError.message : String(initError) });
           return null;
         }
         if (handler.supportedFormats) {
@@ -607,13 +1398,13 @@ async function attemptConvertPath(files: FileData[], path: ConvertPathNode[]): P
       }
 
       if (!supportedFormats) {
-        console.error(`Handler "${handler.name}" doesn't support any formats.`);
+        log.error("conversion", `Handler "${handler.name}" doesn't support any formats`);
         return null;
       }
 
       const inputFormat = supportedFormats.find(f => f.mime === currentNode.format.mime && f.from);
       if (!inputFormat) {
-        console.error(`No valid input format found for ${currentNode.format.mime}`);
+        log.error("conversion", `No valid input format found for ${currentNode.format.mime}`, { mime: currentNode.format.mime });
         return null;
       }
 
@@ -623,7 +1414,7 @@ async function attemptConvertPath(files: FileData[], path: ConvertPathNode[]): P
       ]);
 
       if (!Array.isArray(convertedFiles) || convertedFiles.some(file => !file.bytes?.length)) {
-        console.warn(`Conversion produced empty output at step ${i}`);
+        log.warn("conversion", `Conversion produced empty output at step ${i}`, { handler: handler.name });
         showBusyPopup("Finding conversion route", "This path failed. Looking for a valid route…");
         await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
         return null;
@@ -634,7 +1425,10 @@ async function attemptConvertPath(files: FileData[], path: ConvertPathNode[]): P
 
     return { files, path };
   } catch (error) {
-    console.error("Conversion path failed:", error);
+    log.error("conversion", "Conversion path failed", error instanceof Error ? error : undefined, {
+      pathLength: path.length,
+      handler: path[path.length - 1]?.handler?.name
+    });
     return null;
   }
 }
@@ -649,58 +1443,69 @@ window.tryConvertByTraversing = async function (
     if (path.at(-1)?.handler === to.handler) {
       path[path.length - 1] = to;
     }
-    const attempt = await attemptConvertPath(files, path);
+    const attempt = await attemptConvertPath(files, path, from.format, to.format, Date.now());
     if (attempt) return attempt;
   }
   return null;
 };
 
 function downloadFile(bytes: Uint8Array, name: string, mime: string): void {
+  const blob = new Blob([bytes as BlobPart], { type: mime });
+  const objectURL = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectURL;
+  link.download = name;
+  link.style.display = "none";
+
   try {
-    const blob = new Blob([bytes as BlobPart], { type: mime });
-    const objectURL = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = objectURL;
-    link.download = name;
-    link.style.display = "none";
     document.body.appendChild(link);
     link.click();
+  } catch (error) {
+    console.error("Failed to download file:", error);
+    showErrorPopup(`Failed to download "${name}". Please try again.`);
+  } finally {
     // Use setTimeout to ensure the download starts before cleanup
     setTimeout(() => {
       URL.revokeObjectURL(objectURL);
       link.remove();
     }, 100);
-  } catch (error) {
-    console.error("Failed to download file:", error);
-    showErrorPopup(`Failed to download “${name}”. Please try again.`);
   }
 }
 
 ui.convertButton.onclick = async function () {
 
-  if (ui.convertButton.disabled) return;
+  if (ui.convertButton.disabled) {
+    log.trackInteraction("convert_attempt", false);
+    return;
+  }
+
+  log.trackInteraction("convert_attempt");
 
   const inputFiles = selectedFiles;
 
   if (inputFiles.length === 0) {
+    log.trackInteraction("convert_no_files", false);
     showErrorPopup("Select an input file.");
     return;
   }
 
   const fileValidationError = validateSelectedFiles(inputFiles);
   if (fileValidationError) {
+    log.trackInteraction("convert_validation_failed", false);
     showErrorPopup(fileValidationError, "Upload limit reached");
     return;
   }
 
   const inputButton = ui.inputList.querySelector("button.selected");
   if (!(inputButton instanceof HTMLButtonElement)) {
+    log.trackInteraction("convert_no_input_format", false);
     showErrorPopup("Specify input file format.");
     return;
   }
 
   const outputButton = ui.outputList.querySelector("button.selected");
   if (!(outputButton instanceof HTMLButtonElement)) {
+    log.trackInteraction("convert_no_output_format", false);
     showErrorPopup("Specify output file format.");
     return;
   }
@@ -712,12 +1517,17 @@ ui.convertButton.onclick = async function () {
   const outputOption = allOptions[outputIndex];
 
   if (!inputOption || !outputOption) {
+    log.trackInteraction("convert_invalid_format", false);
     showErrorPopup("Selected formats are unavailable. Please reselect formats and try again.");
     return;
   }
 
   const inputFormat = inputOption.format;
   const outputFormat = outputOption.format;
+  const conversionStartTime = Date.now();
+  const totalFileSize = inputFiles.reduce((sum, f) => sum + f.size, 0);
+
+  log.trackConversion.attempt(inputFormat.format, outputFormat.format, inputFiles.length, totalFileSize);
 
   try {
     releasePersistentDownloadUrls();
@@ -730,6 +1540,8 @@ ui.convertButton.onclick = async function () {
     }
 
     if (inputFormat.mime === outputFormat.mime) {
+      const duration = Date.now() - conversionStartTime;
+      log.trackConversion.success(inputFormat.format, outputFormat.format, duration, inputFiles.length, totalFileSize, "direct");
       for (const file of inputFileData) {
         downloadFile(file.bytes, file.name, inputFormat.mime);
       }
@@ -750,9 +1562,15 @@ ui.convertButton.onclick = async function () {
 
     const output = await window.tryConvertByTraversing(inputFileData, inputOption, outputOption);
     if (!output) {
+      log.trackConversion.failure(inputFormat.format, outputFormat.format, "no_route_found", inputFiles.length);
+      log.trackInteraction("convert_no_route", false);
       showErrorPopup("Failed to find a valid conversion route. Try another target format or switch conversion mode.", "No route found");
       return;
     }
+
+    const duration = Date.now() - conversionStartTime;
+    const handlerName = output.path[output.path.length - 1]?.handler?.name;
+    log.trackConversion.success(inputFormat.format, outputFormat.format, duration, inputFiles.length, totalFileSize, handlerName);
 
     for (const file of output.files) {
       downloadFile(file.bytes, file.name, outputFormat.mime);
@@ -760,9 +1578,11 @@ ui.convertButton.onclick = async function () {
 
     showConversionSuccessPopup(inputFormat, outputFormat, output.path, output.files, outputFormat.mime);
   } catch (error) {
+    const errorType = error instanceof Error ? error.name : "unknown";
+    log.trackConversion.failure(inputFormat.format, outputFormat.format, errorType, inputFiles.length);
+    log.trackInteraction("convert_error", false, error instanceof Error ? error : undefined);
     const errorText = error instanceof Error ? error.message : String(error);
     showErrorPopup(`Unexpected error while converting: ${errorText}`, "Conversion failed");
-    console.error(error);
   }
 
 };

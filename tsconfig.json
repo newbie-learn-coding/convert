@@ -47,6 +47,7 @@
     "src/handlers/qoa-fu/**/*",
     "src/handlers/sppd/**/*",
     "src/handlers/image-to-txt/src/app.ts",
-    "src/handlers/image-to-txt/src/generate.ts"
+    "src/handlers/image-to-txt/src/generate.ts",
+    "src/**/*.test.ts"
   ]
 }

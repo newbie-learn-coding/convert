@@ -99,6 +99,9 @@ jobs:
         id: deploy_step
         run: bash scripts/deploy.sh "${TARGET_ENV}"
 
+      - name: Performance budget check
+        run: bun run check:performance-budgets
+
       - name: Post-deploy production ops gate
         id: post_deploy_gate
         if: env.TARGET_ENV == 'production'

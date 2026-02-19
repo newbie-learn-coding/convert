@@ -45,6 +45,29 @@ declare global {
       files: FileData[];
       path: ConvertPathNode[];
     } | null>;
+
+    /**
+     * Application version from build environment.
+     */
+    APP_VERSION?: string;
+
+    /**
+     * Access to the logger instance for debugging.
+     */
+    __logger?: {
+      getMetrics: () => {
+        conversionsAttempted: number;
+        conversionsSucceeded: number;
+        conversionsFailed: number;
+        handlersInitialized: number;
+        handlersFailed: number;
+        wasmLoadsFailed: number;
+        userInteractions: number;
+        userInteractionErrors: number;
+      };
+      getSessionId: () => string;
+      flush: () => Promise<void>;
+    };
   }
 
   /**

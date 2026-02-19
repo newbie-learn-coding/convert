@@ -1,0 +1,126 @@
+/**
+ * Auto-generated event constants from PyFLP
+ * FL Studio .flp file event IDs and types
+ *
+ * Event ID ranges:
+ * - BYTE (0-63): 1 byte data
+ * - WORD (64-127): 2 bytes data
+ * - DWORD (128-191): 4 bytes data
+ * - TEXT (192-207): Variable length strings (+ some IDs in DATA range)
+ * - DATA (208+): Variable length binary data
+ */
+export declare const BYTE = 0;
+export declare const WORD = 64;
+export declare const DWORD = 128;
+export declare const TEXT = 192;
+export declare const DATA = 208;
+export declare const NEW_TEXT_IDS: readonly [number, number, number];
+/**
+ * Event IDs used by FL Studio project files
+ * Based on PyFLP's event definitions
+ */
+export declare const EVENT_ID: {
+    readonly PROJECT_LOOP_ACTIVE: 9;
+    readonly PROJECT_SHOW_INFO: 10;
+    readonly PROJECT__VOLUME: 12;
+    readonly PROJECT_PAN_LAW: 23;
+    readonly PROJECT_LICENSED: 28;
+    readonly PROJECT__TEMPO_COARSE: number;
+    readonly PROJECT_PITCH: number;
+    readonly PROJECT__TEMPO_FINE: number;
+    readonly PROJECT_CUR_GROUP_ID: number;
+    readonly PROJECT_TEMPO: number;
+    readonly PROJECT_FL_BUILD: number;
+    readonly PROJECT_TITLE: number;
+    readonly PROJECT_COMMENTS: number;
+    readonly PROJECT_URL: number;
+    readonly PROJECT__RTF_COMMENTS: number;
+    readonly PROJECT_FL_VERSION: number;
+    readonly PROJECT_LICENSEE: number;
+    readonly PROJECT_DATA_PATH: number;
+    readonly PROJECT_GENRE: number;
+    readonly PROJECT_ARTISTS: number;
+    readonly PROJECT_TIMESTAMP: number;
+    readonly CHANNEL_IS_ENABLED: 0;
+    readonly CHANNEL__VOL_BYTE: 2;
+    readonly CHANNEL__PAN_BYTE: 3;
+    readonly CHANNEL_ZIPPED: 15;
+    readonly CHANNEL_PING_PONG_LOOP: 20;
+    readonly CHANNEL_TYPE: 21;
+    readonly CHANNEL_ROUTED_TO: 22;
+    readonly CHANNEL_IS_LOCKED: 32;
+    readonly CHANNEL_NEW: 64;
+    readonly CHANNEL_FREQ_TILT: number;
+    readonly CHANNEL_FX_FLAGS: number;
+    readonly CHANNEL_CUTOFF: number;
+    readonly CHANNEL__VOL_WORD: number;
+    readonly CHANNEL__PAN_WORD: number;
+    readonly CHANNEL_PREAMP: number;
+    readonly CHANNEL_FADE_OUT: number;
+    readonly CHANNEL_FADE_IN: number;
+    readonly CHANNEL_RESONANCE: number;
+    readonly CHANNEL_STEREO_DELAY: number;
+    readonly CHANNEL_POGO: number;
+    readonly CHANNEL_TIME_SHIFT: number;
+    readonly CHANNEL_CHILDREN: number;
+    readonly CHANNEL_SWING: number;
+    readonly CHANNEL_RING_MOD: number;
+    readonly CHANNEL_CUT_GROUP: number;
+    readonly CHANNEL_ROOT_NOTE: number;
+    readonly CHANNEL_DELAY_MOD_XY: number;
+    readonly CHANNEL_REVERB: number;
+    readonly CHANNEL__STRETCH_TIME: number;
+    readonly CHANNEL_FINE_TUNE: number;
+    readonly CHANNEL_SAMPLER_FLAGS: number;
+    readonly CHANNEL_LAYER_FLAGS: number;
+    readonly CHANNEL_GROUP_NUM: number;
+    readonly CHANNEL_AU_SAMPLE_RATE: number;
+    readonly CHANNEL__NAME: 192;
+    readonly CHANNEL_SAMPLE_PATH: number;
+    readonly CHANNEL_DELAY: number;
+    readonly CHANNEL_PARAMETERS: number;
+    readonly CHANNEL_ENVELOPE_LFO: number;
+    readonly CHANNEL_LEVELS: number;
+    readonly CHANNEL_POLYPHONY: number;
+    readonly CHANNEL_TRACKING: number;
+    readonly CHANNEL_LEVEL_ADJUSTS: number;
+    readonly CHANNEL_AUTOMATION: number;
+    readonly PLUGIN_COLOR: 128;
+    readonly PLUGIN_ICON: number;
+    readonly PLUGIN_INTERNAL_NAME: number;
+    readonly PLUGIN_NAME: number;
+    readonly PLUGIN_WRAPPER: number;
+    readonly PLUGIN_DATA: number;
+    readonly DISPLAY_GROUP_NAME: number;
+    readonly RACK_SWING: 11;
+    readonly RACK__FIT_TO_STEPS: 13;
+    readonly RACK_WINDOW_HEIGHT: number;
+    readonly MIXER_SLOT_INDEX: number;
+    readonly MIXER_INSERT_ICON: number;
+    readonly MIXER_INSERT_OUTPUT: number;
+    readonly MIXER_INSERT_COLOR: number;
+    readonly MIXER_INSERT_INPUT: number;
+    readonly MIXER_INSERT_NAME: number;
+    readonly MIXER_INSERT_ROUTING: number;
+    readonly MIXER_INSERT_FLAGS: number;
+};
+/**
+ * Event data type classification
+ */
+export type EventKind = "u8" | "i8" | "u16" | "i16" | "u32" | "i32" | "f32" | "text" | "data" | "unknown";
+/**
+ * Maps event IDs to their data type
+ * Used for proper serialization/deserialization
+ */
+export declare const EVENT_KIND: Record<number, EventKind>;
+/**
+ * Determines the event kind based on ID
+ * Falls back to range-based detection if not explicitly mapped
+ */
+export declare function getEventKind(eventId: number): EventKind;
+/**
+ * Returns the fixed size for BYTE/WORD/DWORD events
+ * Returns -1 for variable-length events (TEXT/DATA)
+ */
+export declare function getEventFixedSize(eventId: number): number;
+//# sourceMappingURL=events.generated.d.ts.map

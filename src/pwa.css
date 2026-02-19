@@ -1,0 +1,218 @@
+/**
+ * PWA UI Styles
+ */
+
+/* Offline indicator */
+.pwa-offline-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #ff6b35;
+  color: white;
+  text-align: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  z-index: 10000;
+  transform: translateY(-100%);
+  transition: transform 0.3s ease;
+}
+
+.pwa-offline-indicator.visible {
+  transform: translateY(0);
+}
+
+/* Notification banners */
+.pwa-notification {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(200%);
+  background: #1a1a1a;
+  color: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  padding: 0.75rem;
+  z-index: 9999;
+  transition: transform 0.3s ease;
+  max-width: calc(100vw - 2rem);
+  width: auto;
+}
+
+.pwa-notification.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Force show for update notifications */
+.pwa-notification[data-visible="true"],
+.pwa-notification:has(.pwa-notification-content) {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Since the selector above may not work in all browsers, use JS to add class */
+.pwa-notification.visible {
+  transform: translateX(-50%) translateY(0);
+}
+
+.pwa-notification-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pwa-notification-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.pwa-notification-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.pwa-notification-text strong {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.pwa-notification-text span {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.pwa-notification-button {
+  background: #1C77FF;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.pwa-notification-button:hover {
+  background: #155ddb;
+}
+
+.pwa-notification-button:active {
+  transform: scale(0.98);
+}
+
+.pwa-notification-dismiss {
+  background: transparent;
+  border: none;
+  color: white;
+  opacity: 0.6;
+  cursor: pointer;
+  padding: 0.25rem;
+  font-size: 1rem;
+  line-height: 1;
+  border-radius: 4px;
+  transition: opacity 0.2s;
+}
+
+.pwa-notification-dismiss:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Info variant */
+.pwa-notification-info {
+  background: #1C77FF;
+}
+
+/* Toast messages */
+.pwa-toast {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(200%);
+  background: #333;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 50px;
+  font-size: 0.875rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  transition: transform 0.3s ease;
+}
+
+.pwa-toast.visible {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .pwa-notification {
+    left: 0.5rem;
+    right: 0.5rem;
+    transform: translateY(200%);
+  }
+
+  .pwa-notification.show,
+  .pwa-notification.visible {
+    transform: translateY(0);
+  }
+
+  .pwa-notification-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pwa-notification-text {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .pwa-notification-text strong,
+  .pwa-notification-text span {
+    flex: 1;
+  }
+
+  .pwa-notification-button {
+    width: 100%;
+  }
+}
+
+/* Reduce motion support */
+@media (prefers-reduced-motion: reduce) {
+  .pwa-offline-indicator,
+  .pwa-notification,
+  .pwa-toast {
+    transition: none;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .pwa-notification {
+    background: #2a2a2a;
+  }
+
+  .pwa-toast {
+    background: #444;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .pwa-notification {
+    border: 2px solid white;
+  }
+
+  .pwa-notification-button {
+    background: #000;
+    border: 2px solid white;
+  }
+
+  .pwa-toast {
+    border: 2px solid white;
+  }
+}

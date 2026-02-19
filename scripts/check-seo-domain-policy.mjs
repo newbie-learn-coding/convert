@@ -187,10 +187,18 @@ function checkRedirectFile(relativePath, expectedRules) {
   }
 }
 
+const SEO_EXCLUDE_PREFIXES = [
+  "public/csp-",  // CSP test and violation report endpoints are utility pages
+];
+
+function shouldSkipSeoCheck(relativePath) {
+  return SEO_EXCLUDE_PREFIXES.some(prefix => relativePath.startsWith(prefix));
+}
+
 const htmlFiles = [
   "index.html",
   ...listFiles("public", (relativePath) => relativePath.endsWith(".html"))
-];
+].filter(path => !shouldSkipSeoCheck(path));
 
 for (const htmlFile of htmlFiles) {
   checkHtmlDomainPolicy(htmlFile);
@@ -220,7 +228,8 @@ for (const loc of sitemapLocs) {
 
 const domainSensitiveFiles = [
   "index.html",
-  ...listFiles("public", (relativePath) => /\.(html|txt|xml|json)$/.test(relativePath)),
+  ...listFiles("public", (relativePath) => /\.(html|txt|xml|json)$/.test(relativePath))
+    .filter(path => !shouldSkipSeoCheck(path)),
   "scripts/build-pseo.mjs"
 ];
 

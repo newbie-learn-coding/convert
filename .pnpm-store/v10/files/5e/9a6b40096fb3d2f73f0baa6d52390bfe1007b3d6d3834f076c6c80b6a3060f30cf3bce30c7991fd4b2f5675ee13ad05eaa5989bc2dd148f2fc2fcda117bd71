@@ -1,0 +1,94 @@
+/**
+ * Binary reader for FL Studio .flp files
+ * Uses smart-buffer for binary reading and protobufjs for VarInt decoding
+ */
+export declare class BinaryReader {
+    private sb;
+    constructor(buffer: Buffer);
+    /**
+     * Returns current read position
+     */
+    tell(): number;
+    /**
+     * Seeks to an absolute position
+     */
+    seek(pos: number): void;
+    /**
+     * Seeks relative to current position
+     */
+    skip(offset: number): void;
+    /**
+     * Returns total buffer length
+     */
+    length(): number;
+    /**
+     * Returns remaining bytes to read
+     */
+    remaining(): number;
+    /**
+     * Returns true if there are more bytes to read
+     */
+    hasMore(): boolean;
+    /**
+     * Reads an unsigned 8-bit integer
+     */
+    readU8(): number;
+    /**
+     * Reads a signed 8-bit integer
+     */
+    readI8(): number;
+    /**
+     * Reads an unsigned 16-bit integer (little-endian)
+     */
+    readU16LE(): number;
+    /**
+     * Reads a signed 16-bit integer (little-endian)
+     */
+    readI16LE(): number;
+    /**
+     * Reads an unsigned 32-bit integer (little-endian)
+     */
+    readU32LE(): number;
+    /**
+     * Reads a signed 32-bit integer (little-endian)
+     */
+    readI32LE(): number;
+    /**
+     * Reads a 32-bit float (little-endian)
+     */
+    readF32LE(): number;
+    /**
+     * Reads a 64-bit float (little-endian)
+     */
+    readF64LE(): number;
+    /**
+     * Reads raw bytes
+     */
+    readBytes(length: number): Buffer;
+    /**
+     * Reads a VarInt (variable-length integer) using protobufjs
+     * FL Studio uses this encoding for TEXT and DATA event sizes
+     */
+    readVarInt(): number;
+    /**
+     * Reads an ASCII string (null-terminated)
+     */
+    readAsciiString(length: number): string;
+    /**
+     * Reads a UTF-16LE string (null-terminated)
+     */
+    readUtf16LEString(length: number): string;
+    /**
+     * Peeks at bytes without advancing position
+     */
+    peek(length: number): Buffer;
+    /**
+     * Peeks at a single byte without advancing position
+     */
+    peekU8(): number;
+    /**
+     * Returns the internal buffer
+     */
+    toBuffer(): Buffer;
+}
+//# sourceMappingURL=BinaryReader.d.ts.map

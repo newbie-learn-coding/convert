@@ -11,5 +11,6 @@ bun run check:integrity
 bun run test:ops-hardening
 bun run build
 bun run check:cf-assets
+bun run check:performance-budgets
 
 echo "Production readiness gates passed."

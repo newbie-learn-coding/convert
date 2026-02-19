@@ -9,27 +9,38 @@
   <meta name="theme-color" content="#1C77FF">
   <meta name="author" content="ConvertToIt">
   <meta name="application-name" content="ConvertToIt">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="ConvertToIt">
+  <meta name="mobile-web-app-capable" content="yes">
   <link rel="canonical" href="https://converttoit.com/">
   <link rel="alternate" hreflang="en" href="https://converttoit.com/">
   <link rel="alternate" hreflang="x-default" href="https://converttoit.com/">
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="icon" href="/apple-touch-icon.webp" type="image/webp" sizes="180x180">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="ConvertToIt">
   <meta property="og:title" content="Online File Converter (Free & Secure) | ConvertToIt">
   <meta property="og:description" content="Convert files directly in your browser across many formats. No server upload required. Privacy-focused file conversion.">
   <meta property="og:url" content="https://converttoit.com/">
-  <meta property="og:image" content="https://converttoit.com/social-card.svg">
+  <meta property="og:image" content="https://converttoit.com/social-card.png">
+  <meta property="og:image:url" content="https://converttoit.com/social-card.png">
+  <meta property="og:image:secure_url" content="https://converttoit.com/social-card.png">
+  <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="ConvertToIt - Free Online File Converter">
+  <link rel="image_src" href="https://converttoit.com/social-card.png">
   <meta property="og:locale" content="en_US">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Online File Converter (Free & Secure) | ConvertToIt">
   <meta name="twitter:description" content="Convert files directly in your browser. Privacy-focused, no server upload required.">
-  <meta name="twitter:image" content="https://converttoit.com/social-card.svg">
+  <meta name="twitter:image" content="https://converttoit.com/social-card.png">
+  <meta name="twitter:image:alt" content="ConvertToIt - Free Online File Converter">
   <title>Online File Converter (Free & Secure) | ConvertToIt</title>
   <script type="application/ld+json">
     {
@@ -61,7 +72,12 @@
           "@type": "Organization",
           "name": "ConvertToIt",
           "url": "https://converttoit.com/",
-          "logo": "https://converttoit.com/apple-touch-icon.png"
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://converttoit.com/apple-touch-icon.png",
+            "width": 180,
+            "height": 180
+          }
         }
       ]
     }

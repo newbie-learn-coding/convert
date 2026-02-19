@@ -1,1 +1,5 @@
 /index.html / 301
+
+# CSP violation reporting endpoint - returns 204 No Content
+# Reports are logged to Cloudflare Analytics
+/csp-violation-report-endpoint 204:/__csp-report

@@ -3,6 +3,14 @@ import worker from "../cloudflare/worker/index.mjs";
 
 type AssetsBinding = { fetch: (request: Request) => Promise<Response> | Response };
 
+// Mock the caches API for Cloudflare Workers
+globalThis.caches = {
+  default: {
+    match: async () => null,
+    put: async () => {}
+  }
+} as unknown as CacheStorage;
+
 function createEnv(overrides: Partial<Record<string, unknown>> = {}) {
   const assets: AssetsBinding = {
     fetch: () => new Response("asset-ok", { headers: { "cache-control": "public, max-age=60" } })
@@ -110,7 +118,11 @@ describe("Cloudflare worker hardening", () => {
       }
     });
 
-    const response = await worker.fetch(new Request("https://converttoit.com/style.css"), env);
+    const response = await worker.fetch(
+      new Request("https://converttoit.com/style.css"),
+      env,
+      {}
+    );
 
     expect(response.status).toBe(200);
     expect(response.headers.get("x-frame-options")).toBe("SAMEORIGIN");
