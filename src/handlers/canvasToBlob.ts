@@ -33,7 +33,7 @@ class canvasToBlobHandler implements FormatHandler {
   ): Promise<FileData[]> {
 
     if (!this.#canvas || !this.#ctx) {
-      throw "Handler not initialized.";
+      throw new Error("Handler not initialized.");
     }
 
     const outputFiles: FileData[] = [];
@@ -113,8 +113,10 @@ class canvasToBlobHandler implements FormatHandler {
       else {
         bytes = await new Promise((resolve, reject) => {
           this.#canvas!.toBlob((blob) => {
-            if (!blob) return reject("Canvas output failed");
-            blob.arrayBuffer().then(buf => resolve(new Uint8Array(buf)));
+            if (!blob) return reject(new Error("Canvas output failed"));
+            blob.arrayBuffer()
+              .then(buf => resolve(new Uint8Array(buf)))
+              .catch(err => reject(new Error(`Failed to read blob: ${err}`)));
           }, outputFormat.mime);
         });
       }

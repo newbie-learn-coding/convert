@@ -2,25 +2,34 @@
 <html lang="en-US">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <meta name="description" content="Convert files online for free in your browser. ConvertToIt supports image, audio, video, document, and archive formats without uploading your files to a server.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Convert files online for free in your browser. Supports image, audio, video, document, and archive formats. Privacy-focused: files never leave your device.">
+  <meta name="keywords" content="file converter, online converter, image converter, video converter, audio converter, document converter, free converter, browser converter, privacy">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="theme-color" content="#1C77FF">
+  <meta name="author" content="ConvertToIt">
+  <meta name="application-name" content="ConvertToIt">
   <link rel="canonical" href="https://converttoit.com/">
   <link rel="alternate" hreflang="en" href="https://converttoit.com/">
   <link rel="alternate" hreflang="x-default" href="https://converttoit.com/">
   <link rel="stylesheet" href="style.css">
-  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="ConvertToIt">
   <meta property="og:title" content="Online File Converter (Free & Secure) | ConvertToIt">
-  <meta property="og:description" content="Convert files directly in your browser across many formats. No server upload required for most conversions.">
+  <meta property="og:description" content="Convert files directly in your browser across many formats. No server upload required. Privacy-focused file conversion.">
   <meta property="og:url" content="https://converttoit.com/">
-  <meta property="og:image" content="https://converttoit.com/favicon.ico">
+  <meta property="og:image" content="https://converttoit.com/social-card.svg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Online File Converter (Free & Secure) | ConvertToIt">
-  <meta name="twitter:description" content="Convert files directly in your browser across many formats.">
-  <meta name="twitter:image" content="https://converttoit.com/favicon.ico">
+  <meta name="twitter:description" content="Convert files directly in your browser. Privacy-focused, no server upload required.">
+  <meta name="twitter:image" content="https://converttoit.com/social-card.svg">
   <title>Online File Converter (Free & Secure) | ConvertToIt</title>
   <script type="application/ld+json">
     {
@@ -39,13 +48,20 @@
           "applicationCategory": "UtilitiesApplication",
           "operatingSystem": "Any",
           "url": "https://converttoit.com/",
-          "description": "Browser-based file converter that supports many formats.",
+          "description": "Browser-based file converter that supports many formats. Privacy-focused: files never leave your device.",
           "isAccessibleForFree": true,
           "offers": {
             "@type": "Offer",
             "price": "0",
             "priceCurrency": "USD"
-          }
+          },
+          "featureList": "Image conversion, Video conversion, Audio conversion, Document conversion, Archive conversion, Browser-based processing, Privacy-focused"
+        },
+        {
+          "@type": "Organization",
+          "name": "ConvertToIt",
+          "url": "https://converttoit.com/",
+          "logo": "https://converttoit.com/apple-touch-icon.png"
         }
       ]
     }
@@ -76,7 +92,7 @@
 
     <div id="from-container" class="format-container">
       <h2>Convert from:</h2>
-      <input type="text" id="search-from" class="search" placeholder="Search">
+      <input type="text" id="search-from" class="search" placeholder="Search" aria-label="Search input formats">
       <div id="from-list" class="format-list">
 
       </div>
@@ -84,7 +100,7 @@
 
     <div id="to-container" class="format-container">
       <h2>Convert to:</h2>
-      <input type="text" id="search-to" class="search" placeholder="Search">
+      <input type="text" id="search-to" class="search" placeholder="Search" aria-label="Search output formats">
       <div id="to-list" class="format-list">
 
       </div>
@@ -92,21 +108,122 @@
 
   </div>
 
-  <button id="convert-button" class="disabled">Convert</button>
+  <div id="convert-cta">
+    <button
+      id="convert-button"
+      class="disabled"
+      aria-label="Convert selected files to the selected format"
+      aria-disabled="true"
+      disabled
+    >Convert</button>
+    <p id="convert-helper" role="status" aria-live="polite">Select a file, input format, and output format to enable Convert.</p>
+  </div>
 
   <section id="how-it-works" class="seo-content">
-    <h2>How ConvertToIt works</h2>
-    <p>Choose a file, select an output format, and convert it directly in your browser. ConvertToIt focuses on broad format support and practical output.</p>
-    <p>Need page-specific help? Explore <a href="/format/">Format Guides</a> and <a href="/compare/">Compare Formats</a>.</p>
-    <p>Need policy details? Read our <a href="/privacy.html">Privacy Policy</a> and <a href="/terms.html">Terms of Service</a>.</p>
+    <h2>How ConvertToIt Works</h2>
+    <p>ConvertToIt is a privacy-focused, browser-based file converter that processes your files locally without uploading them to any server. Our advanced WebAssembly technology enables high-performance conversions directly in your browser.</p>
+
+    <h3>Simple 3-Step Process</h3>
+    <ol>
+      <li><strong>Upload your file</strong> - Click the blue area or drag and drop your file. We support images, videos, audio, documents, and archives.</li>
+      <li><strong>Select output format</strong> - Choose from hundreds of format combinations. Our smart algorithm finds the best conversion path automatically.</li>
+      <li><strong>Download result</strong> - Get your converted file instantly. All processing happens in your browser for maximum privacy.</li>
+    </ol>
+
+    <h3>Why Choose ConvertToIt?</h3>
+    <ul>
+      <li><strong>Privacy First</strong> - Files never leave your device. No server uploads means your data stays private.</li>
+      <li><strong>Universal Support</strong> - Convert between any supported formats, even across different media types (e.g., video to images).</li>
+      <li><strong>Free Forever</strong> - Core features are completely free with no registration required.</li>
+      <li><strong>Fast Processing</strong> - WebAssembly-powered conversions run at near-native speed in your browser.</li>
+    </ul>
+
+    <p>Need help with specific formats? Explore our detailed <a href="/format/">Format Guides</a> or <a href="/compare/">Compare Formats</a> to choose the right format for your needs.</p>
   </section>
 
-  <section id="faq" class="seo-content">
-    <h2>FAQ</h2>
-    <h3>Do I need to install software?</h3>
-    <p>No. ConvertToIt runs in modern browsers.</p>
-    <h3>Is the converter free to use?</h3>
-    <p>Yes. The core web converter is free.</p>
+  <section id="faq" class="seo-content" itemscope itemtype="https://schema.org/FAQPage">
+    <h2>Frequently Asked Questions</h2>
+
+    <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Do I need to install any software to use ConvertToIt?</h3>
+      <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">No installation required. ConvertToIt is a browser-based file converter that runs entirely in your web browser. Simply visit converttoit.com, select your file, and convert.</p>
+      </div>
+    </div>
+
+    <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Is ConvertToIt free to use?</h3>
+      <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes, ConvertToIt is completely free to use. The core file conversion features are available at no cost, with no registration or subscription required.</p>
+      </div>
+    </div>
+
+    <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Are my files uploaded to a server?</h3>
+      <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">No, your files are processed locally in your browser. ConvertToIt is privacy-focused and performs all conversions client-side using WebAssembly technology. Your files never leave your device.</p>
+      </div>
+    </div>
+
+    <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What file formats are supported?</h3>
+      <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">ConvertToIt supports a wide range of formats including: Images (PNG, JPG, WEBP, SVG, GIF, TIFF), Videos (MP4, MOV, AVI, WEBM, MKV), Audio (MP3, WAV, FLAC, OGG, AAC), Documents (PDF, DOCX, TXT, MD), and Archives (ZIP). Visit our <a href="/format/">Format Guides</a> for detailed conversion options.</p>
+      </div>
+    </div>
+
+    <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Is there a file size limit?</h3>
+      <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes, the maximum single file size is 256 MB, and you can convert up to 100 files at once with a total size limit of 512 MB. These limits ensure optimal performance in your browser.</p>
+      </div>
+    </div>
+
+    <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Which browsers are supported?</h3>
+      <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">ConvertToIt works in all modern browsers including Chrome, Firefox, Safari, and Edge. We recommend using the latest version of your browser for the best experience.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="popular-conversions" class="seo-content">
+    <h2>Popular conversions</h2>
+    <p>Start with the most-used file conversion guides:</p>
+    <ul>
+      <li><a href="/format/png-to-jpg/">PNG to JPG</a></li>
+      <li><a href="/format/jpg-to-png/">JPG to PNG</a></li>
+      <li><a href="/format/webp-to-png/">WEBP to PNG</a></li>
+      <li><a href="/format/svg-to-png/">SVG to PNG</a></li>
+      <li><a href="/format/pdf-to-jpg/">PDF to JPG</a></li>
+      <li><a href="/format/mov-to-mp4/">MOV to MP4</a></li>
+      <li><a href="/format/wav-to-mp3/">WAV to MP3</a></li>
+    </ul>
+  </section>
+
+  <section id="format-listing" class="seo-content">
+    <h2>Browse all available format paths</h2>
+    <p>These static links stay crawlable for search engines and available as a no-JavaScript fallback.</p>
+    <ul>
+      <li><a href="/format/">All format guides</a></li>
+      <li><a href="/format/png-to-jpg/">PNG to JPG</a></li>
+      <li><a href="/format/jpg-to-png/">JPG to PNG</a></li>
+      <li><a href="/format/webp-to-png/">WEBP to PNG</a></li>
+      <li><a href="/format/svg-to-png/">SVG to PNG</a></li>
+      <li><a href="/format/pdf-to-jpg/">PDF to JPG</a></li>
+      <li><a href="/format/mov-to-mp4/">MOV to MP4</a></li>
+      <li><a href="/format/wav-to-mp3/">WAV to MP3</a></li>
+      <li><a href="/compare/">All comparison guides</a></li>
+      <li><a href="/compare/png-vs-jpg/">PNG vs JPG</a></li>
+      <li><a href="/compare/jpg-vs-webp/">JPG vs WEBP</a></li>
+      <li><a href="/compare/svg-vs-png/">SVG vs PNG</a></li>
+      <li><a href="/compare/mov-vs-mp4/">MOV vs MP4</a></li>
+      <li><a href="/compare/wav-vs-mp3/">WAV vs MP3</a></li>
+      <li><a href="/compare/pdf-vs-docx/">PDF vs DOCX</a></li>
+    </ul>
+    <noscript>
+      <p>JavaScript is disabled. You can still access every conversion guide using the links above.</p>
+    </noscript>
   </section>
 
   <footer class="site-footer">
@@ -115,14 +232,10 @@
     <a href="/compare/">Compare</a>
     <a href="/privacy.html">Privacy</a>
     <a href="/terms.html">Terms</a>
-    <a href="/sitemap.xml">Sitemap</a>
-    <a href="/robots.txt">Robots</a>
   </footer>
 
-  <div id="popup-bg"></div>
-  <div id="popup">
-    <h2>Loading tools...</h2>
-  </div>
+  <div id="popup-bg" hidden aria-hidden="true"></div>
+  <div id="popup" hidden role="dialog" aria-modal="true" aria-live="polite" aria-labelledby="popup-title"></div>
 
   <script type="module" src="src/main.ts"></script>
 

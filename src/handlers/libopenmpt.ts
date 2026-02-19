@@ -150,7 +150,7 @@ class libopenmptHandler implements FormatHandler {
     _inputFormat: FileFormat,
     _outputFormat: FileFormat
   ): Promise<FileData[]> {
-    if (!this.ready || !this.#module) throw "Handler not initialized.";
+    if (!this.ready || !this.#module) throw new Error("Handler not initialized.");
 
     const mod = this.#module;
     const outputFiles: FileData[] = [];

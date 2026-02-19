@@ -49,6 +49,8 @@ export class TraversionGraph {
     private handlers: FormatHandler[] = [];
     private nodes: Node[] = [];
     private edges: Edge[] = [];
+    private nodeIndexMap: Map<string, number> = new Map();
+    private handlerMap: Map<string, FormatHandler> = new Map();
     private categoryChangeCosts: CategoryChangeCost[] = [
         {from: "image", to: "video", cost: 0.2}, // Almost lossless
         {from: "video", to: "image", cost: 0.4}, // Potentially lossy and more complex
@@ -127,40 +129,51 @@ export class TraversionGraph {
         this.handlers = handlers;
         this.nodes.length = 0;
         this.edges.length = 0;
+        this.nodeIndexMap.clear();
+        this.handlerMap.clear();
 
         console.log("Initializing traversion graph...");
         const startTime = performance.now();
+
+        for (const handler of handlers) {
+            this.handlerMap.set(handler.name, handler);
+        }
+
         let handlerIndex = 0;
         supportedFormatCache.forEach((formats, handler) => {
-            let fromIndices: Array<{format: FileFormat, index: number}> = [];
-            let toIndices: Array<{format: FileFormat, index: number}> = [];
-            formats.forEach(format => {
-                let index = this.nodes.findIndex(node => node.mime === format.mime);
-                if (index === -1) {
+            const fromIndices: Array<{format: FileFormat, index: number}> = [];
+            const toIndices: Array<{format: FileFormat, index: number}> = [];
+
+            for (const format of formats) {
+                let index = this.nodeIndexMap.get(format.mime);
+                if (index === undefined) {
                     index = this.nodes.length;
                     this.nodes.push({ mime: format.mime, edges: [] });
+                    this.nodeIndexMap.set(format.mime, index);
                 }
                 if (format.from) fromIndices.push({format, index});
                 if (format.to) toIndices.push({format, index});
-            });
-            fromIndices.forEach(from => {
-                toIndices.forEach(to => {
-                    if (from.index === to.index) return; // No self-loops
+            }
+
+            const handlerLower = handler.toLowerCase();
+            for (const from of fromIndices) {
+                for (const to of toIndices) {
+                    if (from.index === to.index) continue;
                     this.edges.push({
                         from: from,
                         to: to,
                         handler: handler,
                         cost: this.costFunction(
-                            from, 
-                            to, 
-                            strictCategories, 
-                            handler, 
+                            from,
+                            to,
+                            strictCategories,
+                            handlerLower,
                             handlerIndex
                         )
                     });
                     this.nodes[from.index].edges.push(this.edges.length - 1);
-                });
-            });
+                }
+            }
             handlerIndex++;
         });
         const endTime = performance.now();
@@ -170,60 +183,87 @@ export class TraversionGraph {
      * Cost function for calculating the cost of converting from one format to another using a specific handler.
      */
     private costFunction(
-        from: { format: FileFormat; index: number; }, 
-        to: { format: FileFormat; index: number; }, 
-        strictCategories: boolean, 
-        handler: string, 
+        from: { format: FileFormat; index: number; },
+        to: { format: FileFormat; index: number; },
+        strictCategories: boolean,
+        handlerLower: string,
         handlerIndex: number
     ) {
-        let cost = DEPTH_COST; // Base cost for each conversion step
+        let cost = DEPTH_COST;
 
         const handlerPairs = new Map<string, string>(this.categoryChangeCosts.filter(c => c.handler)
         .map(c => [`${c.from}->${c.to}`, c.handler] as [string, string]));
-        // Calculate category change cost
+
         const fromCategory = from.format.category || from.format.mime.split("/")[0];
         const toCategory = to.format.category || to.format.mime.split("/")[0];
+
         if (fromCategory && toCategory) {
             const fromCategories = Array.isArray(fromCategory) ? fromCategory : [fromCategory];
             const toCategories = Array.isArray(toCategory) ? toCategory : [toCategory];
+
             if (strictCategories) {
-                cost += this.categoryChangeCosts.reduce((totalCost, c) => {
-                    // If the category change defined in CATEGORY_CHANGE_COSTS matches the categories of the formats, add the specified cost. Otherwise, if the categories are the same, add no cost. If the categories differ but no specific cost is defined for that change, add a default cost.
-                    if (fromCategories.includes(c.from) 
-                        && toCategories.includes(c.to)
-                        && (!c.handler || c.handler === handler.toLowerCase())
-                    )
-                        return totalCost + c.cost;
-                    return totalCost + DEFAULT_CATEGORY_CHANGE_COST;
-                }, 0);
+                let handlerSpecificCost: number | null = null;
+                let genericCost: number | null = null;
+
+                for (const c of this.categoryChangeCosts) {
+                    if (fromCategories.includes(c.from) && toCategories.includes(c.to)) {
+                        if (c.handler === handlerLower) {
+                            handlerSpecificCost = c.cost;
+                        } else if (!c.handler) {
+                            genericCost = c.cost;
+                        }
+                    }
+                }
+
+                if (handlerSpecificCost !== null) {
+                    cost += handlerSpecificCost;
+                } else if (genericCost !== null) {
+                    cost += genericCost;
+                } else {
+                    cost += DEFAULT_CATEGORY_CHANGE_COST;
+                }
+            } else if (!fromCategories.some(c => toCategories.includes(c))) {
+                // Find the most specific cost for this category change
+                // Priority: 1) handler-specific cost, 2) generic cost, 3) default cost
+                let handlerSpecificCost: number | null = null;
+                let genericCost: number | null = null;
+
+                for (const c of this.categoryChangeCosts) {
+                    if (fromCategories.includes(c.from) && toCategories.includes(c.to)) {
+                        if (c.handler === handlerLower) {
+                            // Handler-specific cost takes highest priority
+                            handlerSpecificCost = c.cost;
+                        } else if (!c.handler) {
+                            // Generic cost (no handler specified)
+                            genericCost = c.cost;
+                        }
+                    }
+                }
+
+                if (handlerSpecificCost !== null) {
+                    cost += handlerSpecificCost;
+                } else if (genericCost !== null) {
+                    cost += genericCost;
+                } else {
+                    cost += DEFAULT_CATEGORY_CHANGE_COST;
+                }
             }
-            else if (!fromCategories.some(c => toCategories.includes(c))) {
-                let costs = this.categoryChangeCosts.filter(c => 
-                    fromCategories.includes(c.from) 
-                    && toCategories.includes(c.to)
-                    && (
-                        (!c.handler && handlerPairs.get(`${c.from}->${c.to}`) !== handler.toLowerCase()) 
-                        || c.handler === handler.toLowerCase()
-                    )
-                );
-                if (costs.length === 0) cost += DEFAULT_CATEGORY_CHANGE_COST; // If no specific cost is defined for this category change, use the default cost
-                else cost += Math.min(...costs.map(c => c.cost)); // If multiple category changes are involved, use the lowest cost defined for those changes. This allows for more nuanced cost calculations when formats belong to multiple categories.
-            }
-        }
-        else if (fromCategory || toCategory) {
-            // If one format has a category and the other doesn't, consider it a category change
-            // Should theoretically never be encountered, unless the MIME type is misspecified
+        } else if (fromCategory || toCategory) {
             cost += DEFAULT_CATEGORY_CHANGE_COST;
         }
 
-        // Add cost based on handler priority
         cost += HANDLER_PRIORITY_COST * handlerIndex;
 
-        // Add cost based on format priority
-        const handlerObj = this.handlers.find(h => h.name === handler)
-        cost += FORMAT_PRIORITY_COST * (handlerObj?.supportedFormats?.findIndex(f => f.mime === to.format.mime) ?? 0);
+        const handlerObj = this.handlerMap.get(handlerLower);
+        if (handlerObj?.supportedFormats) {
+            for (let i = 0; i < handlerObj.supportedFormats.length; i++) {
+                if (handlerObj.supportedFormats[i].mime === to.format.mime) {
+                    cost += FORMAT_PRIORITY_COST * i;
+                    break;
+                }
+            }
+        }
 
-        // Add cost multiplier for lossy conversions
         if (!to.format.lossless) cost *= LOSSY_COST_MULTIPLIER;
 
         return cost;
@@ -232,18 +272,19 @@ export class TraversionGraph {
     /**
      * Returns a copy of the graph data, including nodes, edges, category change costs, and category adaptive costs. This can be used for debugging, visualization, or analysis purposes. The returned data is a deep copy to prevent external modifications from affecting the internal state of the graph.
      */
-    public getData() : {nodes: Node[], edges: Edge[], categoryChangeCosts: CategoryChangeCost[], categoryAdaptiveCosts: CategoryAdaptiveCost[]} {
+    public getData(): { nodes: Node[]; edges: Edge[]; categoryChangeCosts: CategoryChangeCost[]; categoryAdaptiveCosts: CategoryAdaptiveCost[]; nodeIndexMap: Record<string, number> } {
         return {
-            nodes: this.nodes.map(node => ({mime: node.mime, edges: [...node.edges]})),
+            nodes: this.nodes.map(node => ({ mime: node.mime, edges: [...node.edges] })),
             edges: this.edges.map(edge => ({
-                from: {format: {...edge.from.format}, index: edge.from.index},
-                to: {format: {...edge.to.format}, index: edge.to.index},
+                from: { format: { ...edge.from.format }, index: edge.from.index },
+                to: { format: { ...edge.to.format }, index: edge.to.index },
                 handler: edge.handler,
                 cost: edge.cost
             })),
-            categoryChangeCosts: this.categoryChangeCosts.map(c => ({from: c.from, to: c.to, handler: c.handler, cost: c.cost})),
-            categoryAdaptiveCosts: this.categoryAdaptiveCosts.map(c => ({categories: [...c.categories], cost: c.cost}))
-        }; 
+            categoryChangeCosts: this.categoryChangeCosts.map(c => ({ from: c.from, to: c.to, handler: c.handler, cost: c.cost })),
+            categoryAdaptiveCosts: this.categoryAdaptiveCosts.map(c => ({ categories: [...c.categories], cost: c.cost })),
+            nodeIndexMap: Object.fromEntries(this.nodeIndexMap)
+        };
     }
     /**
      * @coverageIgnore
@@ -269,117 +310,147 @@ export class TraversionGraph {
         this.listeners.forEach(l => l(state, path));
     }
 
-    public async* searchPath(from: ConvertPathNode, to: ConvertPathNode, simpleMode: boolean) : AsyncGenerator<ConvertPathNode[]> {
-        // Dijkstra's algorithm
-        // Priority queue of {index, cost, path}
-        let queue: PriorityQueue<QueueNode> = new PriorityQueue<QueueNode>(
+    public async* searchPath(from: ConvertPathNode, to: ConvertPathNode, simpleMode: boolean): AsyncGenerator<ConvertPathNode[]> {
+        const queue = new PriorityQueue<QueueNode>(
             1000,
             (a: QueueNode, b: QueueNode) => a.cost - b.cost
         );
-        let visited = new Array<number>();
-        let fromIndex = this.nodes.findIndex(node => node.mime === from.format.mime);
-        let toIndex = this.nodes.findIndex(node => node.mime === to.format.mime);
-        if (fromIndex === -1 || toIndex === -1) return []; // If either format is not in the graph, return empty array
-        queue.add({index: fromIndex, cost: 0, path: [from], visitedBorder: visited.length });
-        console.log(`Starting path search from ${from.format.mime}(${from.handler?.name}) to ${to.format.mime}(${to.handler?.name}) (simple mode: ${simpleMode})`);
+
+        const visitedSet = new Set<number>();
+        const visited: number[] = [];
+
+        const fromIndex = this.nodeIndexMap.get(from.format.mime);
+        const toIndex = this.nodeIndexMap.get(to.format.mime);
+
+        if (fromIndex === undefined || toIndex === undefined) {
+            return;
+        }
+
+        queue.add({ index: fromIndex, cost: 0, path: [from], visitedBorder: 0 });
+
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`Starting path search from ${from.format.mime}(${from.handler?.name}) to ${to.format.mime}(${to.handler?.name}) (simple mode: ${simpleMode})`);
+        }
+
         let iterations = 0;
         let pathsFound = 0;
+
         while (queue.size() > 0) {
             iterations++;
-            // Get the node with the lowest cost
-            let current = queue.poll()!;
-            const indexInVisited = visited.indexOf(current.index);
-            if (indexInVisited >= 0 && indexInVisited < current.visitedBorder) {
+            const current = queue.poll()!;
+
+            if (current.index !== fromIndex && visitedSet.has(current.index)) {
                 this.dispatchEvent("skipped", current.path);
                 continue;
             }
+
             if (current.index === toIndex) {
-                // Return the path of handlers and formats to get from the input format to the output format
-                console.log(`Found path at iteration ${iterations} with cost ${current.cost}: ${current.path.map(p => p.handler.name + "(" + p.format.mime + ")").join(" -> ")}`);
+                if (process.env.NODE_ENV !== 'production') {
+                    console.log(`Found path at iteration ${iterations} with cost ${current.cost}: ${current.path.map(p => p.handler.name + "(" + p.format.mime + ")").join(" -> ")}`);
+                }
+
                 if (!this.disableSafeChecks) {
-                    // HACK HACK HACK!!
-                    //   Converting image -> video -> audio loses all meaningful media.
-                    //   For now, we explicitly check for this case to avoid blocking Meyda.
                     let found = false;
-                    for (let i = 0; i < current.path.length; i ++) {
+                    for (let i = 0; i < current.path.length - 2; i++) {
                         const curr = current.path[i];
                         const next = current.path[i + 1];
                         const last = current.path[i + 2];
-                        if (!curr || !next || !last) break;
+                        const currCats = Array.isArray(curr.format.category) ? curr.format.category : [curr.format.category];
+                        const nextCats = Array.isArray(next.format.category) ? next.format.category : [next.format.category];
+                        const lastCats = Array.isArray(last.format.category) ? last.format.category : [last.format.category];
+
                         if (
-                            [curr.format.category].flat().includes("image")
-                            && [next.format.category].flat().includes("video")
-                            && [last.format.category].flat().includes("audio")
+                            currCats.includes("image") &&
+                            nextCats.includes("video") &&
+                            lastCats.includes("audio")
                         ) {
                             found = true;
                             break;
                         }
                     }
                     if (found) {
-                        console.log(`Skipping path ${current.path.map(p => p.format.mime).join(" → ")} due to complete loss of media.`);
+                        if (process.env.NODE_ENV !== 'production') {
+                            console.log(`Skipping path ${current.path.map(p => p.format.mime).join(" → ")} due to complete loss of media.`);
+                        }
                         continue;
                     }
-                    // END OF HACK HACK HACK!!
                 }
-                if (simpleMode || !to.handler || to.handler.name === current.path.at(-1)?.handler.name) {
-                    console.log(`Found path at iteration ${iterations} with cost ${current.cost}: ${current.path.map(p => p.handler.name + "(" + p.format.mime + ")").join(" -> ")}`);
+
+                const lastNode = current.path[current.path.length - 1];
+                if (simpleMode || !to.handler || to.handler.name === lastNode?.handler.name) {
+                    if (process.env.NODE_ENV !== 'production') {
+                        console.log(`Yielding path at iteration ${iterations}`);
+                    }
                     this.dispatchEvent("found", current.path);
-                    yield current.path; 
+                    yield current.path;
                     pathsFound++;
-                }
-                else {
-                    console.log(`Unvalid path at iteration ${iterations} with cost ${current.cost}: ${current.path.map(p => p.handler.name + "(" + p.format.mime + ")").join(" -> ")}`);
+                } else {
                     this.dispatchEvent("skipped", current.path);
                 }
-                continue; 
+                continue;
             }
+
+            visitedSet.add(current.index);
             visited.push(current.index);
             this.dispatchEvent("searching", current.path);
-            this.nodes[current.index].edges.forEach(edgeIndex => {
-                let edge = this.edges[edgeIndex];
-                const indexInVisited = visited.indexOf(edge.to.index);
-                if (indexInVisited >= 0 && indexInVisited < current.visitedBorder) return;
-                const handler = this.handlers.find(h => h.name === edge.handler);
-                if (!handler) return; // If the handler for this edge is not found, skip it
-                
-                let path = current.path.concat({handler: handler, format: edge.to.format});
+
+            const node = this.nodes[current.index];
+            for (const edgeIndex of node.edges) {
+                const edge = this.edges[edgeIndex];
+
+                if (visitedSet.has(edge.to.index)) {
+                    continue;
+                }
+
+                const handler = this.handlerMap.get(edge.handler.toLowerCase());
+                if (!handler) continue;
+
+                const newPath = [...current.path, { handler, format: edge.to.format }];
                 queue.add({
                     index: edge.to.index,
-                    cost: current.cost + edge.cost + this.calculateAdaptiveCost(path),
-                    path: path,
+                    cost: current.cost + edge.cost + this.calculateAdaptiveCost(newPath),
+                    path: newPath,
                     visitedBorder: visited.length
                 });
-            });
-            if (iterations % LOG_FREQUENCY === 0) {
+            }
+
+            if (iterations % LOG_FREQUENCY === 0 && process.env.NODE_ENV !== 'production') {
                 console.log(`Still searching... Iterations: ${iterations}, Paths found: ${pathsFound}, Queue length: ${queue.size()}`);
             }
         }
-        console.log(`Path search completed. Total iterations: ${iterations}, Total paths found: ${pathsFound}`);
+
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`Path search completed. Total iterations: ${iterations}, Total paths found: ${pathsFound}`);
+        }
     }
 
-    private calculateAdaptiveCost(path: ConvertPathNode[]) : number {
+    private calculateAdaptiveCost(path: ConvertPathNode[]): number {
         let cost = 0;
-        const categoriesInPath = path.map(p => p.format.category || p.format.mime.split("/")[0]);
-        this.categoryAdaptiveCosts.forEach(c => {
-            let pathPtr = categoriesInPath.length - 1, categoryPtr = c.categories.length - 1;
-            while (true) {
+        const categoriesInPath = path.map(p => {
+            if (Array.isArray(p.format.category)) return p.format.category[0];
+            return p.format.category || p.format.mime.split("/")[0];
+        });
+
+        for (const c of this.categoryAdaptiveCosts) {
+            let pathPtr = categoriesInPath.length - 1;
+            let categoryPtr = c.categories.length - 1;
+
+            while (categoryPtr >= 0 && pathPtr >= 0) {
                 if (categoriesInPath[pathPtr] === c.categories[categoryPtr]) {
                     categoryPtr--;
                     pathPtr--;
-
-                    if (categoryPtr < 0) {
-                        cost += c.cost;
-                        break;
-                    }
-                    if (pathPtr < 0) break;
-                }
-                else if (categoryPtr + 1 < c.categories.length && categoriesInPath[pathPtr] === c.categories[categoryPtr + 1]) {
+                } else if (categoryPtr + 1 < c.categories.length && categoriesInPath[pathPtr] === c.categories[categoryPtr + 1]) {
                     pathPtr--;
-                    if (pathPtr < 0) break;
+                } else {
+                    break;
                 }
-                else break;
             }
-        });
+
+            if (categoryPtr < 0) {
+                cost += c.cost;
+            }
+        }
+
         return cost;
     }
 }

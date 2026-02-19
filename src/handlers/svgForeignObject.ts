@@ -1,5 +1,54 @@
 import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import { createLayoutSandbox, sanitizeHtmlToFragment } from "./layoutSanitizer.ts";
+
+const MEDIA_READY_TIMEOUT_MS = 5000;
+
+function waitForMediaReady (media: HTMLImageElement | HTMLVideoElement): Promise<void> {
+  if (media instanceof HTMLImageElement && media.complete) {
+    return Promise.resolve();
+  }
+  if (media instanceof HTMLVideoElement && media.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+    return Promise.resolve();
+  }
+
+  return new Promise(resolve => {
+    let timeoutId = 0;
+
+    const finish = () => {
+      media.removeEventListener("load", finish);
+      media.removeEventListener("loadeddata", finish);
+      media.removeEventListener("error", finish);
+      window.clearTimeout(timeoutId);
+      resolve();
+    };
+
+    media.addEventListener("load", finish);
+    media.addEventListener("loadeddata", finish);
+    media.addEventListener("error", finish);
+    timeoutId = window.setTimeout(finish, MEDIA_READY_TIMEOUT_MS);
+  });
+}
+
+async function waitForEmbeddedMedia (container: ParentNode): Promise<void> {
+  const mediaElements = Array.from(container.querySelectorAll("img, video"));
+  await Promise.all(mediaElements.map(media => {
+    if (media instanceof HTMLImageElement || media instanceof HTMLVideoElement) {
+      return waitForMediaReady(media);
+    }
+    return Promise.resolve();
+  }));
+}
+
+async function waitForRenderCycle (): Promise<void> {
+  await new Promise<void>(resolve => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        resolve();
+      });
+    });
+  });
+}
 
 class svgForeignObjectHandler implements FormatHandler {
 
@@ -18,54 +67,26 @@ class svgForeignObjectHandler implements FormatHandler {
   }
 
   static async normalizeHTML (html: string) {
-    // To get the size of the input document, we need the
-    // browser to actually render it.
-    // Create a hidden "dummy" element on the DOM.
-    const dummy = document.createElement("div");
-    dummy.style.all = "initial";
-    dummy.style.visibility = "hidden";
-    dummy.style.position = "fixed";
-    document.body.appendChild(dummy);
+    const sandbox = createLayoutSandbox(":host>div{display:flow-root;}");
 
-    // Add a DOM shadow to the dummy to "sterilize" it.
-    const shadow = dummy.attachShadow({ mode: "closed" });
-    const style = document.createElement("style");
-    style.textContent = ":host>div{display:flow-root;}";
-    shadow.appendChild(style);
+    try {
+      sandbox.container.replaceChildren(sanitizeHtmlToFragment(html));
 
-    // Create a div within the shadow DOM to act as
-    // a container for our HTML payload.
-    const container = document.createElement("div");
-    container.innerHTML = html;
-    shadow.appendChild(container);
+      // Wait for all images/videos to finish loading. This is required for layout
+      // changes, not because we actually care about media contents.
+      await waitForEmbeddedMedia(sandbox.container);
 
-    // Wait for all images to finish loading. This is required for layout
-    // changes, not because we actually care about the image contents.
-    const images = container.querySelectorAll("img, video");
-    const promises = Array.from(images).map(image => new Promise(resolve => {
-      image.addEventListener("load", resolve);
-      image.addEventListener("loadeddata", resolve);
-      image.addEventListener("error", resolve);
-    }));
-    await Promise.all(promises);
+      // Make sure the browser has had time to render.
+      await waitForRenderCycle();
 
-    // Make sure the browser has had time to render.
-    // This is probably redundant due to the async calls above.
-    await new Promise(resolve => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(resolve);
-      });
-    });
-
-    // Finally, get the bounding box of the input and serialize it to XML.
-    const bbox = container.getBoundingClientRect();
-    const serializer = new XMLSerializer();
-    const xml = serializer.serializeToString(container);
-
-    container.remove();
-    dummy.remove();
-
-    return { xml, bbox };
+      // Finally, get the bounding box of the input and serialize it to XML.
+      const bbox = sandbox.container.getBoundingClientRect();
+      const serializer = new XMLSerializer();
+      const xml = serializer.serializeToString(sandbox.container);
+      return { xml, bbox };
+    } finally {
+      sandbox.cleanup();
+    }
   }
 
   async doConvert (
@@ -74,8 +95,12 @@ class svgForeignObjectHandler implements FormatHandler {
     outputFormat: FileFormat
   ): Promise<FileData[]> {
 
-    if (inputFormat.internal !== "html") throw "Invalid input format.";
-    if (outputFormat.internal !== "svg") throw "Invalid output format.";
+    if (inputFormat.internal !== "html") {
+      throw new Error(`svgForeignObject handler expected html input, received ${inputFormat.internal}.`);
+    }
+    if (outputFormat.internal !== "svg") {
+      throw new Error(`svgForeignObject handler expected svg output, received ${outputFormat.internal}.`);
+    }
 
     const outputFiles: FileData[] = [];
 

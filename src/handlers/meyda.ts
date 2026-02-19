@@ -64,7 +64,7 @@ class meydaHandler implements FormatHandler {
       || !this.#canvas
       || !this.#ctx
     ) {
-      throw "Handler not initialized!";
+      throw new Error("Handler not initialized!");
     }
     const outputFiles: FileData[] = [];
 
@@ -75,7 +75,7 @@ class meydaHandler implements FormatHandler {
     const hopSize = bufferSize / 2;
 
     if (inputIsImage === outputIsImage) {
-      throw "Invalid input/output format.";
+      throw new Error("Invalid input/output format: input and output must be different types (one image, one audio).");
     }
 
     if (inputIsImage) {

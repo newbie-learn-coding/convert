@@ -26,17 +26,41 @@ class sqlite3Handler implements FormatHandler {
     this.ready = true;
   }
 
-  getTables(db: any) {
+  /**
+   * Validates that a table name is a valid SQLite identifier.
+   * Prevents SQL injection by rejecting names with special characters.
+   */
+  private isValidTableName(name: string): boolean {
+    // SQLite identifiers must start with letter/underscore, followed by alphanumeric/underscore
+    return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name);
+  }
+
+  /**
+   * Escapes a table name for safe use in SQL queries.
+   * Double quotes are used for identifier quoting in SQLite.
+   */
+  private escapeIdentifier(name: string): string {
+    if (!this.isValidTableName(name)) {
+      throw new Error(`Invalid table name: ${name}`);
+    }
+    // Escape any double quotes by doubling them
+    return `"${name.replace(/"/g, '""')}"`;
+  }
+
+  getTables(db: any): string[] {
     const stmt = db.prepare("SELECT name FROM sqlite_master WHERE type='table';");
-    let row: any[] = [];
+    const tables: string[] = [];
     try {
       while (stmt.step()) {
-        row.push(stmt.get(0));
+        const tableName = stmt.get(0);
+        if (typeof tableName === 'string' && this.isValidTableName(tableName)) {
+          tables.push(tableName);
+        }
       }
     } finally {
         stmt.finalize();
     }
-    return row;
+    return tables;
   }
 
   async doConvert (
@@ -45,52 +69,60 @@ class sqlite3Handler implements FormatHandler {
     outputFormat: FileFormat
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
-    console.log(inputFormat, outputFormat);
+
+    if (inputFormat.internal !== "sqlite3" || outputFormat.internal !== "csv") {
+      throw new Error(`Unsupported conversion: ${inputFormat.internal} to ${outputFormat.internal}`);
+    }
 
     const sqlite3 = await sqlite3InitModule();
 
-    if (inputFormat.internal == "sqlite3" && outputFormat.internal == "csv") {
-        for (const file of inputFiles) {
-            const p = sqlite3.wasm.allocFromTypedArray(file.bytes);
+    for (const file of inputFiles) {
+      const p = sqlite3.wasm.allocFromTypedArray(file.bytes);
+      const db = new sqlite3.oo1.DB();
 
-            const db = new sqlite3.oo1.DB();
-            if (!db.pointer) {
-                throw new Error("Database pointer is undefined")
+      try {
+        if (!db.pointer) {
+          throw new Error("Database pointer is undefined");
+        }
+
+        const flags = sqlite3.capi.SQLITE_DESERIALIZE_FREEONCLOSE;
+        const rc = sqlite3.capi.sqlite3_deserialize(
+          db.pointer,
+          "main",
+          p,
+          file.bytes.byteLength,
+          file.bytes.byteLength,
+          flags
+        );
+        db.checkRc(rc);
+
+        for (const table of this.getTables(db)) {
+          const escapedTable = this.escapeIdentifier(table);
+          const stmt = db.prepare(`SELECT * FROM ${escapedTable}`);
+          let csvStr = stmt.getColumnNames().join(",") + "\n";
+          try {
+            while (stmt.step()) {
+              const row = Array.from({ length: stmt.columnCount }, (_, j) => stmt.get(j));
+              csvStr += row.join(", ") + "\n";
             }
-            const flags = sqlite3.capi.SQLITE_DESERIALIZE_FREEONCLOSE;
-            const rc = sqlite3.capi.sqlite3_deserialize(
-                db.pointer,
-                "main",
-                p,
-                file.bytes.byteLength,
-                file.bytes.byteLength,
-                flags
-            );
-            db.checkRc(rc);
+          } finally {
+            stmt.finalize();
+          }
 
-            
-            for (const table of this.getTables(db)) {
-                const stmt = db.prepare(`SELECT * FROM ${table}`);
-                let csvStr = stmt.getColumnNames().join(",") + "\n";
-                try {
-                  while (stmt.step()) {
-                    const row = Array.from({length: stmt.columnCount }, (_, j) => stmt.get(j))
-                    csvStr += row.join(", ") + "\n"
-                  }
-                } finally {
-                    stmt.finalize();
-                }
-
-                const encoder = new TextEncoder()
-                outputFiles.push({
-                    name: table,
-                    bytes: new Uint8Array(encoder.encode(csvStr))
-                })
-            }
-         }
+          const encoder = new TextEncoder();
+          outputFiles.push({
+            name: `${table}.csv`,
+            bytes: new Uint8Array(encoder.encode(csvStr))
+          });
+        }
+      } finally {
+        // Ensure database is closed and WASM memory is freed
+        if (db.pointer) {
+          db.close();
+        }
+        // Note: With SQLITE_DESERIALIZE_FREEONCLOSE, the memory is freed when db is closed
+      }
     }
-
-
 
     return outputFiles;
   }

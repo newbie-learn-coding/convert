@@ -210,7 +210,7 @@ class pandocHandler implements FormatHandler {
       !this.ready
       || !this.query
       || !this.convert
-    ) throw "Handler not initialized.";
+    ) throw new Error("Handler not initialized.");
 
     const outputFiles: FileData[] = [];
 

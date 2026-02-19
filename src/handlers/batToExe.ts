@@ -29,7 +29,7 @@ class batToExeHandler implements FormatHandler {
 
     const header = this.header;
     const footer = this.footer;
-    if (!this.ready || !header || !footer) throw "Handler not initialized!";
+    if (!this.ready || !header || !footer) throw new Error("Handler not initialized!");
 
     const CONTENT_SIZE = 65824;
     const EXIT_BYTES = new Uint8Array([0x0d, 0x0a, 0x65, 0x78, 0x69, 0x74]); // \r\nexit
