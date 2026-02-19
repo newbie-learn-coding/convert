@@ -17,7 +17,10 @@
     "check:integrity": "node scripts/check-critical-files.mjs",
     "check:cf-assets": "node scripts/check-cloudflare-asset-sizes.mjs",
     "test:unit": "bun test tests",
-    "test:browser": "bun test test/commonFormats.test.ts",
+    "test:ops-hardening": "bun test tests/seoDomainPolicy.test.ts tests/criticalFileIntegrity.test.ts tests/cloudflareWorkerHardening.test.ts tests/deployScriptHardening.test.ts",
+    "test:browser": "bun test test/browserSmoke.test.ts",
+    "test:browser:full": "bun test test/commonFormats.test.ts",
+    "validate:production-readiness": "bash scripts/validate-production-readiness.sh",
     "validate:safe": "bash scripts/validate-safe.sh",
     "validate:ci": "VALIDATE_INCLUDE_BUILD=1 bun run validate:safe"
   },
