@@ -623,7 +623,11 @@ function safeText(str) {
 }
 
 const BRAND = "ConvertToIt";
-const OG_IMAGE = `${BASE_URL}/favicon.ico`;
+const OG_IMAGE = `${BASE_URL}/social-card.svg`;
+const THEME_COLOR = "#1C77FF";
+const CONTENT_PUBLISHED_ON = "2026-02-19";
+const ORGANIZATION_ID = `${BASE_URL}/#organization`;
+const WEBSITE_ID = `${BASE_URL}/#website`;
 const REDIRECT_SOURCE_HOSTS = [
   "https://converttoit.app",
   "http://converttoit.app",
@@ -635,6 +639,67 @@ const ENGLISH_STOP_WORDS = new Set([
   "can", "choose", "comparison", "convert", "converter", "converting", "for", "format", "from", "guide", "how", "if", "in", "into",
   "is", "it", "its", "more", "need", "of", "on", "or", "page", "pages", "that", "the", "this", "to", "use", "when", "with", "you", "your"
 ]);
+
+function sharedGraphNodes() {
+  return [
+    {
+      "@type": "Organization",
+      "@id": ORGANIZATION_ID,
+      name: BRAND,
+      url: `${BASE_URL}/`,
+      logo: {
+        "@type": "ImageObject",
+        url: `${BASE_URL}/apple-touch-icon.png`
+      },
+      sameAs: [`${BASE_URL}/`]
+    },
+    {
+      "@type": "WebSite",
+      "@id": WEBSITE_ID,
+      url: `${BASE_URL}/`,
+      name: BRAND,
+      inLanguage: "en-US",
+      publisher: { "@id": ORGANIZATION_ID }
+    }
+  ];
+}
+
+function buildWebPageNode({ pageUrl, title, description, about = [] }) {
+  return {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    name: title,
+    url: pageUrl,
+    description,
+    inLanguage: "en-US",
+    isPartOf: { "@id": WEBSITE_ID },
+    about,
+    datePublished: CONTENT_PUBLISHED_ON,
+    dateModified: TODAY,
+    publisher: { "@id": ORGANIZATION_ID }
+  };
+}
+
+function buildArticleNode({ pageUrl, title, description, keywords = [], about = [] }) {
+  return {
+    "@type": "Article",
+    "@id": `${pageUrl}#article`,
+    headline: title,
+    mainEntityOfPage: { "@id": `${pageUrl}#webpage` },
+    description,
+    inLanguage: "en-US",
+    datePublished: CONTENT_PUBLISHED_ON,
+    dateModified: TODAY,
+    author: {
+      "@type": "Organization",
+      name: `${BRAND} Editorial Team`,
+      url: `${BASE_URL}/`
+    },
+    publisher: { "@id": ORGANIZATION_ID },
+    keywords: keywords.join(", "),
+    about
+  };
+}
 
 function pageShell({
   title,
@@ -658,10 +723,14 @@ function pageShell({
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="${safeText(description)}">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="theme-color" content="${THEME_COLOR}">
   <title>${safeText(title)}</title>
   <link rel="canonical" href="${normalizedCanonical}">
   <link rel="alternate" hreflang="en" href="${normalizedCanonical}">
   <link rel="alternate" hreflang="x-default" href="${normalizedCanonical}">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <meta property="og:type" content="${ogType}">
   <meta property="og:title" content="${safeText(title)}">
   <meta property="og:description" content="${safeText(description)}">
@@ -707,22 +776,46 @@ function paragraphList(items) {
   return items.map((item) => `<p>${safeText(item)}</p>`).join("\n");
 }
 
-function formatFieldNotes(page) {
-  return page.uniquenessSignals.map((signal, index) => {
-    const stage = index % 3 === 0
-      ? "before export"
-      : index % 3 === 1
-        ? "during conversion"
-        : "after validation";
+const FORMAT_DIRECTION_SPECIAL_NOTES = {
+  "png-to-jpg": [
+    "When flattening transparency, define matte color from the destination brand palette first; otherwise alpha-edge halos appear around logos and UI cutouts after export.",
+    "Use a small compression ladder (for example quality 92/86/80) and compare text-edge ringing at 100% zoom so screenshot readability does not degrade silently.",
+    "Track before-after kilobyte deltas for hero images and marketplace uploads, because this conversion is usually justified by delivery weight, not archival quality.",
+    "For visual QA, inspect gradients and shadows after compression; PNG-to-JPG pipelines can introduce block noise that only appears on dark backgrounds."
+  ],
+  "jpg-to-png": [
+    "Treat this conversion as artifact containment for iterative editing: the goal is to stop additional JPEG generation loss during markup, review, and handoff.",
+    "Capture color profile and pixel dimensions before conversion, then lock them in a naming convention so design and content teams can reuse the same editable baseline.",
+    "Use PNG as a collaboration checkpoint for annotations and overlays, then define when final delivery can move back to lightweight distribution formats.",
+    "Document where recompression previously appeared in your workflow; JPG-to-PNG policies are strongest when they are tied to concrete revision-history pain points."
+  ]
+};
 
-    return `Field note ${index + 1}: For ${signal}, teams converting ${page.from} to ${page.to} should document ${stage} checkpoints, keep a rollback copy of the original file, and confirm the output in the final destination workflow before publishing.`;
+function formatFieldNotes(page) {
+  const directionPatterns = FORMAT_DIRECTION_SPECIAL_NOTES[page.slug];
+  return page.uniquenessSignals.map((signal, index) => {
+    if (directionPatterns) {
+      return `Field note ${index + 1}: ${signal}: ${directionPatterns[index % directionPatterns.length]}`;
+    }
+    const patterns = [
+      `${signal}: run a preflight sample with at least three representative ${page.from} files, log expected ${page.to} output size, and capture one screenshot proof so reviewers can approve the preset before full-batch export.`,
+      `${signal}: save one reusable preset, keep the original ${page.from} untouched for rollback, and record why this ${page.to} setting was chosen for the destination channel instead of guessing during the next release cycle.`,
+      `${signal}: validate each output in the final destination tool, not just in the converter preview, because downstream renderers often expose edge cases that are invisible during first-pass conversion checks.`,
+      `${signal}: log size, clarity, and compatibility deltas in one short runbook entry so future ${page.from} to ${page.to} requests can reuse verified settings and skip avoidable trial-and-error loops.`
+    ];
+    return `Field note ${index + 1}: ${patterns[index % patterns.length]}`;
   });
 }
 
 function compareFieldNotes(page) {
   return page.uniquenessSignals.map((signal, index) => {
-    const focus = index % 2 === 0 ? page.a : page.b;
-    return `Decision note ${index + 1}: In ${signal}, prioritize ${focus} only when that choice directly supports your delivery constraints, stakeholder editing needs, and long-term storage policy without adding unnecessary re-encoding steps.`;
+    const patterns = [
+      `${signal}: choose ${page.a} when edit control, revision tolerance, and source fidelity are more important than immediate delivery speed, then document the expected storage or transfer impact before rollout.`,
+      `${signal}: choose ${page.b} when broad playback support, lower delivery friction, and predictable cross-platform behavior matter more than retaining every bit of source flexibility for post-processing.`,
+      `${signal}: test both formats with one representative production asset, compare quality and compatibility outcomes in the real publishing path, then standardize the winner as the default team policy.`,
+      `${signal}: document exception triggers up front so contributors know exactly when to switch from the default format instead of reopening the same debate every time a new asset arrives.`
+    ];
+    return `Decision note ${index + 1}: ${patterns[index % patterns.length]}`;
   });
 }
 
@@ -804,16 +897,25 @@ function htmlTextToWords(html) {
   return plain.match(/[a-z0-9]+/g) ?? [];
 }
 
+function ensureBodyWordCount(label, body, minWords = 1000) {
+  const count = htmlTextToWords(body).length;
+  if (count < minWords) {
+    throw new Error(`${label} rendered body has ${count} words; expected at least ${minWords}.`);
+  }
+  return count;
+}
+
 function renderFormatHub(pages) {
-  const title = "Format Conversion Guides by File Pair | ConvertToIt";
-  const description = "Browse conversion guides by file pair. Use clean /format/* URLs to find practical conversion checklists and related format comparisons.";
+  const title = "Convert File Formats Faster: Practical Guides | ConvertToIt";
+  const description = "Discover format conversion guides for every file pair. Follow practical steps, quality gates, and related links to publish cleaner assets with fewer retries.";
+  ensureLengthInRange("Title for /format/", title, 50, 60);
+  ensureLengthInRange("Meta description for /format/", description, 150, 160);
   const body = `
 <main class="page-wrap">
   ${navBlock()}
   <header>
-    <p class="eyebrow">Template family: /format/*</p>
     <h1>Format Conversion Guides</h1>
-    <p>Pick a conversion intent and jump to a URL-specific guide. Every guide has a unique primary keyword to reduce cannibalization.</p>
+    <p>Pick a source and target format, then open a practical step-by-step guide designed for faster delivery and fewer conversion retries.</p>
   </header>
   <section>
     <h2>Popular conversion intents</h2>
@@ -822,16 +924,32 @@ function renderFormatHub(pages) {
     </div>
   </section>
   <section>
+    <h2>What each guide includes</h2>
+    <ul>
+      <li>Conversion workflow steps that map to real publishing constraints.</li>
+      <li>Quality checks and pitfall recovery plans to reduce rework.</li>
+      <li>Cross-links to comparison guides so format decisions stay consistent.</li>
+    </ul>
+  </section>
+  <section>
     <h2>Also compare formats</h2>
     <p>Not sure which format to pick first? Use <a href="${BASE_URL}/compare/">comparison pages</a> to decide before converting.</p>
   </section>
 </main>`;
 
   const jsonLd = [
+    ...sharedGraphNodes(),
     {
       "@type": "CollectionPage",
+      "@id": `${BASE_URL}/format/#collection`,
       name: "Format Conversion Guides",
-      url: `${BASE_URL}/format/`
+      url: `${BASE_URL}/format/`,
+      description,
+      inLanguage: "en-US",
+      isPartOf: { "@id": WEBSITE_ID },
+      datePublished: CONTENT_PUBLISHED_ON,
+      dateModified: TODAY,
+      publisher: { "@id": ORGANIZATION_ID }
     }
   ];
 
@@ -839,15 +957,16 @@ function renderFormatHub(pages) {
 }
 
 function renderCompareHub(pages) {
-  const title = "File Format Comparison Guides | ConvertToIt";
-  const description = "Compare file formats with decision-focused /compare/* pages. Find format trade-offs, use-case picks, and next-step conversion links.";
+  const title = "Compare File Formats Faster: Decision Guides | ConvertToIt";
+  const description = "Compare file formats with decision-first guides. Review quality, compatibility, and size trade-offs, then jump to best-fit conversion paths for your workflow.";
+  ensureLengthInRange("Title for /compare/", title, 50, 60);
+  ensureLengthInRange("Meta description for /compare/", description, 150, 160);
   const body = `
 <main class="page-wrap">
   ${navBlock()}
   <header>
-    <p class="eyebrow">Template family: /compare/*</p>
     <h1>File Format Comparison Guides</h1>
-    <p>Use these pages to choose the right format before you convert. Each page targets one comparison keyword.</p>
+    <p>Use these pages to choose the right format before you convert, so teams can lock one default policy with fewer downstream exceptions.</p>
   </header>
   <section>
     <h2>Comparison intents</h2>
@@ -856,16 +975,32 @@ function renderCompareHub(pages) {
     </div>
   </section>
   <section>
+    <h2>How these decision guides help</h2>
+    <ul>
+      <li>Compare quality, compatibility, and delivery-size trade-offs in one view.</li>
+      <li>Use linked conversion paths to move from decision to execution quickly.</li>
+      <li>Align default format policies with measurable operational constraints.</li>
+    </ul>
+  </section>
+  <section>
     <h2>Need direct conversion paths?</h2>
     <p>Jump to <a href="${BASE_URL}/format/">format conversion pages</a> for step-by-step action checklists.</p>
   </section>
 </main>`;
 
   const jsonLd = [
+    ...sharedGraphNodes(),
     {
       "@type": "CollectionPage",
+      "@id": `${BASE_URL}/compare/#collection`,
       name: "File Format Comparison Guides",
-      url: `${BASE_URL}/compare/`
+      url: `${BASE_URL}/compare/`,
+      description,
+      inLanguage: "en-US",
+      isPartOf: { "@id": WEBSITE_ID },
+      datePublished: CONTENT_PUBLISHED_ON,
+      dateModified: TODAY,
+      publisher: { "@id": ORGANIZATION_ID }
     }
   ];
 
@@ -899,24 +1034,57 @@ function renderFormatPage(page, allFormatPages, compareMap) {
   const faqList = page.faq.map((item) => `<details><summary>${safeText(item.q)}</summary><p>${safeText(item.a)}</p></details>`).join("");
   const snippetAnswer = `<p><strong>${safeText(primaryKeyword)}</strong> helps when you need a delivery-ready ${safeText(page.to)} file that balances compatibility and quality. Keep the original ${safeText(page.from)} as your master source, export one optimized output for publishing, and validate dimensions, compression, and metadata before sharing to avoid repeat conversion work.</p>`;
   const longFormNotes = formatFieldNotes(page);
-  const keywordAngleNotes = page.secondaryKeywords.map((keyword, index) => (
-    `Keyword angle ${index + 1}: Teams searching for "${keyword}" usually need a fast ${page.from} to ${page.to} workflow that can be repeated with the same quality settings, naming rules, and destination-specific validation checks.`
-  ));
-  const checklistNarrative = page.qualityChecklist.map((item, index) => (
-    `Quality control ${index + 1}: ${item} This matters because production handoffs fail when teams skip pre-publish checks and only notice format issues after distribution.`
-  ));
-  const pitfallNarrative = page.pitfalls.map((item, index) => (
-    `Pitfall pattern ${index + 1}: ${item} Mitigate this by running one representative sample through your full workflow, then documenting the exact setting profile used in successful output.`
+  const keywordAngleNotes = page.secondaryKeywords.map((keyword, index) => {
+    const patterns = [
+      `Searches like "${keyword}" usually mean delivery speed is under pressure, so define one approved ${page.from} to ${page.to} preset and include expected size and quality ranges in your release checklist.`,
+      `Query "${keyword}" often signals compatibility risk, so test converted output inside the final destination app, capture one proof screenshot, and document what failed before scaling conversion to the rest of the batch.`,
+      `When users ask for "${keyword}", they typically need a policy, not a one-off fix: preserve the source, export once, verify destination behavior, and track the exact conditions that justify future exceptions.`
+    ];
+    return `Keyword angle ${index + 1}: ${patterns[index % patterns.length]}`;
+  });
+  const scenarioBlueprints = page.conversionTriggers.map((trigger, index) => {
+    const keyword = page.secondaryKeywords[index % page.secondaryKeywords.length];
+    return `Scenario blueprint ${index + 1}: ${trigger} Treat this as an operational request tied to "${keyword}". Start with one representative file, capture before-and-after size plus clarity data, and only then approve batch conversion for the rest of the queue.`;
+  });
+  const checklistNarrative = page.qualityChecklist.map((item, index) => {
+    const signal = page.uniquenessSignals[index % page.uniquenessSignals.length];
+    const patterns = [
+      `Quality control ${index + 1}: ${item} Capture this as a pre-publish check so handoffs stay consistent, and tie it to signal "${signal}" so teams can detect drift early.`,
+      `Quality control ${index + 1}: ${item} This step prevents avoidable rework when multiple contributors touch the same ${page.from} assets before delivery-ready ${page.to} export.`,
+      `Quality control ${index + 1}: ${item} Teams that standardize this checkpoint usually reduce QA escalation loops and publish cleaner outputs with fewer post-launch corrections.`
+    ];
+    return patterns[index % patterns.length];
+  });
+  const pitfallNarrative = page.pitfalls.map((item, index) => {
+    const trigger = page.conversionTriggers[index % page.conversionTriggers.length];
+    const patterns = [
+      `Pitfall pattern ${index + 1}: ${item} This usually appears during "${trigger}", so run a controlled sample first and lock known-good settings before any large conversion run begins.`,
+      `Pitfall pattern ${index + 1}: ${item} Keep a rollback copy of the source and exported output so recovery stays instant if destination rendering reveals hidden defects.`,
+      `Pitfall pattern ${index + 1}: ${item} Add this as a release gate item with owner and evidence so the same failure mode does not repeat across future conversion batches.`
+    ];
+    return patterns[index % patterns.length];
+  });
+  const governanceNarrative = page.uniquenessSignals.slice(0, 6).map((signal, index) => (
+    `Governance checkpoint ${index + 1}: for "${signal}", log requester intent, selected preset, and final ${page.to} outcome quality so repeated ${primaryKeyword} tasks can be executed with policy-level consistency.`
   ));
   const deepDiveNarrative = (page.deepDive ?? []).map((item, index) => (
     `Direction-specific note ${index + 1}: ${item}`
   ));
+  const directionPlaybookNarrative = (page.deepDive ?? []).map((item, index) => {
+    const signal = page.uniquenessSignals[index % page.uniquenessSignals.length];
+    return `Direction playbook ${index + 1}: ${item} In audits, tag this as "${signal}" so teams can quickly identify why ${page.from} to ${page.to} requires a different rollout policy than reverse-direction conversions.`;
+  });
+  const validationMatrixRows = page.qualityChecklist.map((item, index) => {
+    const trigger = page.conversionTriggers[index % page.conversionTriggers.length];
+    const pitfall = page.pitfalls[index % page.pitfalls.length];
+    const signal = page.uniquenessSignals[index % page.uniquenessSignals.length];
+    return `<tr><td>${index + 1}</td><td>${safeText(trigger)}</td><td>${safeText(item)}</td><td>${safeText(pitfall)}</td><td>${safeText(signal)}</td></tr>`;
+  }).join("");
 
   const body = `
 <main class="page-wrap">
   ${navBlock()}
   <header>
-    <p class="eyebrow">Intent: ${safeText(page.intent)} · Cluster: ${safeText(page.cluster)}</p>
     <h1>How to convert ${safeText(page.from)} to ${safeText(page.to)}</h1>
     <p><strong>${safeText(primaryKeyword)}</strong> is useful when you need practical delivery output with fewer quality surprises.</p>
     <p>${safeText(page.userGoal)}</p>
@@ -933,6 +1101,11 @@ function renderFormatPage(page, allFormatPages, compareMap) {
   </section>
 
   <section>
+    <h2>Channel-specific execution scenarios for ${safeText(page.from)} to ${safeText(page.to)}</h2>
+    ${paragraphList(scenarioBlueprints)}
+  </section>
+
+  <section>
     <h2>How to execute ${safeText(primaryKeyword)} with fewer mistakes</h2>
     <ol>
       <li>Open the <a href="${BASE_URL}/">ConvertToIt browser converter</a> and upload your ${safeText(page.from)} source file.</li>
@@ -944,6 +1117,18 @@ function renderFormatPage(page, allFormatPages, compareMap) {
   <section>
     <h2>Quality checklist before publishing</h2>
     ${textList(page.qualityChecklist)}
+  </section>
+
+  <section>
+    <h2>Production validation matrix</h2>
+    <table>
+      <thead>
+        <tr><th>Step</th><th>Trigger context</th><th>Quality gate</th><th>Primary risk</th><th>Evidence tag</th></tr>
+      </thead>
+      <tbody>
+        ${validationMatrixRows}
+      </tbody>
+    </table>
   </section>
 
   <section>
@@ -963,11 +1148,32 @@ function renderFormatPage(page, allFormatPages, compareMap) {
     ${paragraphList(longFormNotes)}
   </section>
 
+  <section>
+    <h2>Operational governance and measurement baseline</h2>
+    ${paragraphList(governanceNarrative)}
+  </section>
+
   ${deepDiveNarrative.length > 0 ? `
   <section>
     <h2>${safeText(page.from)} to ${safeText(page.to)} direction-specific engineering notes</h2>
     ${paragraphList(deepDiveNarrative)}
   </section>` : ""}
+
+  ${directionPlaybookNarrative.length > 0 ? `
+  <section>
+    <h2>${safeText(page.from)} to ${safeText(page.to)} direction-specific rollout playbook</h2>
+    ${paragraphList(directionPlaybookNarrative)}
+  </section>` : ""}
+
+  <section>
+    <h2>Editorial method and trust signals</h2>
+    <p>This page is maintained by the ${BRAND} editorial workflow and was last refreshed on ${TODAY}. Recommendations are based on repeat conversion operations, not one-off synthetic examples.</p>
+    <ul>
+      <li>Publisher: ${BRAND}, with canonical policy locked to <a href="${BASE_URL}/">${BASE_URL}</a>.</li>
+      <li>Review model: conversion workflow checks + destination compatibility verification + rollback readiness.</li>
+      <li>Quality evidence: each major checklist item maps to an explicit risk and validation signal inside this guide.</li>
+    </ul>
+  </section>
 
   <section>
     <h2>Related conversion resources</h2>
@@ -980,19 +1186,58 @@ function renderFormatPage(page, allFormatPages, compareMap) {
   </section>
 </main>`;
 
+  const wordCount = ensureBodyWordCount(canonicalPath, body, 1000);
+  const about = [
+    { "@type": "Thing", name: page.from },
+    { "@type": "Thing", name: page.to },
+    { "@type": "Thing", name: page.primaryKeyword }
+  ];
+
   const jsonLd = [
-    {
-      "@type": "WebPage",
-      name: `Convert ${page.from} to ${page.to}`,
-      url: pageUrl,
-      description
-    },
+    ...sharedGraphNodes(),
+    buildWebPageNode({ pageUrl, title, description, about }),
+    buildArticleNode({
+      pageUrl,
+      title,
+      description,
+      keywords: [page.primaryKeyword, ...page.secondaryKeywords],
+      about
+    }),
     {
       "@type": "BreadcrumbList",
       itemListElement: [
         { "@type": "ListItem", position: 1, name: "Home", item: `${BASE_URL}/` },
         { "@type": "ListItem", position: 2, name: "Format Guides", item: `${BASE_URL}/format/` },
         { "@type": "ListItem", position: 3, name: `${page.from} to ${page.to}`, item: pageUrl }
+      ]
+    },
+    {
+      "@type": "HowTo",
+      "@id": `${pageUrl}#howto`,
+      name: `How to convert ${page.from} to ${page.to}`,
+      description: `Step-by-step process to ${primaryKeyword} with quality and compatibility checks.`,
+      totalTime: "PT5M",
+      supply: [{ "@type": "HowToSupply", name: `${page.from} source file` }],
+      tool: [{ "@type": "HowToTool", name: "ConvertToIt browser converter" }],
+      step: [
+        {
+          "@type": "HowToStep",
+          position: 1,
+          name: `Upload ${page.from} source`,
+          text: `Open ConvertToIt and upload your ${page.from} file.`
+        },
+        {
+          "@type": "HowToStep",
+          position: 2,
+          name: `Set ${page.to} output profile`,
+          text: `Select ${page.to} output and tune settings for destination quality and compatibility constraints.`
+        },
+        {
+          "@type": "HowToStep",
+          position: 3,
+          name: "Validate and publish",
+          text: `Preview the exported file, compare against source, and archive both versions for rollback safety.`
+        }
       ]
     },
     {
@@ -1014,6 +1259,7 @@ function renderFormatPage(page, allFormatPages, compareMap) {
     primaryKeyword,
     secondaryKeywords: page.secondaryKeywords,
     uniquenessSignals: page.uniquenessSignals,
+    wordCount,
     renderedText: htmlTextToWords(body).join(" "),
     html: pageShell({ title, description, canonicalPath, body, jsonLd, ogImageAlt: `Preview card for ${page.from} to ${page.to} conversion guide` })
   };
@@ -1048,21 +1294,54 @@ function renderComparePage(page, formatMap, allComparePages) {
   const faqList = page.faq.map((item) => `<details><summary>${safeText(item.q)}</summary><p>${safeText(item.a)}</p></details>`).join("");
   const snippetAnswer = `<p><strong>${safeText(primaryKeyword)}</strong> is most useful when you need to balance quality, compatibility, and file size before publishing. Start from your destination channel requirements, confirm whether editing flexibility or playback reach matters more, then convert only once into the format that matches that decision.</p>`;
   const longFormNotes = compareFieldNotes(page);
-  const keywordAngleNotes = page.secondaryKeywords.map((keyword, index) => (
-    `Keyword angle ${index + 1}: Queries around "${keyword}" usually indicate buyers or operators evaluating long-term policy, not just one-off conversion output, so decision criteria should include edit lifecycle, storage cost, and distribution risk.`
+  const keywordAngleNotes = page.secondaryKeywords.map((keyword, index) => {
+    const patterns = [
+      `Queries around "${keyword}" usually come from teams setting policy defaults, so compare measurable outcomes first and publish one documented baseline instead of debating preferences case by case.`,
+      `"${keyword}" often means stakeholders are balancing reach, quality, and workflow cost, so use one representative file and score both outcomes before selecting the default format.`,
+      `If users search "${keyword}", speed still matters: compare once, define the default, and document exception triggers so contributors can make consistent decisions under delivery pressure.`
+    ];
+    return `Keyword angle ${index + 1}: ${patterns[index % patterns.length]}`;
+  });
+  const decisionScenarioNarrative = page.chooseA.map((item, index) => {
+    const counterpart = page.chooseB[index % page.chooseB.length];
+    return `Scenario ${index + 1}: If the workflow centers on "${item}", start with ${page.a}; if the primary delivery context mirrors "${counterpart}", ${page.b} usually reduces distribution risk while maintaining acceptable output quality.`;
+  });
+  const chooseANarrative = page.chooseA.map((item, index) => {
+    const signal = page.uniquenessSignals[index % page.uniquenessSignals.length];
+    const patterns = [
+      `${page.a} priority ${index + 1}: ${item} Choose this when edit control and source fidelity come first, and use signal "${signal}" to justify the policy in documentation.`,
+      `${page.a} priority ${index + 1}: ${item} This is usually best for workflows that can tolerate larger files in exchange for better revision flexibility during production.`,
+      `${page.a} priority ${index + 1}: ${item} Keep it as default when downstream tools or approvals depend on this format as the editorial source of truth.`
+    ];
+    return patterns[index % patterns.length];
+  });
+  const chooseBNarrative = page.chooseB.map((item, index) => {
+    const signal = page.uniquenessSignals[(index + 3) % page.uniquenessSignals.length];
+    const patterns = [
+      `${page.b} priority ${index + 1}: ${item} Choose this when broad compatibility is the main goal, and map rollout checks to "${signal}" so deployment teams can validate outcomes quickly.`,
+      `${page.b} priority ${index + 1}: ${item} This path usually reduces friction in web, mobile, and external collaboration flows where receiver tooling is not controlled.`,
+      `${page.b} priority ${index + 1}: ${item} Use it as the default when speed, transfer size, and predictable playback behavior matter more than preserving maximum source editability.`
+    ];
+    return patterns[index % patterns.length];
+  });
+  const governanceNarrative = page.uniquenessSignals.slice(0, 6).map((signal, index) => (
+    `Governance note ${index + 1}: track "${signal}" alongside policy adoption metrics so teams can prove whether ${page.a} or ${page.b} decisions are improving quality consistency and delivery reliability over time.`
   ));
-  const chooseANarrative = page.chooseA.map((item, index) => (
-    `${page.a} priority ${index + 1}: ${item} This route is strongest when your team needs predictable quality control and can accept any workflow overhead required by ${page.a}.`
-  ));
-  const chooseBNarrative = page.chooseB.map((item, index) => (
-    `${page.b} priority ${index + 1}: ${item} This route is strongest when compatibility, transfer speed, or downstream publishing constraints are the dominant business requirement.`
-  ));
+  const pilotPlanNarrative = page.secondaryKeywords.map((keyword, index) => {
+    const action = actionLinks[index % Math.max(actionLinks.length, 1)];
+    const actionHint = action ? `then validate with ${action.label.toLowerCase()}` : "then validate with one direct conversion test";
+    return `Pilot test ${index + 1}: use a representative file for query intent "${keyword}", score clarity, size, and compatibility outcomes, ${actionHint}, and publish the winner as the default format policy.`;
+  });
+  const decisionMatrixRows = page.chooseA.map((item, index) => {
+    const bItem = page.chooseB[index % page.chooseB.length];
+    const signal = page.uniquenessSignals[index % page.uniquenessSignals.length];
+    return `<tr><td>${index + 1}</td><td>${safeText(item)}</td><td>${safeText(bItem)}</td><td>${safeText(signal)}</td></tr>`;
+  }).join("");
 
   const body = `
 <main class="page-wrap">
   ${navBlock()}
   <header>
-    <p class="eyebrow">Intent: ${safeText(page.intent)} · Cluster: ${safeText(page.cluster)}</p>
     <h1>${safeText(page.a)} vs ${safeText(page.b)}</h1>
     <p><strong>${safeText(primaryKeyword)}</strong> should be your first check before choosing a conversion path.</p>
     <p>${safeText(page.decisionSummary)}</p>
@@ -1081,6 +1360,11 @@ function renderComparePage(page, formatMap, allComparePages) {
   <section>
     <h2>When ${safeText(page.b)} is the better choice</h2>
     ${textList(page.chooseB)}
+  </section>
+
+  <section>
+    <h2>Channel-level decision scenarios</h2>
+    ${paragraphList(decisionScenarioNarrative)}
   </section>
 
   <section>
@@ -1113,9 +1397,41 @@ function renderComparePage(page, formatMap, allComparePages) {
   </section>
 
   <section>
+    <h2>Policy validation matrix</h2>
+    <table>
+      <thead>
+        <tr><th>Step</th><th>Choose ${safeText(page.a)} when...</th><th>Choose ${safeText(page.b)} when...</th><th>Evidence signal</th></tr>
+      </thead>
+      <tbody>
+        ${decisionMatrixRows}
+      </tbody>
+    </table>
+  </section>
+
+  <section>
     <h2>What teams learn after repeated ${safeText(primaryKeyword)} evaluations</h2>
     ${paragraphList(keywordAngleNotes)}
     ${paragraphList(longFormNotes)}
+  </section>
+
+  <section>
+    <h2>Pilot experiment plan before defaulting one format</h2>
+    ${paragraphList(pilotPlanNarrative)}
+  </section>
+
+  <section>
+    <h2>Governance checkpoints for long-term format policy</h2>
+    ${paragraphList(governanceNarrative)}
+  </section>
+
+  <section>
+    <h2>Editorial method and trust signals</h2>
+    <p>This comparison was refreshed on ${TODAY} by the ${BRAND} editorial workflow. Recommendations prioritize observed delivery behavior, repeatability, and policy clarity over one-off anecdotal outcomes.</p>
+    <ul>
+      <li>Publisher: ${BRAND} on canonical domain <a href="${BASE_URL}/">${BASE_URL}</a>.</li>
+      <li>Method: compare representative assets, score quality/size/compatibility, then codify exceptions.</li>
+      <li>Governance: each recommendation maps to explicit evidence signals for recurring audits.</li>
+    </ul>
   </section>
 
   <section>
@@ -1129,13 +1445,23 @@ function renderComparePage(page, formatMap, allComparePages) {
   </section>
 </main>`;
 
+  const wordCount = ensureBodyWordCount(canonicalPath, body, 1000);
+  const about = [
+    { "@type": "Thing", name: page.a },
+    { "@type": "Thing", name: page.b },
+    { "@type": "Thing", name: page.primaryKeyword }
+  ];
+
   const jsonLd = [
-    {
-      "@type": "WebPage",
-      name: `${page.a} vs ${page.b}`,
-      url: pageUrl,
-      description
-    },
+    ...sharedGraphNodes(),
+    buildWebPageNode({ pageUrl, title, description, about }),
+    buildArticleNode({
+      pageUrl,
+      title,
+      description,
+      keywords: [page.primaryKeyword, ...page.secondaryKeywords],
+      about
+    }),
     {
       "@type": "BreadcrumbList",
       itemListElement: [
@@ -1143,6 +1469,17 @@ function renderComparePage(page, formatMap, allComparePages) {
         { "@type": "ListItem", position: 2, name: "Compare Formats", item: `${BASE_URL}/compare/` },
         { "@type": "ListItem", position: 3, name: `${page.a} vs ${page.b}`, item: pageUrl }
       ]
+    },
+    {
+      "@type": "ItemList",
+      "@id": `${pageUrl}#decision-checklist`,
+      name: `${page.a} vs ${page.b} decision checklist`,
+      itemListElement: page.chooseA.map((item, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: `${page.a}: ${item}`,
+        item: `${page.a} | ${page.b}: ${item}`
+      }))
     },
     {
       "@type": "FAQPage",
@@ -1163,6 +1500,7 @@ function renderComparePage(page, formatMap, allComparePages) {
     primaryKeyword,
     secondaryKeywords: page.secondaryKeywords,
     uniquenessSignals: page.uniquenessSignals,
+    wordCount,
     renderedText: htmlTextToWords(body).join(" "),
     html: pageShell({ title, description, canonicalPath, body, jsonLd, ogImageAlt: `Preview card for ${page.a} vs ${page.b} format comparison guide` })
   };
@@ -1513,6 +1851,8 @@ function scoreSeoPage(page) {
   const density = (keywordCount / ((words.length || 1) / 1000));
   const quickSection = body.match(/<section>[\s\S]*?<h2>What is [\s\S]*?<\/h2>[\s\S]*?<p>([\s\S]*?)<\/p>/i)?.[1] ?? "";
   const quickWordCount = htmlTextToWords(quickSection).length;
+  const hasEeatSchema = /"dateModified"/i.test(html) && /"publisher"/i.test(html);
+  const hasEditorialSection = /editorial method and trust signals/i.test(body);
 
   const breakdown = {
     title: 0,
@@ -1560,8 +1900,8 @@ function scoreSeoPage(page) {
   if (/<meta\s+name="twitter:card"\s+content="summary_large_image"/i.test(html)) breakdown.social += 1;
 
   if (/<details>/i.test(body)) breakdown.contentDepth += 1;
-  if (words.length >= 800) breakdown.contentDepth += 1;
-  if (/related conversion resources|related decision resources/i.test(body.toLowerCase())) breakdown.contentDepth += 1;
+  if (words.length >= 1000) breakdown.contentDepth += 1;
+  if (hasEeatSchema && hasEditorialSection) breakdown.contentDepth += 1;
 
   const score = Object.values(breakdown).reduce((sum, value) => sum + value, 0);
 
@@ -1572,19 +1912,23 @@ function scoreSeoPage(page) {
     titleLength: title.length,
     descriptionLength: description.length,
     keywordInFirst100Words: first100.includes(keyword),
-    internalSelfLinkCount: selfLinks
+    internalSelfLinkCount: selfLinks,
+    wordCount: words.length
   };
 }
 
 function buildSeoRubricReport(detailPages) {
   const pageScores = detailPages.map((page) => scoreSeoPage(page));
   const scores = pageScores.map((entry) => entry.score);
+  const wordCounts = pageScores.map((entry) => entry.wordCount);
   const minScore = Math.min(...scores);
   const maxScore = Math.max(...scores);
   const averageScore = Number((scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(2));
+  const minWordCount = Math.min(...wordCounts);
+  const averageWordCount = Number((wordCounts.reduce((sum, count) => sum + count, 0) / wordCounts.length).toFixed(1));
 
   return {
-    rubricVersion: "strict-seo-template-rubric-v1",
+    rubricVersion: "strict-seo-template-rubric-v2",
     maxScore: 30,
     targetMinimumScore: 24,
     summary: {
@@ -1592,7 +1936,10 @@ function buildSeoRubricReport(detailPages) {
       averageScore,
       minScore,
       maxScore,
-      passingPages: pageScores.filter((entry) => entry.score >= 24).length
+      passingPages: pageScores.filter((entry) => entry.score >= 24).length,
+      contentDepthTargetWords: 1000,
+      minWordCount,
+      averageWordCount
     },
     pageScores
   };

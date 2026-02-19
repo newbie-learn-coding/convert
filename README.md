@@ -78,12 +78,26 @@ Recommended production gate (SEO + pSEO + deploy validation):
 cp .env.local.example .env.local
 source .env.local
 bun run pseo:build
-VALIDATE_INCLUDE_BUILD=1 bun run validate:safe
-bun run check:cf-assets
+bun run check:seo-policy
+bun run check:integrity
+bun run validate:production-readiness
 bun run cf:deploy:dry-run
 bun run cf:deploy
 CF_DEPLOY_BASE_URL="https://converttoit.com" bun run cf:logs:check
 ```
+
+SEO artifact quality quick-check (after `bun run pseo:build`):
+
+```bash
+node -e 'const r=require("./public/seo/seo-rubric-report.json"); if(r.summary.minScore<24||r.summary.minWordCount<1000) throw new Error("SEO rubric gate failed"); console.log(r.summary);'
+node -e 'const r=require("./public/seo/anti-cannibalization-report.json"); if(r.summary.minMeaningfulUniquenessStrategyScore<80) throw new Error("Anti-cannibalization gate failed"); console.log(r.summary);'
+```
+
+Canonical policy for production:
+
+- `https://converttoit.com` is the only canonical/indexable host.
+- `converttoit.app` (and `www` variants) stays redirect-only to `.com`.
+- SEO artifact source of truth is `scripts/build-pseo.mjs`; generated files under `public/format`, `public/compare`, and `public/seo` must stay script-generated.
 
 ### Docker (prebuilt image)
 

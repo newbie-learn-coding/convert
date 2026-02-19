@@ -15,6 +15,22 @@ Use this with:
 - `docs/ops/cloudflare-deploy-runbook.md`
 - `docs/architecture/cloudflare-ops-endpoints.md`
 
+## 1.1) SEO artifact source of truth (must-follow)
+
+- Generator source of truth: `scripts/build-pseo.mjs`
+- Generated outputs (do not hand-edit):
+  - `public/format/**/index.html`
+  - `public/compare/**/index.html`
+  - `public/seo/keyword-intent-map.json`
+  - `public/seo/anti-cannibalization-report.json`
+  - `public/seo/seo-rubric-report.json`
+  - `public/seo/domain-policy.json`
+  - `public/seo/url-patterns.json`
+  - `public/sitemap.xml`
+- Domain policy remains fixed:
+  - canonical/indexable host: `https://converttoit.com`
+  - `converttoit.app` is redirect-only.
+
 ## 2) Parallel workflow and phase gates
 
 ### Lane A — SEO migration + indexing
@@ -50,8 +66,17 @@ source .env.local
 bun run pseo:build
 bun run check:seo-policy
 bun run check:integrity
-bun run validate:safe
-bun run check:cf-assets
+bun run validate:production-readiness
+```
+
+### 3.2.1 SEO quality gate checks (required pass)
+
+```bash
+# strict SEO rubric + depth floor
+node -e 'const r=require("./public/seo/seo-rubric-report.json"); if(r.summary.minScore<24||r.summary.minWordCount<1000) throw new Error(`SEO gate failed: minScore=${r.summary.minScore}, minWordCount=${r.summary.minWordCount}`); console.log("SEO rubric gate OK", r.summary);'
+
+# anti-cannibalization strategy floor
+node -e 'const r=require("./public/seo/anti-cannibalization-report.json"); if(r.summary.minMeaningfulUniquenessStrategyScore<80) throw new Error(`Cannibalization gate failed: minStrategy=${r.summary.minMeaningfulUniquenessStrategyScore}`); console.log("Anti-cannibalization gate OK", r.summary);'
 ```
 
 ### 3.3 Deploy gates
@@ -103,11 +128,19 @@ bash scripts/cf-rollback.sh production --yes
 
 Capture and attach these in each production release note:
 
-1. `bun run cf:deploy:dry-run` output (`SUCCESS` gate).
-2. `bun run cf:deploy` output (deployed version id).
-3. `/_ops/health` JSON snapshot (timestamp + environment).
-4. `/_ops/version` JSON snapshot (version + commit metadata).
-5. `bun run cf:logs:check` output containing:
+1. `bun run pseo:build` output with:
+   - generated page counts
+   - SEO rubric summary (`minScore`, `avg`)
+   - meaningful uniqueness strategy summary (`min`, `avg`)
+2. `public/seo/seo-rubric-report.json` summary snippet (include `minWordCount`).
+3. `public/seo/anti-cannibalization-report.json` summary snippet.
+4. `bun run check:seo-policy` output (`passed` token).
+5. `bun run check:integrity` output (`passed` token).
+6. `bun run cf:deploy:dry-run` output (`SUCCESS` gate).
+7. `bun run cf:deploy` output (deployed version id).
+8. `/_ops/health` JSON snapshot (timestamp + environment).
+9. `/_ops/version` JSON snapshot (version + commit metadata).
+10. `bun run cf:logs:check` output containing:
    - generated correlation id
    - `SUCCESS: correlation id found in Cloudflare tail output.`
 
