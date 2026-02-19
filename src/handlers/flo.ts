@@ -249,7 +249,7 @@ class floHandler implements FormatHandler {
     inputFiles: FileData[],
     inputFormat: FileFormat,
     outputFormat: FileFormat,
-    args?: string[],
+    _args?: string[],
   ): Promise<FileData[]> {
     if (!inputFiles || inputFiles.length === 0) throw "No input files";
     const file = inputFiles[0];

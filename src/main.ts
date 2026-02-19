@@ -17,13 +17,6 @@ const MAX_UPLOAD_FILES = 100;
 const MAX_SINGLE_FILE_SIZE = 256 * 1024 * 1024; // 256 MB
 const MAX_TOTAL_FILE_SIZE = 512 * 1024 * 1024; // 512 MB
 
-/** Handlers that support conversion from any formats. */
-const conversionsFromAnyInput: ConvertPathNode[] = handlers
-  .filter(h => h.supportAnyInput && h.supportedFormats)
-  .flatMap(h => h.supportedFormats!
-    .filter(f => f.to)
-    .map(f => ({ handler: h, format: f })));
-
 const ui = {
   fileInput: document.querySelector("#file-input") as HTMLInputElement,
   fileSelectArea: document.querySelector("#file-area") as HTMLDivElement,
@@ -156,11 +149,7 @@ const filterButtonList = (list: HTMLDivElement, query: string) => {
       hasExtension = format?.format.extension.toLowerCase().includes(query) ?? false;
     }
     const hasText = button.textContent?.toLowerCase().includes(query) ?? false;
-    if (!hasExtension && !hasText) {
-      button.style.display = "none";
-    } else {
-      button.style.display = "";
-    }
+    button.classList.toggle("hidden", !hasExtension && !hasText);
   }
 };
 
@@ -182,6 +171,22 @@ const searchHandler = (event: Event) => {
 // Assign search handler to both search boxes
 ui.inputSearch.oninput = searchHandler;
 ui.outputSearch.oninput = searchHandler;
+
+// Event delegation for format list button clicks
+function formatListClickHandler(event: Event) {
+  const target = event.target;
+  const button = target instanceof HTMLButtonElement
+    ? target
+    : (target instanceof HTMLElement ? target.closest("button") : null);
+  if (!(button instanceof HTMLButtonElement)) return;
+  const parent = button.parentElement;
+  const previous = parent?.querySelector("button.selected");
+  if (previous instanceof HTMLButtonElement) previous.classList.remove("selected");
+  button.classList.add("selected");
+  updateConvertButtonState();
+}
+ui.inputList.addEventListener("click", formatListClickHandler);
+ui.outputList.addEventListener("click", formatListClickHandler);
 
 // Map clicks in the file selection area to the file input element
 ui.fileSelectArea.onclick = () => {
@@ -451,6 +456,11 @@ async function buildOptionList() {
   ui.inputList.innerHTML = "";
   ui.outputList.innerHTML = "";
 
+  const inputFragment = document.createDocumentFragment();
+  const outputFragment = document.createDocumentFragment();
+  const seenInputs = new Set<string>();
+  const seenOutputs = new Set<string>();
+
   for (const handler of handlers) {
     if (!window.supportedFormatCache.has(handler.name)) {
       console.warn(`Cache miss for formats of handler "${handler.name}".`);
@@ -476,19 +486,12 @@ async function buildOptionList() {
       allOptions.push({ format, handler });
 
       // In simple mode, display each input/output format only once
+      const formatKey = `${format.mime}\0${format.format}`;
       let addToInputs = true;
       let addToOutputs = true;
       if (simpleMode) {
-        addToInputs = !Array.from(ui.inputList.children).some(child => {
-          const formatIndex = child.getAttribute("format-index") || "";
-          const currFormat = allOptions[Number.parseInt(formatIndex, 10)]?.format;
-          return currFormat?.mime === format.mime && currFormat?.format === format.format;
-        });
-        addToOutputs = !Array.from(ui.outputList.children).some(child => {
-          const formatIndex = child.getAttribute("format-index") || "";
-          const currFormat = allOptions[Number.parseInt(formatIndex, 10)]?.format;
-          return currFormat?.mime === format.mime && currFormat?.format === format.format;
-        });
+        addToInputs = !seenInputs.has(formatKey);
+        addToOutputs = !seenOutputs.has(formatKey);
         if ((!format.from || !addToInputs) && (!format.to || !addToOutputs)) continue;
       }
 
@@ -510,29 +513,22 @@ async function buildOptionList() {
       newOption.appendChild(createFormatLabelSpan("format-label-secondary", readableName));
       newOption.appendChild(createFormatLabelSpan("format-label-mime", supportingDetails));
 
-      const clickHandler = (event: Event) => {
-        const clickedButton = event.currentTarget;
-        if (!(clickedButton instanceof HTMLButtonElement)) return;
-        const targetParent = clickedButton.parentElement;
-        const previous = targetParent?.querySelector("button.selected");
-        if (previous instanceof HTMLButtonElement) previous.classList.remove("selected");
-        clickedButton.classList.add("selected");
-        updateConvertButtonState();
-      };
-
       if (format.from && addToInputs) {
         const clone = newOption.cloneNode(true) as HTMLButtonElement;
-        clone.onclick = clickHandler;
-        ui.inputList.appendChild(clone);
+        inputFragment.appendChild(clone);
+        if (simpleMode) seenInputs.add(formatKey);
       }
       if (format.to && addToOutputs) {
         const clone = newOption.cloneNode(true) as HTMLButtonElement;
-        clone.onclick = clickHandler;
-        ui.outputList.appendChild(clone);
+        outputFragment.appendChild(clone);
+        if (simpleMode) seenOutputs.add(formatKey);
       }
 
     }
   }
+
+  ui.inputList.appendChild(inputFragment);
+  ui.outputList.appendChild(outputFragment);
   window.traversionGraph.init(window.supportedFormatCache, handlers);
 
   filterButtonList(ui.inputList, ui.inputSearch.value);

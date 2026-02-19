@@ -60,7 +60,10 @@ function getCanonicalRedirectResponse(request) {
   canonicalUrl.search = url.search;
   canonicalUrl.hash = url.hash;
 
-  return withHeaders(Response.redirect(canonicalUrl.toString(), 301), DEFAULT_SECURITY_HEADERS);
+  return withHeaders(Response.redirect(canonicalUrl.toString(), 301), {
+    ...DEFAULT_SECURITY_HEADERS,
+    "cache-control": "public, max-age=86400"
+  });
 }
 
 function jsonResponse(payload, init = {}, requestMethod = "GET") {

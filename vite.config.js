@@ -14,7 +14,9 @@ export default defineConfig({
         manualChunks: {
           "vendor": ["@ffmpeg/ffmpeg", "@ffmpeg/util"],
           "media": ["@imagemagick/magick-wasm", "@flo-audio/reflo"],
-          "data": ["jszip", "pako", "mime"],
+          "data": ["jszip", "pako", "mime", "buffer", "imagetracer"],
+          "3d": ["three", "three-mesh-bvh", "three-bvh-csg"],
+          "niche": ["nbtify", "pe-library", "ts-flp", "wavefile"],
         },
         entryFileNames: "assets/[name]-[hash].js",
         chunkFileNames: "assets/[name]-[hash].js",

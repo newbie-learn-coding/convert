@@ -17,6 +17,10 @@ body {
   border: 0;
 }
 
+.hidden {
+  display: none !important;
+}
+
 #file-input {
   display: none;
 }

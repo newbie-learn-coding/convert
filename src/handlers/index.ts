@@ -1,4 +1,6 @@
 import type { FormatHandler } from "../FormatHandler.ts";
+import { lazyHandler } from "./LazyHandler.ts";
+import CommonFormats from "src/CommonFormats.ts";
 
 import canvasToBlobHandler from "./canvasToBlob.ts";
 import meydaHandler from "./meyda.ts";
@@ -13,7 +15,6 @@ import pandocHandler from "./pandoc.ts";
 import svgForeignObjectHandler from "./svgForeignObject.ts";
 import qoiFuHandler from "./qoi-fu.ts";
 import sppdHandler from "./sppd.ts";
-import threejsHandler from "./threejs.ts";
 import sqlite3Handler from "./sqlite.ts";
 import vtfHandler from "./vtf.ts";
 import mcMapHandler from "./mcmap.ts";
@@ -22,8 +23,6 @@ import qoaFuHandler from "./qoa-fu.ts";
 import pyTurtleHandler from "./pyTurtle.ts";
 import { fromJsonHandler, toJsonHandler } from "./json.ts";
 import nbtHandler from "./nbt.ts";
-import peToZipHandler from "./petozip.ts";
-import flptojsonHandler from "./flptojson.ts";
 import floHandler from "./flo.ts";
 import cgbiToPngHandler from "./cgbi-to-png.ts";
 import batToExeHandler from "./batToExe.ts";
@@ -45,7 +44,32 @@ try { handlers.push(new envelopeHandler()) } catch (_) { };
 try { handlers.push(new svgForeignObjectHandler()) } catch (_) { };
 try { handlers.push(new qoiFuHandler()) } catch (_) { };
 try { handlers.push(new sppdHandler()) } catch (_) { };
-try { handlers.push(new threejsHandler()) } catch (_) { };
+
+// Lazy-loaded: Three.js (~618KB) - only needed for GLB→image conversion
+try {
+  handlers.push(lazyHandler(
+    {
+      name: "threejs",
+      supportedFormats: [
+        {
+          name: "GL Transmission Format Binary",
+          format: "glb",
+          extension: "glb",
+          mime: "model/gltf-binary",
+          from: true,
+          to: false,
+          internal: "glb",
+          category: "model"
+        },
+        CommonFormats.PNG.supported("png", false, true),
+        CommonFormats.JPEG.supported("jpeg", false, true),
+        CommonFormats.WEBP.supported("webp", false, true)
+      ]
+    },
+    () => import("./threejs.ts")
+  ));
+} catch (_) { };
+
 try { handlers.push(new sqlite3Handler()) } catch (_) { };
 try { handlers.push(new vtfHandler()) } catch (_) { };
 try { handlers.push(new mcMapHandler()) } catch (_) { };
@@ -55,8 +79,61 @@ try { handlers.push(new pyTurtleHandler()) } catch (_) { };
 try { handlers.push(new fromJsonHandler()) } catch (_) { };
 try { handlers.push(new toJsonHandler()) } catch (_) { };
 try { handlers.push(new nbtHandler()) } catch (_) { };
-try { handlers.push(new peToZipHandler()) } catch (_) { };
-try { handlers.push(new flptojsonHandler()) } catch (_) { };
+
+// Lazy-loaded: pe-library + buffer (~50KB) - only needed for EXE/DLL→ZIP
+try {
+  handlers.push(lazyHandler(
+    {
+      name: "petozip",
+      supportedFormats: [
+        {
+          name: "Windows Executable",
+          format: "exe",
+          extension: "exe",
+          mime: "application/vnd.microsoft.portable-executable",
+          from: true,
+          to: false,
+          internal: "exe"
+        },
+        {
+          name: "Dynamic-Link Library",
+          format: "dll",
+          extension: "dll",
+          mime: "application/vnd.microsoft.portable-executable",
+          from: true,
+          to: false,
+          internal: "dll"
+        },
+        CommonFormats.ZIP.builder("zip").allowTo().markLossless()
+      ]
+    },
+    () => import("./petozip.ts")
+  ));
+} catch (_) { };
+
+// Lazy-loaded: ts-flp + buffer (~30KB) - only needed for FLP→JSON
+try {
+  handlers.push(lazyHandler(
+    {
+      name: "flptojson",
+      supportedFormats: [
+        {
+          name: "FL Studio Project File",
+          format: "flp",
+          extension: "flp",
+          mime: "application/octet-stream",
+          from: true,
+          to: false,
+          internal: "flp",
+          category: "audio",
+        },
+        CommonFormats.JSON.supported("json", false, true)
+      ]
+    },
+    () => import("./flptojson.ts")
+  ));
+} catch (_) { };
+
 try { handlers.push(new floHandler()) } catch (_) { };
 try { handlers.push(new cgbiToPngHandler()) } catch (_) { };
 try { handlers.push(new batToExeHandler()) } catch (_) { };

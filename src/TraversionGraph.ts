@@ -46,7 +46,6 @@ export class TraversionGraph {
         this.disableSafeChecks = disableSafeChecks;
     }
     private disableSafeChecks: boolean;
-    private handlers: FormatHandler[] = [];
     private nodes: Node[] = [];
     private edges: Edge[] = [];
     private nodeIndexMap: Map<string, number> = new Map();
@@ -126,7 +125,6 @@ export class TraversionGraph {
      * @param strictCategories If true, the algorithm will apply category change costs more strictly, even when formats share categories. This can lead to more accurate pathfinding at the cost of potentially longer paths and increased search time. If false, category change costs will only be applied when formats do not share any categories, allowing for more flexible pathfinding that may yield shorter paths but with less nuanced cost calculations.
      */
     public init(supportedFormatCache: Map<string, FileFormat[]>, handlers: FormatHandler[], strictCategories: boolean = false) {
-        this.handlers = handlers;
         this.nodes.length = 0;
         this.edges.length = 0;
         this.nodeIndexMap.clear();
@@ -190,9 +188,6 @@ export class TraversionGraph {
         handlerIndex: number
     ) {
         let cost = DEPTH_COST;
-
-        const handlerPairs = new Map<string, string>(this.categoryChangeCosts.filter(c => c.handler)
-        .map(c => [`${c.from}->${c.to}`, c.handler] as [string, string]));
 
         const fromCategory = from.format.category || from.format.mime.split("/")[0];
         const toCategory = to.format.category || to.format.mime.split("/")[0];

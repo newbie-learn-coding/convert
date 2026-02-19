@@ -22,7 +22,7 @@ export class toJsonHandler implements FormatHandler {
   async doConvert (
     inputFiles: FileData[],
     inputFormat: FileFormat,
-    outputFormat: FileFormat
+    _outputFormat: FileFormat
   ): Promise<FileData[]> {
     return inputFiles.map(file => {
       const name = file.name.split(".")[0]+".json";
@@ -88,7 +88,7 @@ export class fromJsonHandler {
 
   async doConvert (
     inputFiles: FileData[],
-    inputFormat: FileFormat,
+    _inputFormat: FileFormat,
     outputFormat: FileFormat
   ): Promise<FileData[]> {
     return inputFiles.map(file => {
