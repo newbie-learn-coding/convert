@@ -121,9 +121,7 @@ DEPLOY_ARGS=(
   --var "ENVIRONMENT:$ENVIRONMENT_LABEL"
 )
 
-if [ "$TARGET_ENV" = "production" ]; then
-  DEPLOY_ARGS+=(--env "")
-else
+if [ "$TARGET_ENV" != "production" ]; then
   DEPLOY_ARGS+=(--env "$TARGET_ENV")
 fi
 

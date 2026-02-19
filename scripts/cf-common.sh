@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WRANGLER_CONFIG_PATH="${WRANGLER_CONFIG_PATH:-$ROOT_DIR/wrangler.toml}"
 CF_ENV_FILE="${CF_ENV_FILE:-$ROOT_DIR/.env.local}"
+DEFAULT_WRANGLER_VERSION="${DEFAULT_WRANGLER_VERSION:-4.0.0}"
 
 load_cf_env_file() {
   if [ -f "$CF_ENV_FILE" ]; then
@@ -25,6 +26,8 @@ ensure_wrangler_config() {
 }
 
 load_cf_env_file
+CF_WRANGLER_VERSION="${CF_WRANGLER_VERSION:-$DEFAULT_WRANGLER_VERSION}"
+WRANGLER_PACKAGE="wrangler@${CF_WRANGLER_VERSION}"
 
 wrangler_cmd() {
   if [ -x "$ROOT_DIR/node_modules/.bin/wrangler" ]; then
@@ -33,12 +36,12 @@ wrangler_cmd() {
   fi
 
   if command -v npx >/dev/null 2>&1; then
-    npx --yes wrangler@4 "$@"
+    npx --yes "$WRANGLER_PACKAGE" "$@"
     return
   fi
 
   if command -v bunx >/dev/null 2>&1; then
-    bunx --bun wrangler@4 "$@"
+    bunx --bun "$WRANGLER_PACKAGE" "$@"
     return
   fi
 

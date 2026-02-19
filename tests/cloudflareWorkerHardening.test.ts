@@ -59,6 +59,10 @@ describe("Cloudflare worker hardening", () => {
   test("enforces OPS_LOG_TOKEN on log-ping", async () => {
     const env = createEnv({ OPS_LOG_TOKEN: "super-secret-token" });
     const unauthorized = await worker.fetch(new Request("https://converttoit.com/_ops/log-ping"), env);
+    const queryTokenAttempt = await worker.fetch(
+      new Request("https://converttoit.com/_ops/log-ping?token=super-secret-token"),
+      env
+    );
     const authorized = await worker.fetch(
       new Request("https://converttoit.com/_ops/log-ping", {
         headers: { "x-ops-token": "super-secret-token" }
@@ -67,6 +71,7 @@ describe("Cloudflare worker hardening", () => {
     );
 
     expect(unauthorized.status).toBe(401);
+    expect(queryTokenAttempt.status).toBe(401);
     expect(authorized.status).toBe(200);
   });
 

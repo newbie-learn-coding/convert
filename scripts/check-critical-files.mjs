@@ -37,6 +37,8 @@ function assertFileExists(relativePath) {
 
 const requiredFiles = [
   "index.html",
+  ".github/workflows/cloudflare-deploy.yml",
+  ".github/workflows/pages.yml",
   "public/robots.txt",
   "public/sitemap.xml",
   "public/privacy.html",
@@ -54,7 +56,10 @@ const requiredFiles = [
   "cloudflare/worker/index.mjs",
   "wrangler.toml.example",
   "scripts/build-pseo.mjs",
+  "scripts/cf-common.sh",
   "scripts/check-cloudflare-asset-sizes.mjs",
+  "scripts/cf-post-deploy-gate.sh",
+  "scripts/validate-production-readiness.sh",
   "scripts/validate-safe.sh"
 ];
 
@@ -139,13 +144,98 @@ for (const requiredWorkerToken of [
   "x-robots-tag",
   "OPS_ALLOWED_METHODS",
   "method_not_allowed",
+  "x-ops-token",
   "MAX_CORRELATION_ID_LENGTH = 64",
   "CANONICAL_ORIGIN = \"https://converttoit.com\"",
   "\"converttoit.app\"",
+  "\"www.converttoit.com\"",
   "Response.redirect(canonicalUrl.toString(), 301)"
 ]) {
   if (!workerSource.includes(requiredWorkerToken)) {
     errors.push(`cloudflare/worker/index.mjs: missing hardening token -> ${requiredWorkerToken}`);
+  }
+}
+if (workerSource.includes("searchParams.get(\"token\")")) {
+  errors.push("cloudflare/worker/index.mjs: query-string token auth must not be supported");
+}
+
+for (const workflowFile of [".github/workflows/cloudflare-deploy.yml", ".github/workflows/pages.yml"]) {
+  const workflowSource = readFile(workflowFile);
+  for (const requiredToken of [
+    "Production readiness gates (canonical + deploy)",
+    "bun run validate:production-readiness"
+  ]) {
+    if (!workflowSource.includes(requiredToken)) {
+      errors.push(`${workflowFile}: missing workflow gate token -> ${requiredToken}`);
+    }
+  }
+}
+
+const cloudflareDeployWorkflow = readFile(".github/workflows/cloudflare-deploy.yml");
+for (const requiredToken of [
+  "Post-deploy production ops gate",
+  "if: env.TARGET_ENV == 'production'",
+  "CF_DEPLOY_BASE_URL: https://converttoit.com",
+  "bash scripts/cf-post-deploy-gate.sh production --base-url \"$CF_DEPLOY_BASE_URL\"",
+  "Rollback production deploy on post-deploy gate failure",
+  "steps.deploy_step.outcome == 'success'",
+  "steps.post_deploy_gate.outcome == 'failure'",
+  "bash scripts/cf-rollback.sh production --yes"
+]) {
+  if (!cloudflareDeployWorkflow.includes(requiredToken)) {
+    errors.push(`.github/workflows/cloudflare-deploy.yml: missing post-deploy ops gate token -> ${requiredToken}`);
+  }
+}
+
+const deployScriptSource = readFile("scripts/deploy.sh");
+for (const requiredToken of [
+  "if [ \"$TARGET_ENV\" != \"production\" ]; then",
+  "DEPLOY_ARGS+=(--env \"$TARGET_ENV\")"
+]) {
+  if (!deployScriptSource.includes(requiredToken)) {
+    errors.push(`scripts/deploy.sh: missing deploy hardening token -> ${requiredToken}`);
+  }
+}
+if (deployScriptSource.includes("DEPLOY_ARGS+=(--env \"\")")) {
+  errors.push("scripts/deploy.sh: production deploy must not pass --env \"\"");
+}
+
+const cfCommonSource = readFile("scripts/cf-common.sh");
+for (const requiredToken of [
+  "DEFAULT_WRANGLER_VERSION",
+  "CF_WRANGLER_VERSION",
+  "WRANGLER_PACKAGE=\"wrangler@${CF_WRANGLER_VERSION}\""
+]) {
+  if (!cfCommonSource.includes(requiredToken)) {
+    errors.push(`scripts/cf-common.sh: missing wrangler pinning token -> ${requiredToken}`);
+  }
+}
+if (cfCommonSource.includes("wrangler@4")) {
+  errors.push("scripts/cf-common.sh: floating wrangler@4 pin must not be used");
+}
+
+const postDeployGateScript = readFile("scripts/cf-post-deploy-gate.sh");
+for (const requiredToken of [
+  "CANONICAL_HOST=\"converttoit.com\"",
+  "/_ops/health",
+  "/_ops/version",
+  "cf-log-check.sh\" production --base-url \"$NORMALIZED_BASE_URL\""
+]) {
+  if (!postDeployGateScript.includes(requiredToken)) {
+    errors.push(`scripts/cf-post-deploy-gate.sh: missing post-deploy check token -> ${requiredToken}`);
+  }
+}
+
+const productionReadinessScript = readFile("scripts/validate-production-readiness.sh");
+for (const requiredToken of [
+  "bun run check:seo-policy",
+  "bun run check:integrity",
+  "bun run test:ops-hardening",
+  "bun run build",
+  "bun run check:cf-assets"
+]) {
+  if (!productionReadinessScript.includes(requiredToken)) {
+    errors.push(`scripts/validate-production-readiness.sh: missing gate command -> ${requiredToken}`);
   }
 }
 

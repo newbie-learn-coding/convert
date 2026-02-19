@@ -56,8 +56,8 @@ echo -n "$CF_OPS_LOG_TOKEN" | bunx --bun wrangler@4 secret put OPS_LOG_TOKEN --c
 Domain policy guardrails (enforced in `scripts/deploy.sh` by default):
 
 - Canonical domain is `https://converttoit.com` only.
-- `converttoit.app` is redirect-only and must not be used as canonical/sitemap/hreflang/internal-link target.
-- Keep host-level redirect matrix in `cloudflare/redirects/converttoit.app/_redirects` (or equivalent zone rules).
+- `converttoit.app` is redirect-only and must never be used as a canonical target.
+- Keep host-level redirect rules in the Cloudflare redirect rules file for the `.app` zone (or equivalent zone rules).
 - Keep `public/_redirects` path-relative only (Workers assets reject host-based rules).
 - Preflight checks run automatically:
   - `node scripts/check-seo-domain-policy.mjs`
@@ -67,6 +67,7 @@ Domain policy guardrails (enforced in `scripts/deploy.sh` by default):
 Dry run (build + bundle verification):
 
 ```bash
+bun run validate:production-readiness
 bash scripts/deploy.sh production --dry-run
 ```
 
@@ -87,6 +88,11 @@ Emergency bypass (not recommended):
 ```bash
 bash scripts/deploy.sh production --skip-policy-checks
 ```
+
+GitHub workflow groundwork:
+
+- `.github/workflows/cloudflare-deploy.yml` and `.github/workflows/pages.yml` both run `bun run validate:production-readiness` in their verify jobs.
+- This keeps canonical/domain controls and Cloudflare asset limits as mandatory merge gates.
 
 ## 4) Post-deploy verification
 

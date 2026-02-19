@@ -91,8 +91,7 @@ function requireOpsToken(request, env) {
   }
 
   const headerToken = request.headers.get("x-ops-token");
-  const queryToken = new URL(request.url).searchParams.get("token");
-  return headerToken === expected || queryToken === expected;
+  return headerToken === expected;
 }
 
 function makeRequestId(request) {

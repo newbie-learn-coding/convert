@@ -41,8 +41,8 @@ jobs:
       - name: Install dependencies
         run: bun i --frozen-lockfile
 
-      - name: Deterministic validation suite
-        run: bun run validate:ci
+      - name: Production readiness gates (canonical + deploy)
+        run: bun run validate:production-readiness
 
   deploy:
     name: Deploy to Cloudflare
@@ -96,4 +96,21 @@ jobs:
           fi
 
       - name: Deploy
+        id: deploy_step
         run: bash scripts/deploy.sh "${TARGET_ENV}"
+
+      - name: Post-deploy production ops gate
+        id: post_deploy_gate
+        if: env.TARGET_ENV == 'production'
+        env:
+          CF_DEPLOY_BASE_URL: https://converttoit.com
+        run: bash scripts/cf-post-deploy-gate.sh production --base-url "$CF_DEPLOY_BASE_URL"
+
+      - name: Rollback production deploy on post-deploy gate failure
+        if: ${{ always() && env.TARGET_ENV == 'production' && steps.deploy_step.outcome == 'success' && steps.post_deploy_gate.outcome == 'failure' }}
+        run: |
+          set -euo pipefail
+          echo "::warning::Production post-deploy gate failed after deploy. Starting automatic rollback."
+          echo "[rollback] Trigger reason: post-deploy gate failed after successful production deploy."
+          bash scripts/cf-rollback.sh production --yes
+          echo "[rollback] Automatic rollback finished."
