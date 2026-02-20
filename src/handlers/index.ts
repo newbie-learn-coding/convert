@@ -24,7 +24,7 @@ import batToExeHandler from "./batToExe.ts";
 import textEncodingHandler from "./textEncoding.ts";
 import sb3ToHtmlHandler from "./sb3tohtml.ts";
 import lzhHandler from "./lzh.ts";
-import espeakngHandler from "./espeakng.js"
+import espeakngHandler from "./espeakng"
 import textToShellHandler from "./texttoshell.ts";
 import batchHandler from "./batch.ts";
 
