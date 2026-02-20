@@ -17,6 +17,7 @@ declare global {
 const server = Bun.serve({
   async fetch (req) {
     let path = new URL(req.url).pathname.replace("/convert/", "") || "index.html";
+    path = path.replaceAll("..", "");
     if (path.startsWith("/test/")) path = "../test/resources/" + path.slice(6);
     const file = Bun.file(`${__dirname}/../dist/${path}`);
     if (!(await file.exists())) return new Response("Not Found", { status: 404 });
@@ -32,12 +33,15 @@ const browser = await puppeteer.launch({
 });
 const page = await browser.newPage();
 
-await page.goto("http://localhost:8080/convert/index.html");
-await page.waitForFunction(
-  () => typeof window.tryConvertByTraversing === "function"
-    && (window.traversionGraph as { getData?: () => { nodes?: unknown[] } })?.getData?.().nodes?.length > 0,
-  { timeout: 180000 }
-);
+await Promise.all([
+  new Promise(resolve => {
+    page.on("console", msg => {
+      const text = msg.text();
+      if (text === "Built initial format list.") resolve(null);
+    });
+  }),
+  page.goto("http://localhost:8080/convert/index.html")
+]);
 
 console.log("Setup finished.");
 
@@ -75,92 +79,132 @@ function attemptConversion (
 //                         START OF TESTS
 // ==================================================================
 
-function expectSuccessfulRoute(
-  conversion: Awaited<ReturnType<typeof attemptConversion>>,
-  fromMime: string,
-  toMime: string
-) {
-  expect(conversion).not.toBeNull();
-  const mimes = conversion!.path.map(step => step.format.mime);
-  expect(mimes[0]).toBe(fromMime);
-  expect(mimes[mimes.length - 1]).toBe(toMime);
-  expect(conversion!.files.length).toBeGreaterThan(0);
-}
+test("png → jpeg", async () => {
 
-test("png → jpeg succeeds with a valid route", async () => {
   const conversion = await attemptConversion(
     ["colors_50x50.png"],
     CommonFormats.PNG,
     CommonFormats.JPEG
   );
-  expectSuccessfulRoute(conversion, "image/png", "image/jpeg");
+
+  expect(conversion).toBeTruthy();
+  expect(conversion!.path.map(c => c.format.mime)).toEqual(["image/png", "image/jpeg"]);
+
 }, { timeout: 60000 });
 
-test("png → webp succeeds with a valid route", async () => {
-  const conversion = await attemptConversion(
-    ["colors_50x50.png"],
-    CommonFormats.PNG,
-    CommonFormats.WEBP
-  );
-  expectSuccessfulRoute(conversion, "image/png", "image/webp");
-}, { timeout: 60000 });
+test("png → svg", async () => {
 
-test("jpeg → png succeeds with a valid route", async () => {
-  const conversion = await attemptConversion(
-    ["colors_50x50.png"],
-    CommonFormats.JPEG,
-    CommonFormats.PNG
-  );
-  expectSuccessfulRoute(conversion, "image/jpeg", "image/png");
-}, { timeout: 60000 });
-
-test("mp3 → wav succeeds with a valid route", async () => {
-  const conversion = await attemptConversion(
-    ["gaster.mp3"],
-    CommonFormats.MP3,
-    CommonFormats.WAV
-  );
-  expectSuccessfulRoute(conversion, "audio/mpeg", "audio/wav");
-}, { timeout: 60000 });
-
-test("docx → html succeeds with a valid route", async () => {
-  const conversion = await attemptConversion(
-    ["word.docx"],
-    CommonFormats.DOCX,
-    CommonFormats.HTML
-  );
-  expectSuccessfulRoute(
-    conversion,
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "text/html"
-  );
-}, { timeout: 60000 });
-
-test("png → svg gracefully returns no route when unavailable", async () => {
   const conversion = await attemptConversion(
     ["colors_50x50.png"],
     CommonFormats.PNG,
     CommonFormats.SVG
   );
-  expect(conversion).toBeNull();
+
+  expect(conversion).toBeTruthy();
+  expect(conversion!.path.map(c => c.format.mime)).toEqual(["image/png", "image/svg+xml"]);
+
 }, { timeout: 60000 });
 
-test("mp4 → png gracefully returns no route when unavailable", async () => {
+test("mp4 → apng", async () => {
+
   const conversion = await attemptConversion(
     ["doom.mp4"],
     CommonFormats.MP4,
-    CommonFormats.PNG
+    CommonFormats.PNG.builder("apng").withFormat("apng")
   );
-  expect(conversion).toBeNull();
+
+  expect(conversion).toBeTruthy();
+  expect(conversion!.path.map(c => c.format.format)).toEqual(["mp4", "apng"]);
+  expect(conversion?.files.length).toBe(1);
+
 }, { timeout: 60000 });
 
-test("md → docx gracefully returns no route when unavailable", async () => {
+test("png → mp4", async () => {
+
+  const conversion = await attemptConversion(
+    ["colors_50x50.png"],
+    CommonFormats.PNG,
+    CommonFormats.MP4
+  );
+
+  expect(conversion).toBeTruthy();
+  expect(conversion!.path.map(c => c.format.mime)).toEqual(["image/png", "video/mp4"]);
+
+}, { timeout: 60000 });
+
+test("png → wav → mp3", async () => {
+
+  const conversion = await attemptConversion(
+    ["colors_50x50.png"],
+    CommonFormats.PNG,
+    CommonFormats.MP3
+  );
+
+  expect(conversion).toBeTruthy();
+  expect(conversion!.path.map(c => c.format.mime)).toEqual(["image/png", "audio/wav", "audio/mpeg"]);
+
+}, { timeout: 60000 });
+
+test("mp3 → png → gif", async () => {
+
+  const conversion = await attemptConversion(
+    ["gaster.mp3"],
+    CommonFormats.MP3,
+    CommonFormats.GIF
+  );
+
+  expect(conversion).toBeTruthy();
+  expect(conversion!.path.map(c => c.format.mime)).toEqual(["audio/mpeg", "image/png", "image/gif"]);
+
+}, { timeout: 60000 });
+
+test("docx → html → svg → png → pdf", async () => {
+
+  const conversion = await attemptConversion(
+    ["word.docx"],
+    CommonFormats.DOCX,
+    CommonFormats.PDF
+  );
+
+  expect(conversion).toBeTruthy();
+  expect(conversion!.path.map(c => c.format.mime)).toEqual([
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/html", "image/svg+xml", "image/png", "application/pdf"
+  ]);
+  const fileSize = Object.values(conversion!.files[0].bytes).length;
+  expect(fileSize).toBeWithin(55000, 65000);
+
+}, { timeout: 60000 });
+
+test("md → docx", async () => {
+
   const conversion = await attemptConversion(
     ["markdown.md"],
     CommonFormats.MD,
     CommonFormats.DOCX
   );
-  expect(conversion).toBeNull();
+
+  expect(conversion).toBeTruthy();
+  expect(conversion!.path.map(c => c.format.mime)).toEqual([
+    "text/markdown", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  ]);
+
+}, { timeout: 60000 });
+
+test("txt → wav → flac", async () => {
+
+  const conversion = await attemptConversion(
+    ["markdown.md"],
+    CommonFormats.TEXT,
+    CommonFormats.FLAC
+  );
+
+  expect(conversion).toBeTruthy();
+  expect(conversion!.path.map(c => c.format.mime)).toEqual([
+    "text/plain", "audio/wav", "audio/flac"
+  ]);
+  expect(conversion!.path[1].handler.name).toBe("espeakng");
+
 }, { timeout: 60000 });
 
 // ==================================================================

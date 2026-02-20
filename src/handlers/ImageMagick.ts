@@ -43,7 +43,7 @@ class ImageMagickHandler implements FormatHandler {
         format: formatName === "jpg" ? "jpeg" : formatName,
         extension: formatName,
         mime: normalizeMimeType(mimeType),
-        from: format.supportsReading,
+        from: mimeType === "application/pdf" ? false : format.supportsReading,
         to: format.supportsWriting,
         internal: format.format,
         category: mimeType.split("/")[0],

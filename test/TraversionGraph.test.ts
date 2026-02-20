@@ -42,160 +42,6 @@ for (const handler of handlers) {
 
 console.log("Testing...\n");
 test('should find the optimal path from image to audio\n', async () => {
-  const graph = new TraversionGraph(true);
-  graph.init(supportedFormatCache, handlers);
-
-  const paths = graph.searchPath(
-    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
-    new ConvertPathNode(handlers.find(h => h.name === "ffmpeg")!, CommonFormats.MP3.supported("mp3", true, true, true)),
-    true
-  );
-  let extractedPaths = [];
-  for await (const path of paths) 
-    extractedPaths.push(path);
-  expect(extractedPaths.length).toBeGreaterThan(0);
-  const optimalPath = extractedPaths[0];
-  expect(optimalPath[0].handler.name).toBe("canvasToBlob");
-  expect(optimalPath[optimalPath.length - 1].handler.name).toBe("ffmpeg");
-});
-
-test('should find the optimal path from image to audio in strict graph\n', async () => {
-  const graph = new TraversionGraph(true);
-  graph.init(supportedFormatCache, handlers, true);
-
-  const paths = graph.searchPath(
-    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
-    new ConvertPathNode(handlers.find(h => h.name === "ffmpeg")!, CommonFormats.MP3.supported("mp3", true, true, true)),
-    true
-  );
-  let extractedPaths = [];
-  for await (const path of paths) 
-    extractedPaths.push(path);
-  expect(extractedPaths.length).toBeGreaterThan(0);
-  const optimalPath = extractedPaths[0];
-  expect(optimalPath[0].handler.name).toBe("canvasToBlob");
-  expect(optimalPath[optimalPath.length - 1].handler.name).toBe("ffmpeg");
-});
-
-
-test('add category change costs should affect pathfinding\n', async () => {
-  const graph = new TraversionGraph(true);
-  graph.init(supportedFormatCache, handlers);
-
-  const paths = graph.searchPath(
-    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
-    new ConvertPathNode(handlers.find(h => h.name === "ffmpeg")!, CommonFormats.MP3.supported("mp3", true, true, true)),
-    true
-  );
-  let extractedPaths = [];
-  for await (const path of paths) 
-    extractedPaths.push(path);
-
-    
-  graph.addCategoryChangeCost("image", "audio", 100);
-  graph.init(supportedFormatCache, handlers);
-  const newPaths = graph.searchPath(
-    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
-    new ConvertPathNode(handlers.find(h => h.name === "ffmpeg")!, CommonFormats.MP3.supported("mp3", true, true, true)),
-    true
-  );
-  let extractedNewPaths = [];
-  for await (const path of newPaths) 
-    extractedNewPaths.push(path);
-  expect(extractedPaths.length).toBeGreaterThan(0);
-  expect(extractedNewPaths.length).toBeGreaterThan(0);
-  expect(extractedNewPaths).not.toEqual(extractedPaths);
-});
-
-test('remove category change costs should affect pathfinding\n', async () => {
-  const graph = new TraversionGraph(true);
-  graph.updateCategoryChangeCost("image", "audio", 100);
-  graph.init(supportedFormatCache, handlers);
-
-  const paths = graph.searchPath(
-    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
-    new ConvertPathNode(handlers.find(h => h.name === "ffmpeg")!, CommonFormats.MP3.supported("mp3", true, true, true)),
-    true
-  );
-  let extractedPaths = [];
-  for await (const path of paths) 
-    extractedPaths.push(path);
-
-    
-  graph.removeCategoryChangeCost("image", "audio");
-  graph.init(supportedFormatCache, handlers);
-  const newPaths = graph.searchPath(
-    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
-    new ConvertPathNode(handlers.find(h => h.name === "ffmpeg")!, CommonFormats.MP3.supported("mp3", true, true, true)),
-    true
-  );
-  let extractedNewPaths = [];
-  for await (const path of newPaths) 
-    extractedNewPaths.push(path);
-  expect(extractedPaths.length).toBeGreaterThan(0);
-  expect(extractedNewPaths.length).toBeGreaterThan(0);
-  expect(extractedNewPaths).not.toEqual(extractedPaths);
-});
-
-test('add adaptive category costs should affect pathfinding\n', async () => {
-  const graph = new TraversionGraph(true);
-  graph.init(supportedFormatCache, handlers);
-
-  const paths = graph.searchPath(
-    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
-    new ConvertPathNode(handlers.find(h => h.name === "ffmpeg")!, CommonFormats.MP3.supported("mp3", true, true, true)),
-    true
-  );
-  let extractedPaths = [];
-  for await (const path of paths) 
-    extractedPaths.push(path);
-
-    
-  graph.addCategoryAdaptiveCost(["image", "audio"], 20000);
-  graph.init(supportedFormatCache, handlers);
-  const newPaths = graph.searchPath(
-    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
-    new ConvertPathNode(handlers.find(h => h.name === "ffmpeg")!, CommonFormats.MP3.supported("mp3", true, true, true)),
-    true
-  );
-  let extractedNewPaths = [];
-  for await (const path of newPaths) 
-    extractedNewPaths.push(path);
-  expect(extractedPaths.length).toBeGreaterThan(0);
-  expect(extractedNewPaths.length).toBeGreaterThan(0);
-  expect(extractedNewPaths).not.toEqual(extractedPaths);
-});
-
-test('remove adaptive category costs should affect pathfinding\n', async () => {
-  const graph = new TraversionGraph(true);
-  graph.init(supportedFormatCache, handlers);
-
-  const paths = graph.searchPath(
-    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
-    new ConvertPathNode(handlers.find(h => h.name === "ffmpeg")!, CommonFormats.MP3.supported("mp3", true, true, true)),
-    true
-  );
-  let extractedPaths = [];
-  for await (const path of paths) 
-    extractedPaths.push(path);
-
-    
-  graph.removeCategoryAdaptiveCost(["image", "video", "audio"]);
-  graph.init(supportedFormatCache, handlers);
-  const newPaths = graph.searchPath(
-    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
-    new ConvertPathNode(handlers.find(h => h.name === "ffmpeg")!, CommonFormats.MP3.supported("mp3", true, true, true)),
-    true
-  );
-  let extractedNewPaths = [];
-  for await (const path of newPaths) 
-    extractedNewPaths.push(path);
-  expect(extractedPaths.length).toBeGreaterThan(0);
-  expect(extractedNewPaths.length).toBeGreaterThan(0);
-  expect(extractedNewPaths[0]).not.toEqual(extractedPaths[0]);
-});
-
-test('enabling safe checks should affect pathfinding\n', async () => {
   const graph = new TraversionGraph();
   graph.init(supportedFormatCache, handlers);
 
@@ -205,10 +51,135 @@ test('enabling safe checks should affect pathfinding\n', async () => {
     true
   );
   let extractedPaths = [];
-  for await (const path of paths) 
+  for await (const path of paths)
+    extractedPaths.push(path);
+  expect(extractedPaths.length).toBeGreaterThan(0);
+  const optimalPath = extractedPaths[0];
+  expect(optimalPath[0].handler.name).toBe("canvasToBlob");
+  expect(optimalPath[optimalPath.length - 1].handler.name).toBe("ffmpeg");
+});
+
+test('should find the optimal path from image to audio in strict graph\n', async () => {
+  const graph = new TraversionGraph();
+  graph.init(supportedFormatCache, handlers, true);
+
+  const paths = graph.searchPath(
+    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
+    new ConvertPathNode(handlers.find(h => h.name === "ffmpeg")!, CommonFormats.MP3.supported("mp3", true, true, true)),
+    true
+  );
+  let extractedPaths = [];
+  for await (const path of paths)
+    extractedPaths.push(path);
+  expect(extractedPaths.length).toBeGreaterThan(0);
+  const optimalPath = extractedPaths[0];
+  expect(optimalPath[0].handler.name).toBe("canvasToBlob");
+  expect(optimalPath[optimalPath.length - 1].handler.name).toBe("ffmpeg");
+});
+
+
+test('add category change costs should affect pathfinding\n', async () => {
+  const graph = new TraversionGraph();
+  graph.init(supportedFormatCache, handlers);
+
+  const paths = graph.searchPath(
+    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
+    new ConvertPathNode(handlers.find(h => h.name === "ffmpeg")!, CommonFormats.MP3.supported("mp3", true, true, true)),
+    true
+  );
+  let extractedPaths = [];
+  for await (const path of paths)
     extractedPaths.push(path);
 
-    
+
+  graph.addCategoryChangeCost("image", "audio", 100);
+  graph.init(supportedFormatCache, handlers);
+  const newPaths = graph.searchPath(
+    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
+    new ConvertPathNode(handlers.find(h => h.name === "ffmpeg")!, CommonFormats.MP3.supported("mp3", true, true, true)),
+    true
+  );
+  let extractedNewPaths = [];
+  for await (const path of newPaths)
+    extractedNewPaths.push(path);
+  expect(extractedPaths.length).toBeGreaterThan(0);
+  expect(extractedNewPaths.length).toBeGreaterThan(0);
+  expect(extractedNewPaths).not.toEqual(extractedPaths);
+});
+
+test('remove category change costs should affect pathfinding\n', async () => {
+  const graph = new TraversionGraph();
+  graph.updateCategoryChangeCost("image", "audio", 100);
+  graph.init(supportedFormatCache, handlers);
+
+  const paths = graph.searchPath(
+    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
+    new ConvertPathNode(handlers.find(h => h.name === "ffmpeg")!, CommonFormats.MP3.supported("mp3", true, true, true)),
+    true
+  );
+  let extractedPaths = [];
+  for await (const path of paths)
+    extractedPaths.push(path);
+
+
+  graph.removeCategoryChangeCost("image", "audio");
+  graph.init(supportedFormatCache, handlers);
+  const newPaths = graph.searchPath(
+    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
+    new ConvertPathNode(handlers.find(h => h.name === "ffmpeg")!, CommonFormats.MP3.supported("mp3", true, true, true)),
+    true
+  );
+  let extractedNewPaths = [];
+  for await (const path of newPaths)
+    extractedNewPaths.push(path);
+  expect(extractedPaths.length).toBeGreaterThan(0);
+  expect(extractedNewPaths.length).toBeGreaterThan(0);
+  expect(extractedNewPaths).not.toEqual(extractedPaths);
+});
+
+test('add adaptive category costs should affect pathfinding\n', async () => {
+  const graph = new TraversionGraph();
+  graph.init(supportedFormatCache, handlers);
+
+  const paths = graph.searchPath(
+    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
+    new ConvertPathNode(handlers.find(h => h.name === "ffmpeg")!, CommonFormats.MP3.supported("mp3", true, true, true)),
+    true
+  );
+  let extractedPaths = [];
+  for await (const path of paths)
+    extractedPaths.push(path);
+
+
+  graph.addCategoryAdaptiveCost(["image", "audio"], 20000);
+  graph.init(supportedFormatCache, handlers);
+  const newPaths = graph.searchPath(
+    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
+    new ConvertPathNode(handlers.find(h => h.name === "ffmpeg")!, CommonFormats.MP3.supported("mp3", true, true, true)),
+    true
+  );
+  let extractedNewPaths = [];
+  for await (const path of newPaths)
+    extractedNewPaths.push(path);
+  expect(extractedPaths.length).toBeGreaterThan(0);
+  expect(extractedNewPaths.length).toBeGreaterThan(0);
+  expect(extractedNewPaths).not.toEqual(extractedPaths);
+});
+
+test('remove adaptive category costs should affect pathfinding\n', async () => {
+  const graph = new TraversionGraph();
+  graph.init(supportedFormatCache, handlers);
+
+  const paths = graph.searchPath(
+    new ConvertPathNode(handlers.find(h => h.name === "canvasToBlob")!, CommonFormats.PNG.supported("png", true, true, true)),
+    new ConvertPathNode(handlers.find(h => h.name === "ffmpeg")!, CommonFormats.MP3.supported("mp3", true, true, true)),
+    true
+  );
+  let extractedPaths = [];
+  for await (const path of paths)
+    extractedPaths.push(path);
+
+
   graph.removeCategoryAdaptiveCost(["image", "video", "audio"]);
   graph.init(supportedFormatCache, handlers);
   const newPaths = graph.searchPath(
@@ -217,51 +188,9 @@ test('enabling safe checks should affect pathfinding\n', async () => {
     true
   );
   let extractedNewPaths = [];
-  for await (const path of newPaths) 
+  for await (const path of newPaths)
     extractedNewPaths.push(path);
   expect(extractedPaths.length).toBeGreaterThan(0);
   expect(extractedNewPaths.length).toBeGreaterThan(0);
-  expect(extractedNewPaths[0]).toEqual(extractedPaths[0]);
-});
-
-test("getReachableOutputMimes should return transitive reachable MIME types", () => {
-  const graph = new TraversionGraph(true);
-  graph.init(supportedFormatCache, handlers);
-
-  const reachable = graph.getReachableOutputMimes("image/png");
-  expect(reachable.has("image/png")).toBe(true);
-  expect(reachable.has("audio/mpeg")).toBe(true);
-  expect(reachable.has("video/mp4")).toBe(true);
-
-  const missing = graph.getReachableOutputMimes("application/not-real");
-  expect(missing.size).toBe(0);
-});
-
-test("advanced mode should find route for mixed-case handler names", async () => {
-  const mixedCaseHandler = new MockedHandler("ImageMagick", [
-    CommonFormats.PDF.supported("pdf", true, true, true),
-    CommonFormats.PNG.supported("png", true, true, true),
-  ], false);
-
-  await mixedCaseHandler.init();
-  const localHandlers: FormatHandler[] = [mixedCaseHandler];
-  const localCache = new Map<string, FileFormat[]>([
-    [mixedCaseHandler.name, mixedCaseHandler.supportedFormats!],
-  ]);
-
-  const graph = new TraversionGraph(true);
-  graph.init(localCache, localHandlers);
-
-  const paths = graph.searchPath(
-    new ConvertPathNode(mixedCaseHandler, CommonFormats.PDF.supported("pdf", true, true, true)),
-    new ConvertPathNode(mixedCaseHandler, CommonFormats.PNG.supported("png", true, true, true)),
-    false
-  );
-
-  const extractedPaths: ConvertPathNode[][] = [];
-  for await (const path of paths) extractedPaths.push(path);
-
-  expect(extractedPaths.length).toBeGreaterThan(0);
-  expect(extractedPaths[0][0].handler.name).toBe("ImageMagick");
-  expect(extractedPaths[0][extractedPaths[0].length - 1].handler.name).toBe("ImageMagick");
+  expect(extractedNewPaths[0]).not.toEqual(extractedPaths[0]);
 });

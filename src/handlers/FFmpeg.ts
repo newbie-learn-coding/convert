@@ -5,46 +5,7 @@ import type { LogEvent } from "@ffmpeg/ffmpeg";
 
 import mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
-import { wasmAssetPath, withBasePath } from "../assetPath.ts";
-
-const DEFAULT_FFMPEG_CORE_BASE_URL = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm";
-const INIT_FORMAT_TIMEOUT_MS = 15000;
-
-const MIME_HINTS: Record<string, string> = {
-  apng: "image/png",
-  mov: "video/quicktime",
-  mp3: "audio/mpeg",
-  m4a: "audio/mp4",
-  m4v: "video/mp4",
-  oga: "audio/ogg",
-  ogv: "video/ogg",
-  tga: "image/x-tga",
-  mjpeg: "video/x-motion-jpeg"
-};
-
-const FALLBACK_SUPPORTED_FORMATS: FileFormat[] = [
-  { name: "PNG", format: "png", extension: "png", mime: "image/png", from: true, to: true, internal: "png", category: "image", lossless: true },
-  { name: "JPEG", format: "jpeg", extension: "jpg", mime: "image/jpeg", from: true, to: true, internal: "mjpeg", category: "image", lossless: false },
-  { name: "GIF", format: "gif", extension: "gif", mime: "image/gif", from: true, to: true, internal: "gif", category: "image", lossless: false },
-  { name: "WAV", format: "wav", extension: "wav", mime: "audio/wav", from: true, to: true, internal: "wav", category: "audio", lossless: true },
-  { name: "MP3", format: "mp3", extension: "mp3", mime: "audio/mpeg", from: true, to: true, internal: "mp3", category: "audio", lossless: false },
-  { name: "MP4", format: "mp4", extension: "mp4", mime: "video/mp4", from: true, to: true, internal: "mp4", category: "video", lossless: false },
-  { name: "WebM", format: "webm", extension: "webm", mime: "video/webm", from: true, to: true, internal: "webm", category: "video", lossless: false }
-];
-
-function resolveFFmpegAssetUrl(base: string, fileName: string) {
-  const normalizedBase = base.trim().replace(/\/+$/, "");
-  if (normalizedBase.length === 0) {
-    return wasmAssetPath(fileName);
-  }
-
-  if (/^https?:\/\//i.test(normalizedBase)) {
-    return `${normalizedBase}/${fileName}`;
-  }
-
-  const pathWithoutLeadingSlash = normalizedBase.replace(/^\/+/, "");
-  return withBasePath(`${pathWithoutLeadingSlash}/${fileName}`);
-}
+import CommonFormats from "src/CommonFormats.ts";
 
 class FFmpegHandler implements FormatHandler {
 
@@ -53,9 +14,6 @@ class FFmpegHandler implements FormatHandler {
   public ready: boolean = false;
 
   #ffmpeg?: FFmpeg;
-  #onLog = (log: LogEvent) => {
-    this.handleStdout(log);
-  };
 
   #stdout: string = "";
   handleStdout (log: LogEvent) {
@@ -67,40 +25,17 @@ class FFmpegHandler implements FormatHandler {
   async getStdout (callback: () => void | Promise<void>) {
     if (!this.#ffmpeg) return "";
     this.clearStdout();
-    this.#ffmpeg.off("log", this.#onLog);
-    this.#ffmpeg.on("log", this.#onLog);
-    try {
-      await callback();
-      return this.#stdout;
-    } finally {
-      this.#ffmpeg.off("log", this.#onLog);
-    }
+    this.#ffmpeg.on("log", this.handleStdout.bind(this));
+    await callback();
+    this.#ffmpeg.off("log", this.handleStdout.bind(this));
+    return this.#stdout;
   }
 
   async loadFFmpeg () {
     if (!this.#ffmpeg) return;
-
-    const configuredBase = `${import.meta.env.VITE_FFMPEG_CORE_BASE_URL ?? ""}`.trim();
-    const baseCandidates = configuredBase.length > 0
-      ? [configuredBase]
-      : [DEFAULT_FFMPEG_CORE_BASE_URL, "/wasm"];
-
-    let lastError: unknown;
-    for (const base of baseCandidates) {
-      const coreURL = resolveFFmpegAssetUrl(base, "ffmpeg-core.js");
-      const wasmURL = resolveFFmpegAssetUrl(base, "ffmpeg-core.wasm");
-      try {
-        await this.#ffmpeg.load({
-          coreURL,
-          wasmURL
-        });
-        return;
-      } catch (error) {
-        lastError = error;
-      }
-    }
-
-    throw lastError ?? new Error("Failed to load FFmpeg core assets.");
+    return await this.#ffmpeg.load({
+      coreURL: "/convert/wasm/ffmpeg-core.js"
+    });
   }
   terminateFFmpeg () {
     if (!this.#ffmpeg) return;
@@ -122,20 +57,15 @@ class FFmpegHandler implements FormatHandler {
    * @param attempts Amount of times to attempt execution. Default is 1.
    */
   async execSafe (args: string[], timeout: number = -1, attempts: number = 1): Promise<void> {
-    if (!this.#ffmpeg) throw new Error("Handler not initialized.");
+    if (!this.#ffmpeg) throw "Handler not initialized.";
     try {
       if (timeout === -1) {
         await this.#ffmpeg.exec(args);
       } else {
-        let timeoutId: ReturnType<typeof setTimeout>;
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          timeoutId = setTimeout(() => reject(new Error("FFmpeg execution timed out")), timeout);
-        });
-        try {
-          await Promise.race([this.#ffmpeg.exec(args, timeout), timeoutPromise]);
-        } finally {
-          clearTimeout(timeoutId!);
-        }
+        await Promise.race([
+          this.#ffmpeg.exec(args, timeout),
+          new Promise((_, reject) => setTimeout(reject, timeout))
+        ]);
       }
     } catch (e) {
       if (!e || (
@@ -155,16 +85,96 @@ class FFmpegHandler implements FormatHandler {
 
     this.#ffmpeg = new FFmpeg();
     await this.loadFFmpeg();
-    this.supportedFormats = [];
 
-    try {
+    const getMuxerDetails = async (muxer: string) => {
+
       const stdout = await this.getStdout(async () => {
-        await this.execSafe(["-formats", "-hide_banner"], INIT_FORMAT_TIMEOUT_MS, 2);
+        await this.execSafe(["-hide_banner", "-h", "muxer=" + muxer], 3000, 5);
       });
-      this.supportedFormats = this.parseSupportedFormatsFromList(stdout);
-    } catch (error) {
-      console.warn("FFmpeg format discovery failed, falling back to baseline format set.", error);
-      this.supportedFormats = FALLBACK_SUPPORTED_FORMATS.map(format => ({ ...format }));
+
+      return {
+        extension: stdout.split("Common extensions: ")[1].split(".")[0].split(",")[0],
+        mimeType: stdout.split("Mime type: ")[1].split("\n")[0].split(".").slice(0, -1).join(".")
+      };
+    }
+
+    const stdout = await this.getStdout(async () => {
+      await this.execSafe(["-formats", "-hide_banner"], 3000, 5);
+    });
+    const lines = stdout.split(" --\n")[1].split("\n");
+
+    for (let line of lines) {
+
+      let len;
+      do {
+        len = line.length;
+        line = line.replaceAll("  ", " ");
+      } while (len !== line.length);
+      line = line.trim();
+
+      const parts = line.split(" ");
+      if (parts.length < 2) continue;
+
+      const flags = parts[0];
+      const description = parts.slice(2).join(" ");
+      const formats = parts[1].split(",");
+
+      if (description.startsWith("piped ")) continue;
+      if (description.toLowerCase().includes("subtitle")) continue;
+      if (description.toLowerCase().includes("manifest")) continue;
+
+      for (const format of formats) {
+
+        let primaryFormat = formats[0];
+        if (primaryFormat === "png") primaryFormat = "apng";
+
+        let extension, mimeType;
+        try {
+          const details = await getMuxerDetails(primaryFormat);
+          extension = details.extension;
+          mimeType = details.mimeType;
+        } catch (e) {
+          extension = format;
+          mimeType = mime.getType(format) || ("video/" + format);
+        }
+        mimeType = normalizeMimeType(mimeType);
+
+        let category = mimeType.split("/")[0];
+        if (
+          description.includes("PCM")
+          || description.includes("PWM")
+          || primaryFormat === "aptx"
+          || primaryFormat === "aptx_hd"
+          || primaryFormat === "codec2"
+          || primaryFormat === "codec2raw"
+          || primaryFormat === "apm"
+          || primaryFormat === "alp"
+        ) {
+          category = "audio";
+          mimeType = "audio/" + mimeType.split("/")[1];
+        } else if (
+          category !== "audio"
+          && category !== "video"
+          && category !== "image"
+        ) {
+          if (description.toLowerCase().includes("audio")) category = "audio";
+          else category = "video";
+        }
+
+        this.supportedFormats.push({
+          name: description + (formats.length > 1 ? (" / " + format) : ""),
+          format,
+          extension,
+          mime: mimeType,
+          from: flags.includes("D"),
+          to: flags.includes("E"),
+          internal: format,
+          category,
+          lossless: ["png", "bmp", "tiff"].includes(format)
+        });
+
+      }
+
     }
 
     // ====== Manual fine-tuning ======
@@ -179,9 +189,11 @@ class FFmpegHandler implements FormatHandler {
     });
 
     // AV1 doesn't seem to be included in WASM FFmpeg
-    this.supportedFormats = this.supportedFormats.filter(c => c.mime !== "image/avif");
+    this.supportedFormats.splice(this.supportedFormats.findIndex(c => c.mime === "image/avif"), 1);
     // HEVC stalls when attempted
-    this.supportedFormats = this.supportedFormats.filter(c => c.mime !== "video/hevc");
+    this.supportedFormats.splice(this.supportedFormats.findIndex(c => c.internal === "hevc"), 1);
+    // RTSP stalls when attempted
+    this.supportedFormats.splice(this.supportedFormats.findIndex(c => c.internal === "rtsp"), 1);
 
     // Add .qta (QuickTime Audio) support - uses same mov demuxer
     this.supportedFormats.push({
@@ -194,76 +206,13 @@ class FFmpegHandler implements FormatHandler {
       internal: "mov"
     });
 
+    // Add PNG input explicitly - FFmpeg otherwise treats both PNG and
+    // APNG as the same thing.
+    this.supportedFormats.push(CommonFormats.PNG.builder("png").allowFrom());
+
     this.#ffmpeg.terminate();
 
     this.ready = true;
-  }
-
-  private parseSupportedFormatsFromList (stdout: string): FileFormat[] {
-    const formats: FileFormat[] = [];
-    const seenKeys = new Set<string>();
-    const formatSection = stdout.split(" --\n")[1] ?? "";
-    const lines = formatSection.split("\n");
-
-    for (let line of lines) {
-      let len;
-      do {
-        len = line.length;
-        line = line.replaceAll("  ", " ");
-      } while (len !== line.length);
-      line = line.trim();
-
-      const parts = line.split(" ");
-      if (parts.length < 2) continue;
-
-      const flags = parts[0];
-      const description = parts.slice(2).join(" ");
-      const aliases = parts[1].split(",").map(item => item.trim()).filter(Boolean);
-
-      if (description.startsWith("piped ") || aliases.length === 0) continue;
-
-      const primaryAlias = aliases[0] === "png" ? "apng" : aliases[0];
-
-      for (const alias of aliases) {
-        const mimeType = this.resolveMimeType(primaryAlias, alias);
-        if (
-          !mimeType.startsWith("video/")
-          && !mimeType.startsWith("audio/")
-          && !mimeType.startsWith("image/")
-        ) continue;
-
-        const key = `${alias}:${mimeType}:${flags}`;
-        if (seenKeys.has(key)) continue;
-        seenKeys.add(key);
-
-        formats.push({
-          name: description + (aliases.length > 1 ? ` / ${alias}` : ""),
-          format: alias,
-          extension: this.resolveExtension(primaryAlias, alias, mimeType),
-          mime: mimeType,
-          from: flags.includes("D"),
-          to: flags.includes("E"),
-          internal: alias,
-          category: mimeType.split("/")[0],
-          lossless: ["png", "bmp", "tiff"].includes(alias)
-        });
-      }
-    }
-
-    return formats;
-  }
-
-  private resolveExtension (primaryAlias: string, alias: string, mimeType: string): string {
-    const explicit = mime.getExtension(mimeType);
-    if (explicit) return explicit;
-    if (primaryAlias === "mjpeg" || alias === "jpeg") return "jpg";
-    return alias;
-  }
-
-  private resolveMimeType (primaryAlias: string, alias: string): string {
-    const hinted = MIME_HINTS[alias] ?? MIME_HINTS[primaryAlias];
-    const fallback = hinted ?? mime.getType(alias) ?? mime.getType(primaryAlias) ?? `video/${primaryAlias}`;
-    return normalizeMimeType(fallback);
   }
 
   async doConvert (
@@ -274,7 +223,7 @@ class FFmpegHandler implements FormatHandler {
   ): Promise<FileData[]> {
 
     if (!this.#ffmpeg) {
-      throw new Error("Handler not initialized.");
+      throw "Handler not initialized.";
     }
 
     await this.reloadFFmpeg();
@@ -297,6 +246,10 @@ class FFmpegHandler implements FormatHandler {
     const command = ["-hide_banner", "-f", "concat", "-safe", "0", "-i", "list.txt", "-f", outputFormat.internal];
     if (outputFormat.mime === "video/mp4") {
       command.push("-pix_fmt", "yuv420p");
+    } else if (outputFormat.internal === "dvd") {
+      command.push("-vf", "setsar=1", "-target", "ntsc-dvd", "-pix_fmt", "rgb24");
+    } else if (outputFormat.internal === "vcd") {
+      command.push("-vf", "scale=352:288,setsar=1", "-target", "pal-vcd", "-pix_fmt", "rgb24");
     }
     if (args) command.push(...args);
     command.push("output");
@@ -323,11 +276,11 @@ class FFmpegHandler implements FormatHandler {
       }
       if (stdout.includes("Valid sizes are") && !oldArgs.includes("-s")) {
         const newSize = stdout.split("Valid sizes are ")[1].split(".")[0].split(" ").pop();
-        if (typeof newSize !== "string") throw new Error(`FFmpeg conversion failed: ${stdout}`);
+        if (typeof newSize !== "string") throw stdout;
         return this.doConvert(inputFiles, inputFormat, outputFormat, [...oldArgs, "-s", newSize]);
       }
 
-      throw new Error(`FFmpeg conversion failed: ${stdout}`);
+      throw stdout;
     }
 
     let bytes: Uint8Array;
@@ -337,11 +290,11 @@ class FFmpegHandler implements FormatHandler {
     try {
       fileData = await this.#ffmpeg.readFile("output");
     } catch (e) {
-      throw new Error(`Output file not created: ${e}`);
+      throw `Output file not created: ${e}`;
     }
 
     if (!fileData || (fileData instanceof Uint8Array && fileData.length === 0)) {
-      throw new Error("FFmpeg failed to produce output file");
+      throw "FFmpeg failed to produce output file";
     }
     if (!(fileData instanceof Uint8Array)) {
       const encoder = new TextEncoder();

@@ -114,8 +114,8 @@ const CommonFormats = {
     ),
     MD: new FormatDefinition(
         "Markdown Document",
-        "md",
-        "md",
+        "markdown",
+        "markdown",
         "text/markdown",
         ["document", "text"]
     ),
@@ -125,6 +125,13 @@ const CommonFormats = {
         "bat",
         "text/windows-batch",
         ["text"]
+    ),
+    SH: new FormatDefinition(
+        "Shell Script",
+        "sh",
+        "sh",
+        "application/x-sh",
+        Category.TEXT
     ),
     // audio
     MP3: new FormatDefinition(
@@ -199,7 +206,7 @@ const CommonFormats = {
         "pptx",
         "pptx",
         "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        Category.PRESENTATION
+        [Category.PRESENTATION, Category.DOCUMENT]
     )
 }
 
