@@ -13,17 +13,14 @@ let selectedFiles: File[] = [];
  */
 let simpleMode: boolean = true;
 
-/** Handlers that support conversion from any formats. */
-const conversionsFromAnyInput: ConvertPathNode[] = handlers
-.filter(h => h.supportAnyInput && h.supportedFormats)
-.flatMap(h => h.supportedFormats!
-  .filter(f => f.to)
-  .map(f => ({ handler: h, format: f})))
-
 const ui = {
   fileInput: document.querySelector("#file-input") as HTMLInputElement,
   fileSelectArea: document.querySelector("#file-area") as HTMLDivElement,
+  fileAreaTitle: document.querySelector("#file-area-title") as HTMLHeadingElement | null,
+  dropHintText: document.querySelector("#drop-hint-text") as HTMLParagraphElement | null,
+  fileSelectionStatus: document.querySelector("#file-selection-status") as HTMLParagraphElement | null,
   convertButton: document.querySelector("#convert-button") as HTMLButtonElement,
+  convertHelperText: document.querySelector("#convert-helper") as HTMLParagraphElement | null,
   modeToggleButton: document.querySelector("#mode-button") as HTMLButtonElement,
   inputList: document.querySelector("#from-list") as HTMLDivElement,
   outputList: document.querySelector("#to-list") as HTMLDivElement,
@@ -32,6 +29,92 @@ const ui = {
   popupBox: document.querySelector("#popup") as HTMLDivElement,
   popupBackground: document.querySelector("#popup-bg") as HTMLDivElement
 };
+
+const DISCLOSURE_HASH_TARGETS = new Set([
+  "#how-it-works",
+  "#faq",
+  "#popular-conversions",
+  "#format-listing"
+]);
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+}
+
+function openDisclosureForHash(hash: string, options?: { scroll?: boolean; focusSummary?: boolean }): void {
+  const normalizedHash = hash.startsWith("#") ? hash : `#${hash}`;
+  if (!DISCLOSURE_HASH_TARGETS.has(normalizedHash)) return;
+
+  const section = document.querySelector(normalizedHash);
+  if (!(section instanceof HTMLElement)) return;
+
+  const details = section.querySelector("details");
+  if (details instanceof HTMLDetailsElement) {
+    details.open = true;
+  }
+
+  if (options?.scroll) {
+    section.scrollIntoView({
+      behavior: prefersReducedMotion() ? "auto" : "smooth",
+      block: "start"
+    });
+  }
+
+  if (options?.focusSummary) {
+    const summary = section.querySelector("summary");
+    if (summary instanceof HTMLElement) {
+      summary.focus({ preventScroll: true });
+    }
+  }
+}
+
+openDisclosureForHash(window.location.hash, { scroll: false, focusSummary: false });
+
+window.addEventListener("hashchange", () => {
+  openDisclosureForHash(window.location.hash, { scroll: false, focusSummary: false });
+});
+
+document.addEventListener("click", (event: MouseEvent) => {
+  const target = event.target;
+  if (!(target instanceof Element)) return;
+
+  const anchor = target.closest('a[href^="#"]');
+  if (!(anchor instanceof HTMLAnchorElement)) return;
+
+  const href = anchor.getAttribute("href");
+  if (!href || href === "#") return;
+  if (!DISCLOSURE_HASH_TARGETS.has(href)) return;
+
+  event.preventDefault();
+  if (window.location.hash !== href) {
+    history.pushState(null, "", href);
+  }
+  openDisclosureForHash(href, { scroll: true, focusSummary: true });
+});
+
+function updateConvertCtaState(): void {
+  const hasFiles = selectedFiles.length > 0;
+  const hasInput = document.querySelector("#from-list .selected") instanceof HTMLButtonElement;
+  const hasOutput = document.querySelector("#to-list .selected") instanceof HTMLButtonElement;
+
+  const canConvert = hasFiles && hasInput && hasOutput;
+
+  ui.convertButton.disabled = !canConvert;
+  ui.convertButton.setAttribute("aria-disabled", String(!canConvert));
+  ui.convertButton.classList.toggle("disabled", !canConvert);
+
+  if (ui.convertHelperText) {
+    if (!hasFiles) {
+      ui.convertHelperText.textContent = "Select a file to begin.";
+    } else if (!hasInput || !hasOutput) {
+      ui.convertHelperText.textContent = "Pick input and output formats to enable Convert.";
+    } else {
+      ui.convertHelperText.textContent = "Ready — click Convert to start.";
+    }
+  }
+}
+
+updateConvertCtaState();
 
 /**
  * Filters a list of butttons to exclude those not matching a substring.
@@ -111,10 +194,23 @@ const fileSelectHandler = (event: Event) => {
   files.sort((a, b) => a.name === b.name ? 0 : (a.name < b.name ? -1 : 1));
   selectedFiles = files;
 
-  ui.fileSelectArea.innerHTML = `<h2>
-    ${files[0].name}
-    ${files.length > 1 ? `<br>... and ${files.length - 1} more` : ""}
-  </h2>`;
+  ui.fileSelectArea.classList.toggle("has-files", selectedFiles.length > 0);
+
+  if (ui.fileAreaTitle) {
+    ui.fileAreaTitle.textContent = files.length > 1
+      ? `${files[0].name} (+${files.length - 1} more)`
+      : files[0].name;
+  }
+
+  if (ui.dropHintText) {
+    ui.dropHintText.textContent = "Click to choose a different file";
+  }
+
+  if (ui.fileSelectionStatus) {
+    ui.fileSelectionStatus.textContent = files.length > 1
+      ? `Selected ${files.length} files.`
+      : `Selected: ${files[0].name}`;
+  }
 
   // Common MIME type adjustments (to match "mime" library)
   let mimeType = normalizeMimeType(files[0].type);
@@ -129,6 +225,7 @@ const fileSelectHandler = (event: Event) => {
     buttonMimeType.click();
     ui.inputSearch.value = mimeType;
     filterButtonList(ui.inputList, ui.inputSearch.value);
+    updateConvertCtaState();
     return;
   }
 
@@ -150,6 +247,7 @@ const fileSelectHandler = (event: Event) => {
   }
 
   filterButtonList(ui.inputList, ui.inputSearch.value);
+  updateConvertCtaState();
 
 };
 
@@ -166,6 +264,8 @@ window.addEventListener("paste", fileSelectHandler);
  */
 window.showPopup = function (html: string) {
   ui.popupBox.innerHTML = html;
+  ui.popupBox.hidden = false;
+  ui.popupBackground.hidden = false;
   ui.popupBox.style.display = "block";
   ui.popupBackground.style.display = "block";
 }
@@ -175,6 +275,8 @@ window.showPopup = function (html: string) {
 window.hidePopup = function () {
   ui.popupBox.style.display = "none";
   ui.popupBackground.style.display = "none";
+  ui.popupBox.hidden = true;
+  ui.popupBackground.hidden = true;
 }
 
 const allOptions: Array<{ format: FileFormat, handler: FormatHandler }> = [];
@@ -238,6 +340,7 @@ async function buildOptionList () {
       newOption.setAttribute("mime-type", format.mime);
 
       const formatDescriptor = format.format.toUpperCase();
+      let labelText = "";
       if (simpleMode) {
         // Hide any handler-specific information in simple mode
         const cleanName = format.name
@@ -245,10 +348,12 @@ async function buildOptionList () {
           .filter((_, i) => i % 2 === 0)
           .filter(c => c != "")
           .join(" ");
-        newOption.appendChild(document.createTextNode(`${formatDescriptor} - ${cleanName} (${format.mime})`));
+        labelText = `${formatDescriptor} - ${cleanName} (${format.mime})`;
       } else {
-        newOption.appendChild(document.createTextNode(`${formatDescriptor} - ${format.name} (${format.mime}) ${handler.name}`));
+        labelText = `${formatDescriptor} - ${format.name} (${format.mime}) ${handler.name}`;
       }
+      newOption.textContent = labelText;
+      newOption.setAttribute("aria-label", labelText);
 
       const clickHandler = (event: Event) => {
         if (!(event.target instanceof HTMLButtonElement)) return;
@@ -256,12 +361,7 @@ async function buildOptionList () {
         const previous = targetParent?.getElementsByClassName("selected")?.[0];
         if (previous) previous.className = "";
         event.target.className = "selected";
-        const allSelected = document.getElementsByClassName("selected");
-        if (allSelected.length === 2) {
-          ui.convertButton.className = "";
-        } else {
-          ui.convertButton.className = "disabled";
-        }
+        updateConvertCtaState();
       };
 
       if (format.from && addToInputs) {
@@ -282,6 +382,7 @@ async function buildOptionList () {
   filterButtonList(ui.outputList, ui.outputSearch.value);
 
   window.hidePopup();
+  updateConvertCtaState();
 
 }
 
@@ -413,14 +514,33 @@ ui.convertButton.onclick = async function () {
   const inputFiles = selectedFiles;
 
   if (inputFiles.length === 0) {
-    return alert("Select an input file.");
+    window.showPopup(
+      "<h2>Select an input file.</h2>" +
+      "<p>Choose a file first, then pick input/output formats.</p>" +
+      "<button onclick=\"window.hidePopup()\">OK</button>"
+    );
+    return;
   }
 
   const inputButton = document.querySelector("#from-list .selected");
-  if (!inputButton) return alert("Specify input file format.");
+  if (!inputButton) {
+    window.showPopup(
+      "<h2>Pick an input format.</h2>" +
+      "<p>Select the format your file is currently in.</p>" +
+      "<button onclick=\"window.hidePopup()\">OK</button>"
+    );
+    return;
+  }
 
   const outputButton = document.querySelector("#to-list .selected");
-  if (!outputButton) return alert("Specify output file format.");
+  if (!outputButton) {
+    window.showPopup(
+      "<h2>Pick an output format.</h2>" +
+      "<p>Select the format you want to convert to.</p>" +
+      "<button onclick=\"window.hidePopup()\">OK</button>"
+    );
+    return;
+  }
 
   const inputOption = allOptions[Number(inputButton.getAttribute("format-index"))];
   const outputOption = allOptions[Number(outputButton.getAttribute("format-index"))];
@@ -447,8 +567,11 @@ ui.convertButton.onclick = async function () {
 
     const output = await window.tryConvertByTraversing(inputFileData, inputOption, outputOption);
     if (!output) {
-      window.hidePopup();
-      alert("Failed to find conversion route.");
+      window.showPopup(
+        "<h2>Could not find a conversion route.</h2>" +
+        "<p>Try a different output format (or switch mode for more options).</p>" +
+        "<button onclick=\"window.hidePopup()\">OK</button>"
+      );
       return;
     }
 
@@ -464,8 +587,11 @@ ui.convertButton.onclick = async function () {
 
   } catch (e) {
 
-    window.hidePopup();
-    alert("Unexpected error while routing:\n" + e);
+    window.showPopup(
+      "<h2>Unexpected error</h2>" +
+      "<p>Something went wrong while converting. Please try again.</p>" +
+      "<button onclick=\"window.hidePopup()\">OK</button>"
+    );
     console.error(e);
 
   }
