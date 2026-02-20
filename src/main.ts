@@ -434,6 +434,11 @@ async function buildOptionList () {
         }
       }
     }
+
+    // Embed mode: strip site chrome when loaded inside an iframe
+    if (params.get("embed") === "1") {
+      document.body.classList.add("embed-mode");
+    }
   }
 })();
 

@@ -2113,6 +2113,28 @@ button.selected {
 }
 
 /* ============================================
+   EMBED MODE - iframe-embedded converter
+   ============================================ */
+body.embed-mode .site-header,
+body.embed-mode .site-footer,
+body.embed-mode #secondary-content,
+body.embed-mode #side-panel,
+body.embed-mode .skip-link,
+body.embed-mode #tool-hero {
+  display: none !important;
+}
+
+body.embed-mode #tool-shell {
+  padding: 12px;
+  margin: 0;
+}
+
+body.embed-mode {
+  padding-bottom: 0;
+  background: transparent;
+}
+
+/* ============================================
    PRINT STYLES
    ============================================ */
 @media print {
