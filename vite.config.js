@@ -51,7 +51,7 @@ export default defineConfig({
       }
     }
   },
-  base: "/convert/",
+  base: "/",
   plugins: [
     viteStaticCopy({
       targets: [
