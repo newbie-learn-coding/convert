@@ -2127,6 +2127,26 @@ body.embed-mode #tool-hero {
 body.embed-mode #tool-shell {
   padding: 12px;
   margin: 0;
+  padding-bottom: 64px;
+}
+
+body.embed-mode #convert-cta {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  max-width: none;
+  border-radius: 0;
+  padding: 8px 16px;
+  gap: 4px;
+  box-shadow: 0 -2px 12px rgba(15, 43, 94, 0.15);
+}
+
+body.embed-mode #convert-cta #workflow-steps,
+body.embed-mode #convert-cta #convert-helper,
+body.embed-mode #convert-cta .conversion-path-preview {
+  display: none;
 }
 
 body.embed-mode {
