@@ -2113,6 +2113,28 @@ button.selected {
 }
 
 /* ============================================
+   EMBED MODE - Stripped-down UI for iframe embedding
+   ============================================ */
+body.embed-mode {
+  background: var(--bg-body);
+  padding-bottom: 0;
+}
+
+body.embed-mode .site-header,
+body.embed-mode .site-footer,
+body.embed-mode #secondary-content,
+body.embed-mode #side-panel,
+body.embed-mode .skip-link,
+body.embed-mode #tool-hero {
+  display: none !important;
+}
+
+body.embed-mode #tool-shell {
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+/* ============================================
    PRINT STYLES
    ============================================ */
 @media print {

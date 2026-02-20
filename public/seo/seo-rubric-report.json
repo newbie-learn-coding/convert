@@ -10,7 +10,7 @@
     "passingPages": 29,
     "contentDepthTargetWords": 1000,
     "minWordCount": 1061,
-    "averageWordCount": 1513.5
+    "averageWordCount": 1507
   },
   "pageScores": [
     {
@@ -144,7 +144,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1958
+      "wordCount": 1947
     },
     {
       "url": "/format/jpg-to-png/",
@@ -163,7 +163,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1944
+      "wordCount": 1933
     },
     {
       "url": "/format/webp-to-png/",
@@ -182,7 +182,7 @@
       "descriptionLength": 159,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1606
+      "wordCount": 1595
     },
     {
       "url": "/format/svg-to-png/",
@@ -201,7 +201,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1594
+      "wordCount": 1583
     },
     {
       "url": "/format/pdf-to-jpg/",
@@ -220,7 +220,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1605
+      "wordCount": 1594
     },
     {
       "url": "/format/mov-to-mp4/",
@@ -239,7 +239,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1618
+      "wordCount": 1607
     },
     {
       "url": "/format/wav-to-mp3/",
@@ -258,7 +258,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1586
+      "wordCount": 1575
     },
     {
       "url": "/format/jpg-to-webp/",
@@ -277,7 +277,7 @@
       "descriptionLength": 159,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1587
+      "wordCount": 1576
     },
     {
       "url": "/format/png-to-webp/",
@@ -296,7 +296,7 @@
       "descriptionLength": 159,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1556
+      "wordCount": 1545
     },
     {
       "url": "/format/mp4-to-gif/",
@@ -315,7 +315,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1591
+      "wordCount": 1580
     },
     {
       "url": "/format/avi-to-mp4/",
@@ -334,7 +334,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1556
+      "wordCount": 1545
     },
     {
       "url": "/format/mp3-to-wav/",
@@ -353,7 +353,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1552
+      "wordCount": 1541
     },
     {
       "url": "/format/flac-to-mp3/",
@@ -372,7 +372,7 @@
       "descriptionLength": 159,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1551
+      "wordCount": 1540
     },
     {
       "url": "/format/docx-to-pdf/",
@@ -391,7 +391,7 @@
       "descriptionLength": 159,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1540
+      "wordCount": 1529
     },
     {
       "url": "/format/txt-to-pdf/",
@@ -410,7 +410,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1520
+      "wordCount": 1509
     },
     {
       "url": "/format/heic-to-jpg/",
@@ -429,7 +429,7 @@
       "descriptionLength": 159,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1557
+      "wordCount": 1546
     },
     {
       "url": "/format/gif-to-mp4/",
@@ -448,7 +448,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1559
+      "wordCount": 1548
     },
     {
       "url": "/compare/png-vs-jpg/",

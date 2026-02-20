@@ -434,6 +434,11 @@ async function buildOptionList () {
         }
       }
     }
+
+    // Embed mode: strip chrome for iframe embedding
+    if (params.get("embed") === "1") {
+      document.body.classList.add("embed-mode");
+    }
   }
 })();
 
