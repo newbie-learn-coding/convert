@@ -40,6 +40,11 @@ const JSON_HEADERS = {
   "x-robots-tag": "noindex, nofollow, noarchive"
 };
 
+const OPS_NO_CACHE_HEADERS = {
+  "cache-control": "no-store",
+  "x-robots-tag": "noindex, nofollow, noarchive"
+};
+
 const CACHE_CONTROL_DIRECTIVES = {
   staticAssets: `public, max-age=${CACHE_CONFIG.STATIC_ASSETS.browserTTL}, s-maxage=${CACHE_CONFIG.STATIC_ASSETS.edgeTTL}, stale-while-revalidate=${CACHE_CONFIG.STATIC_ASSETS.staleWhileRevalidate}, immutable`,
   html: `public, max-age=${CACHE_CONFIG.HTML.browserTTL}, s-maxage=${CACHE_CONFIG.HTML.edgeTTL}, stale-while-revalidate=${CACHE_CONFIG.HTML.staleWhileRevalidate}, must-revalidate`,
@@ -58,6 +63,16 @@ const TELEMETRY_RATE_LIMIT_CONFIG = {
   requests: 50,
   window: 60
 };
+
+const GLOBAL_RATE_LIMIT_PROVIDER = {
+  durableObject: "durable_object",
+  kv: "kv"
+};
+
+const GLOBAL_RATE_LIMIT_DO_NAME = "global-rate-limiter-v1";
+const GLOBAL_RATE_LIMIT_CLIENT_ID_MAX_LENGTH = 120;
+const GLOBAL_RATE_LIMIT_SCOPE_OPS = "ops";
+const GLOBAL_RATE_LIMIT_SCOPE_TELEMETRY = "telemetry";
 
 const ERROR_TRACKING = {
   maxErrorsPerWindow: 50,
@@ -91,6 +106,24 @@ const CORRELATION_ID_SAFE_CHARS = /[^A-Za-z0-9._:-]/g;
 const RATE_LIMITER_CLEANUP_SAMPLE_RATE = 0.01;
 
 const METRICS_PREFIX = "cf_worker_";
+const OPS_METRICS_PREFIX = "converttoit_ops_";
+const OPS_LATENCY_BUCKETS_SECONDS = [0.05, 0.1, 0.25, 0.5, 1, 2.5, 5];
+const OPS_SLO_TARGETS = {
+  availability: 0.999,
+  latencyP95Seconds: 0.3,
+  errorRate: 0.01,
+  rateLimitedRate: 0.02
+};
+const OPS_METRICS_SCHEMA_VERSION = "2026-02-20";
+
+const OPS_OBSERVABILITY = {
+  startedAtMs: Date.now(),
+  requestsTotal: new Map(),
+  durationCountByEndpoint: new Map(),
+  durationSumByEndpoint: new Map(),
+  durationBucketByEndpoint: new Map(),
+  rejectionsTotal: new Map()
+};
 
 function mergeDefaultHeaders(headers, defaults) {
   for (const [key, value] of Object.entries(defaults)) {
@@ -98,6 +131,254 @@ function mergeDefaultHeaders(headers, defaults) {
       headers.set(key, value);
     }
   }
+}
+
+function mapIncrement(map, key, delta = 1) {
+  map.set(key, (map.get(key) || 0) + delta);
+}
+
+function escapePrometheusLabelValue(value) {
+  return String(value)
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/"/g, "\\\"");
+}
+
+function formatPrometheusLabels(labels = {}) {
+  const entries = Object.entries(labels);
+  if (!entries.length) {
+    return "";
+  }
+
+  return `{${entries.map(([key, value]) => `${key}="${escapePrometheusLabelValue(value)}"`).join(",")}}`;
+}
+
+function normalizeOpsEndpoint(pathname) {
+  if (!pathname.startsWith("/_ops/")) {
+    return "/_ops/_non_ops";
+  }
+
+  if (pathname === "/_ops/logging") {
+    return "/_ops/logging";
+  }
+
+  if (
+    pathname === "/_ops/health" ||
+    pathname === "/_ops/version" ||
+    pathname === "/_ops/metrics" ||
+    pathname === "/_ops/log-ping" ||
+    pathname === "/_ops/logs"
+  ) {
+    return pathname;
+  }
+
+  return "/_ops/_unknown";
+}
+
+function getStatusClass(statusCode) {
+  return `${Math.floor(statusCode / 100)}xx`;
+}
+
+function recordOpsRejection(pathname, reason) {
+  if (!pathname.startsWith("/_ops/")) {
+    return;
+  }
+
+  const endpoint = normalizeOpsEndpoint(pathname);
+  const key = `${endpoint}\u0000${reason}`;
+  mapIncrement(OPS_OBSERVABILITY.rejectionsTotal, key, 1);
+}
+
+function recordOpsRequest(pathname, method, statusCode, durationMs) {
+  if (!pathname.startsWith("/_ops/")) {
+    return;
+  }
+
+  const endpoint = normalizeOpsEndpoint(pathname);
+  const normalizedMethod = String(method || "GET").toUpperCase();
+  const safeStatusCode = Number.isFinite(statusCode) ? statusCode : 500;
+  const statusClass = getStatusClass(safeStatusCode);
+  const requestKey = `${endpoint}\u0000${normalizedMethod}\u0000${safeStatusCode}\u0000${statusClass}`;
+  mapIncrement(OPS_OBSERVABILITY.requestsTotal, requestKey, 1);
+
+  const durationSeconds = Math.max(durationMs, 0) / 1000;
+  mapIncrement(OPS_OBSERVABILITY.durationCountByEndpoint, endpoint, 1);
+  mapIncrement(OPS_OBSERVABILITY.durationSumByEndpoint, endpoint, durationSeconds);
+
+  for (const bucket of OPS_LATENCY_BUCKETS_SECONDS) {
+    if (durationSeconds <= bucket) {
+      const bucketKey = `${endpoint}\u0000${bucket}`;
+      mapIncrement(OPS_OBSERVABILITY.durationBucketByEndpoint, bucketKey, 1);
+    }
+  }
+
+  if (safeStatusCode >= 500) {
+    recordOpsRejection(pathname, "server_error");
+  }
+}
+
+function buildOpsMetricsSnapshot(env) {
+  const endpoints = new Set([
+    ...OPS_OBSERVABILITY.durationCountByEndpoint.keys(),
+    ...Array.from(OPS_OBSERVABILITY.requestsTotal.keys()).map((key) => key.split("\u0000", 1)[0]),
+    ...Array.from(OPS_OBSERVABILITY.rejectionsTotal.keys()).map((key) => key.split("\u0000", 1)[0])
+  ]);
+
+  const requests = [];
+  for (const [key, value] of OPS_OBSERVABILITY.requestsTotal.entries()) {
+    const [endpoint, method, statusCode, statusClass] = key.split("\u0000");
+    requests.push({
+      endpoint,
+      method,
+      statusCode,
+      statusClass,
+      total: value
+    });
+  }
+
+  const latency = [];
+  for (const endpoint of endpoints) {
+    const count = OPS_OBSERVABILITY.durationCountByEndpoint.get(endpoint) || 0;
+    if (count === 0) {
+      continue;
+    }
+
+    const buckets = OPS_LATENCY_BUCKETS_SECONDS.map((le) => ({
+      le,
+      count: OPS_OBSERVABILITY.durationBucketByEndpoint.get(`${endpoint}\u0000${le}`) || 0
+    }));
+
+    latency.push({
+      endpoint,
+      count,
+      sumSeconds: OPS_OBSERVABILITY.durationSumByEndpoint.get(endpoint) || 0,
+      buckets
+    });
+  }
+
+  const rejections = [];
+  for (const [key, value] of OPS_OBSERVABILITY.rejectionsTotal.entries()) {
+    const [endpoint, reason] = key.split("\u0000");
+    rejections.push({
+      endpoint,
+      reason,
+      total: value
+    });
+  }
+
+  return {
+    schemaVersion: OPS_METRICS_SCHEMA_VERSION,
+    generatedAt: new Date().toISOString(),
+    processStartTimeSeconds: Math.floor(OPS_OBSERVABILITY.startedAtMs / 1000),
+    uptimeSeconds: Math.max(0, Math.floor((Date.now() - OPS_OBSERVABILITY.startedAtMs) / 1000)),
+    service: readVersion(env),
+    sloTargets: OPS_SLO_TARGETS,
+    rateLimiter: {
+      ops: {
+        limit: RATE_LIMIT_CONFIG.requests,
+        windowSeconds: RATE_LIMIT_CONFIG.window,
+        activeClients: SHARED_RATE_LIMITERS.ops.requests.size
+      },
+      telemetry: {
+        limit: TELEMETRY_RATE_LIMIT_CONFIG.requests,
+        windowSeconds: TELEMETRY_RATE_LIMIT_CONFIG.window,
+        activeClients: SHARED_RATE_LIMITERS.telemetry.requests.size
+      }
+    },
+    requests,
+    latency,
+    rejections
+  };
+}
+
+function buildOpsPrometheusMetrics(env) {
+  const snapshot = buildOpsMetricsSnapshot(env);
+  const lines = [];
+  const addMetric = (name, labels, value) => {
+    lines.push(`${name}${formatPrometheusLabels(labels)} ${value}`);
+  };
+
+  lines.push(`# HELP ${OPS_METRICS_PREFIX}process_start_time_seconds Worker isolate start time.`);
+  lines.push(`# TYPE ${OPS_METRICS_PREFIX}process_start_time_seconds gauge`);
+  addMetric(`${OPS_METRICS_PREFIX}process_start_time_seconds`, {}, snapshot.processStartTimeSeconds);
+
+  lines.push(`# HELP ${OPS_METRICS_PREFIX}uptime_seconds Worker isolate uptime in seconds.`);
+  lines.push(`# TYPE ${OPS_METRICS_PREFIX}uptime_seconds gauge`);
+  addMetric(`${OPS_METRICS_PREFIX}uptime_seconds`, {}, snapshot.uptimeSeconds);
+
+  lines.push(`# HELP ${OPS_METRICS_PREFIX}build_info Build metadata for ops endpoints.`);
+  lines.push(`# TYPE ${OPS_METRICS_PREFIX}build_info gauge`);
+  addMetric(`${OPS_METRICS_PREFIX}build_info`, {
+    service: snapshot.service.service,
+    environment: snapshot.service.environment,
+    app_version: snapshot.service.appVersion,
+    build_sha: snapshot.service.buildSha
+  }, 1);
+
+  lines.push(`# HELP ${OPS_METRICS_PREFIX}slo_target_ratio SLO target ratios for /_ops.`);
+  lines.push(`# TYPE ${OPS_METRICS_PREFIX}slo_target_ratio gauge`);
+  addMetric(`${OPS_METRICS_PREFIX}slo_target_ratio`, { objective: "availability" }, snapshot.sloTargets.availability);
+  addMetric(`${OPS_METRICS_PREFIX}slo_target_ratio`, { objective: "latency_p95" }, snapshot.sloTargets.latencyP95Seconds);
+  addMetric(`${OPS_METRICS_PREFIX}slo_target_ratio`, { objective: "error_rate" }, snapshot.sloTargets.errorRate);
+  addMetric(`${OPS_METRICS_PREFIX}slo_target_ratio`, { objective: "rate_limited_rate" }, snapshot.sloTargets.rateLimitedRate);
+
+  lines.push(`# HELP ${OPS_METRICS_PREFIX}rate_limit_limit Rate limiter limits for /_ops traffic.`);
+  lines.push(`# TYPE ${OPS_METRICS_PREFIX}rate_limit_limit gauge`);
+  addMetric(`${OPS_METRICS_PREFIX}rate_limit_limit`, { scope: "ops" }, snapshot.rateLimiter.ops.limit);
+  addMetric(`${OPS_METRICS_PREFIX}rate_limit_limit`, { scope: "telemetry" }, snapshot.rateLimiter.telemetry.limit);
+
+  lines.push(`# HELP ${OPS_METRICS_PREFIX}rate_limit_window_seconds Rate limiter windows in seconds.`);
+  lines.push(`# TYPE ${OPS_METRICS_PREFIX}rate_limit_window_seconds gauge`);
+  addMetric(`${OPS_METRICS_PREFIX}rate_limit_window_seconds`, { scope: "ops" }, snapshot.rateLimiter.ops.windowSeconds);
+  addMetric(`${OPS_METRICS_PREFIX}rate_limit_window_seconds`, { scope: "telemetry" }, snapshot.rateLimiter.telemetry.windowSeconds);
+
+  lines.push(`# HELP ${OPS_METRICS_PREFIX}rate_limiter_active_clients Active clients tracked in in-memory rate limiters.`);
+  lines.push(`# TYPE ${OPS_METRICS_PREFIX}rate_limiter_active_clients gauge`);
+  addMetric(`${OPS_METRICS_PREFIX}rate_limiter_active_clients`, { scope: "ops" }, snapshot.rateLimiter.ops.activeClients);
+  addMetric(`${OPS_METRICS_PREFIX}rate_limiter_active_clients`, { scope: "telemetry" }, snapshot.rateLimiter.telemetry.activeClients);
+
+  lines.push(`# HELP ${OPS_METRICS_PREFIX}requests_total Total requests observed on /_ops endpoints.`);
+  lines.push(`# TYPE ${OPS_METRICS_PREFIX}requests_total counter`);
+  for (const sample of snapshot.requests) {
+    addMetric(`${OPS_METRICS_PREFIX}requests_total`, {
+      endpoint: sample.endpoint,
+      method: sample.method,
+      status_code: sample.statusCode,
+      status_class: sample.statusClass
+    }, sample.total);
+  }
+
+  lines.push(`# HELP ${OPS_METRICS_PREFIX}request_duration_seconds Request duration histogram for /_ops endpoints.`);
+  lines.push(`# TYPE ${OPS_METRICS_PREFIX}request_duration_seconds histogram`);
+  for (const sample of snapshot.latency) {
+    for (const bucket of sample.buckets) {
+      addMetric(`${OPS_METRICS_PREFIX}request_duration_seconds_bucket`, {
+        endpoint: sample.endpoint,
+        le: bucket.le
+      }, bucket.count);
+    }
+    addMetric(`${OPS_METRICS_PREFIX}request_duration_seconds_bucket`, {
+      endpoint: sample.endpoint,
+      le: "+Inf"
+    }, sample.count);
+    addMetric(`${OPS_METRICS_PREFIX}request_duration_seconds_sum`, {
+      endpoint: sample.endpoint
+    }, sample.sumSeconds.toFixed(6));
+    addMetric(`${OPS_METRICS_PREFIX}request_duration_seconds_count`, {
+      endpoint: sample.endpoint
+    }, sample.count);
+  }
+
+  lines.push(`# HELP ${OPS_METRICS_PREFIX}rejections_total Rejected /_ops requests by reason.`);
+  lines.push(`# TYPE ${OPS_METRICS_PREFIX}rejections_total counter`);
+  for (const sample of snapshot.rejections) {
+    addMetric(`${OPS_METRICS_PREFIX}rejections_total`, {
+      endpoint: sample.endpoint,
+      reason: sample.reason
+    }, sample.total);
+  }
+
+  return `${lines.join("\n")}\n`;
 }
 
 function getCacheControlForPath(pathname) {
@@ -270,6 +551,191 @@ class RateLimiter {
   }
 }
 
+function parseBooleanFlag(value, defaultValue = false) {
+  if (typeof value !== "string") {
+    return defaultValue;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) {
+    return true;
+  }
+  if (["0", "false", "no", "off"].includes(normalized)) {
+    return false;
+  }
+
+  return defaultValue;
+}
+
+function parsePositiveInteger(value, fallback, min = 1, max = 1_000_000) {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < min || parsed > max) {
+    return fallback;
+  }
+
+  return parsed;
+}
+
+function sanitizeLimiterClientId(value) {
+  if (typeof value !== "string") {
+    return "unknown";
+  }
+
+  const cleaned = value.replace(CORRELATION_ID_SAFE_CHARS, "-").slice(0, GLOBAL_RATE_LIMIT_CLIENT_ID_MAX_LENGTH);
+  return cleaned || "unknown";
+}
+
+function normalizeGlobalProvider(rawValue) {
+  if (typeof rawValue !== "string") {
+    return GLOBAL_RATE_LIMIT_PROVIDER.durableObject;
+  }
+
+  const normalized = rawValue.trim().toLowerCase();
+  if (normalized === GLOBAL_RATE_LIMIT_PROVIDER.kv) {
+    return GLOBAL_RATE_LIMIT_PROVIDER.kv;
+  }
+  return GLOBAL_RATE_LIMIT_PROVIDER.durableObject;
+}
+
+function getGlobalRateLimitSettings(env) {
+  return {
+    enabled: parseBooleanFlag(env.RATE_LIMIT_GLOBAL_ENABLED, false),
+    provider: normalizeGlobalProvider(env.RATE_LIMIT_GLOBAL_PROVIDER),
+    allowKvFallback: parseBooleanFlag(env.RATE_LIMIT_GLOBAL_ALLOW_KV_FALLBACK, false),
+    telemetryEnabled: parseBooleanFlag(env.RATE_LIMIT_GLOBAL_TELEMETRY_ENABLED, false),
+    durableObjectName:
+      typeof env.RATE_LIMIT_GLOBAL_DO_NAME === "string" && env.RATE_LIMIT_GLOBAL_DO_NAME.trim().length > 0
+        ? env.RATE_LIMIT_GLOBAL_DO_NAME.trim()
+        : GLOBAL_RATE_LIMIT_DO_NAME,
+    limits: {
+      [GLOBAL_RATE_LIMIT_SCOPE_OPS]: {
+        requests: parsePositiveInteger(env.RATE_LIMIT_GLOBAL_OPS_REQUESTS, RATE_LIMIT_CONFIG.requests, 1, 100_000),
+        window: parsePositiveInteger(env.RATE_LIMIT_GLOBAL_OPS_WINDOW_SECONDS, RATE_LIMIT_CONFIG.window, 1, 3600)
+      },
+      [GLOBAL_RATE_LIMIT_SCOPE_TELEMETRY]: {
+        requests: parsePositiveInteger(env.RATE_LIMIT_GLOBAL_TELEMETRY_REQUESTS, TELEMETRY_RATE_LIMIT_CONFIG.requests, 1, 100_000),
+        window: parsePositiveInteger(env.RATE_LIMIT_GLOBAL_TELEMETRY_WINDOW_SECONDS, TELEMETRY_RATE_LIMIT_CONFIG.window, 1, 3600)
+      }
+    }
+  };
+}
+
+export class GlobalRateLimiter {
+  constructor(ctx) {
+    this.ctx = ctx;
+    this.schemaReady = false;
+  }
+
+  ensureSchema() {
+    if (this.schemaReady) {
+      return;
+    }
+
+    this.ctx.storage.sql.exec(`
+      CREATE TABLE IF NOT EXISTS rate_limit_counters (
+        scope TEXT NOT NULL,
+        client_id TEXT NOT NULL,
+        window_start INTEGER NOT NULL,
+        count INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (scope, client_id)
+      )
+    `);
+    this.ctx.storage.sql.exec(`
+      CREATE INDEX IF NOT EXISTS idx_rate_limit_updated_at
+      ON rate_limit_counters (updated_at)
+    `);
+
+    this.schemaReady = true;
+  }
+
+  sanitizeScope(rawScope) {
+    if (rawScope === GLOBAL_RATE_LIMIT_SCOPE_TELEMETRY) {
+      return GLOBAL_RATE_LIMIT_SCOPE_TELEMETRY;
+    }
+    return GLOBAL_RATE_LIMIT_SCOPE_OPS;
+  }
+
+  async consume(input = {}) {
+    this.ensureSchema();
+
+    const now = Number.isFinite(input.now) ? Math.floor(input.now) : Date.now();
+    const scope = this.sanitizeScope(input.scope);
+    const clientId = sanitizeLimiterClientId(input.clientId);
+    const limit = Number.isFinite(input.limit) ? Math.max(1, Math.floor(input.limit)) : RATE_LIMIT_CONFIG.requests;
+    const windowSeconds = Number.isFinite(input.windowSeconds) ? Math.max(1, Math.floor(input.windowSeconds)) : RATE_LIMIT_CONFIG.window;
+
+    const windowMs = windowSeconds * 1000;
+    const windowStart = Math.floor(now / windowMs) * windowMs;
+    const resetAt = windowStart + windowMs;
+
+    const row = this.ctx.storage.sql.exec(
+      "SELECT count, window_start FROM rate_limit_counters WHERE scope = ?1 AND client_id = ?2",
+      scope,
+      clientId
+    ).one();
+
+    const rowCount = Number(row?.count) || 0;
+    const rowWindowStart = Number(row?.window_start) || 0;
+    const currentCount = rowWindowStart === windowStart ? rowCount : 0;
+
+    if (currentCount >= limit) {
+      this.maybeCleanup(now, windowMs);
+      return {
+        allowed: false,
+        remaining: 0,
+        resetAt,
+        limit,
+        windowSeconds,
+        source: "global:durable_object"
+      };
+    }
+
+    const nextCount = currentCount + 1;
+    this.ctx.storage.sql.exec(
+      `
+        INSERT INTO rate_limit_counters (scope, client_id, window_start, count, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5)
+        ON CONFLICT(scope, client_id) DO UPDATE SET
+          window_start = excluded.window_start,
+          count = excluded.count,
+          updated_at = excluded.updated_at
+      `,
+      scope,
+      clientId,
+      windowStart,
+      nextCount,
+      now
+    );
+
+    this.maybeCleanup(now, windowMs);
+    return {
+      allowed: true,
+      remaining: Math.max(0, limit - nextCount),
+      resetAt,
+      limit,
+      windowSeconds,
+      source: "global:durable_object"
+    };
+  }
+
+  maybeCleanup(now, windowMs) {
+    if (Math.random() >= RATE_LIMITER_CLEANUP_SAMPLE_RATE) {
+      return;
+    }
+
+    const cutoff = now - Math.max(windowMs * 2, 60_000);
+    this.ctx.storage.sql.exec(
+      "DELETE FROM rate_limit_counters WHERE updated_at < ?1",
+      cutoff
+    );
+  }
+}
+
 const SHARED_RATE_LIMITERS = {
   ops: new RateLimiter(RATE_LIMIT_CONFIG.requests, RATE_LIMIT_CONFIG.window),
   telemetry: new RateLimiter(TELEMETRY_RATE_LIMIT_CONFIG.requests, TELEMETRY_RATE_LIMIT_CONFIG.window)
@@ -290,6 +756,162 @@ function getClientIdentifier(request) {
     return `${request.headers.get("cf-connecting-ip") || "unknown"}_${cf.colo}`;
   }
   return request.headers.get("cf-connecting-ip") || "unknown";
+}
+
+function normalizeGlobalLimiterResult(result, fallbackLimit, fallbackWindow, source) {
+  const allowed = result?.allowed !== false;
+  const remaining = Number.isFinite(result?.remaining)
+    ? Math.max(0, Math.floor(result.remaining))
+    : 0;
+  const limit = Number.isFinite(result?.limit)
+    ? Math.max(1, Math.floor(result.limit))
+    : fallbackLimit;
+  const windowSeconds = Number.isFinite(result?.windowSeconds)
+    ? Math.max(1, Math.floor(result.windowSeconds))
+    : fallbackWindow;
+  const resetAt = Number.isFinite(result?.resetAt)
+    ? Math.floor(result.resetAt)
+    : Date.now() + windowSeconds * 1000;
+
+  return {
+    allowed,
+    remaining,
+    limit,
+    windowSeconds,
+    resetAt,
+    source
+  };
+}
+
+async function checkGlobalRateLimitDO(env, settings, scope, clientId, limitConfig) {
+  if (!env.GLOBAL_RATE_LIMITER || typeof env.GLOBAL_RATE_LIMITER.getByName !== "function") {
+    return { applied: false, reason: "missing_do_binding" };
+  }
+
+  const stub = env.GLOBAL_RATE_LIMITER.getByName(settings.durableObjectName);
+  if (!stub || typeof stub.consume !== "function") {
+    return { applied: false, reason: "invalid_do_stub" };
+  }
+
+  const result = await stub.consume({
+    scope,
+    clientId,
+    limit: limitConfig.requests,
+    windowSeconds: limitConfig.window,
+    now: Date.now()
+  });
+
+  return {
+    applied: true,
+    ...normalizeGlobalLimiterResult(
+      result,
+      limitConfig.requests,
+      limitConfig.window,
+      "global:durable_object"
+    )
+  };
+}
+
+async function checkGlobalRateLimitWithKv(env, scope, clientId, limitConfig) {
+  const kv = env.GLOBAL_RATE_LIMIT_KV;
+  if (!kv || typeof kv.get !== "function" || typeof kv.put !== "function") {
+    return { applied: false, reason: "missing_kv_binding" };
+  }
+
+  const now = Date.now();
+  const windowMs = limitConfig.window * 1000;
+  const windowStart = Math.floor(now / windowMs) * windowMs;
+  const key = `rl:${scope}:${clientId}:${windowStart}`;
+  const rawCount = await kv.get(key);
+  const currentCount = Number.parseInt(rawCount ?? "0", 10);
+  const safeCount = Number.isFinite(currentCount) && currentCount > 0 ? currentCount : 0;
+
+  if (safeCount >= limitConfig.requests) {
+    return {
+      applied: true,
+      allowed: false,
+      remaining: 0,
+      limit: limitConfig.requests,
+      windowSeconds: limitConfig.window,
+      resetAt: windowStart + windowMs,
+      source: "global:kv"
+    };
+  }
+
+  const nextCount = safeCount + 1;
+  await kv.put(key, String(nextCount), { expirationTtl: Math.max(limitConfig.window * 2, limitConfig.window + 1) });
+  return {
+    applied: true,
+    allowed: true,
+    remaining: Math.max(0, limitConfig.requests - nextCount),
+    limit: limitConfig.requests,
+    windowSeconds: limitConfig.window,
+    resetAt: windowStart + windowMs,
+    source: "global:kv"
+  };
+}
+
+async function checkGlobalRateLimit(request, env, scope) {
+  const settings = getGlobalRateLimitSettings(env);
+  if (!settings.enabled) {
+    return { applied: false, reason: "disabled" };
+  }
+
+  if (scope === GLOBAL_RATE_LIMIT_SCOPE_TELEMETRY && !settings.telemetryEnabled) {
+    return { applied: false, reason: "telemetry_not_enabled" };
+  }
+
+  const limitConfig = settings.limits[scope];
+  if (!limitConfig) {
+    return { applied: false, reason: "invalid_scope" };
+  }
+
+  const clientId = sanitizeLimiterClientId(getClientIdentifier(request));
+
+  try {
+    if (settings.provider === GLOBAL_RATE_LIMIT_PROVIDER.kv) {
+      if (!settings.allowKvFallback) {
+        return { applied: false, reason: "kv_fallback_not_allowed" };
+      }
+      return await checkGlobalRateLimitWithKv(env, scope, clientId, limitConfig);
+    }
+
+    return await checkGlobalRateLimitDO(env, settings, scope, clientId, limitConfig);
+  } catch (error) {
+    logError(env, error, {
+      type: "global_rate_limit_check",
+      provider: settings.provider,
+      scope
+    });
+    return { applied: false, reason: "check_error" };
+  }
+}
+
+function createRateLimitExceededResponse({
+  requestId,
+  requestMethod,
+  limit,
+  remaining = 0,
+  resetAt,
+  source = "isolate"
+}) {
+  const safeResetAt = Number.isFinite(resetAt) ? resetAt : Date.now() + 1000;
+  const retryAfter = Math.max(1, Math.ceil((safeResetAt - Date.now()) / 1000));
+
+  return jsonResponse({
+    error: "rate_limited",
+    requestId,
+    retryAfter,
+    source
+  }, {
+    status: 429,
+    headers: {
+      "retry-after": retryAfter.toString(),
+      "x-ratelimit-limit": String(limit),
+      "x-ratelimit-remaining": String(Math.max(0, remaining)),
+      "x-ratelimit-source": source
+    }
+  }, requestMethod);
 }
 
 function getCanonicalRedirectResponse(request, env) {
@@ -331,6 +953,21 @@ function jsonResponse(payload, init = {}, requestMethod = "GET") {
   });
 }
 
+function textResponse(payload, init = {}, requestMethod = "GET") {
+  const headers = new Headers(init.headers || {});
+  mergeDefaultHeaders(headers, OPS_NO_CACHE_HEADERS);
+  mergeDefaultHeaders(headers, DEFAULT_SECURITY_HEADERS);
+  mergeDefaultHeaders(headers, {
+    "content-type": "text/plain; charset=utf-8"
+  });
+
+  const body = requestMethod === "HEAD" ? null : payload;
+  return new Response(body, {
+    ...init,
+    headers
+  });
+}
+
 function readVersion(env) {
   return {
     service: "converttoit.com",
@@ -348,6 +985,16 @@ function requireOpsToken(request, env) {
 
   const headerToken = request.headers.get("x-ops-token");
   return headerToken === expected;
+}
+
+function getOpsMetricsToken(env) {
+  const configuredToken = env.OPS_METRICS_TOKEN || env.OPS_LOG_TOKEN;
+  if (typeof configuredToken !== "string") {
+    return null;
+  }
+
+  const trimmed = configuredToken.trim();
+  return trimmed || null;
 }
 
 function makeRequestId(request) {
@@ -389,10 +1036,12 @@ function sanitizeMetrics(metrics) {
   return sanitized;
 }
 
-function ensureOpsMethod(request, requestId) {
+function ensureOpsMethod(request, requestId, pathname) {
   if (OPS_ALLOWED_METHODS.has(request.method)) {
     return null;
   }
+
+  recordOpsRejection(pathname, "method_not_allowed");
 
   return jsonResponse({
     error: "method_not_allowed",
@@ -434,6 +1083,7 @@ async function handleClientLogRoute(request, env, pathname, rateLimiter) {
   const requestId = makeRequestId(request);
 
   if (!LOGGING_ALLOWED_METHODS.has(request.method)) {
+    recordOpsRejection(pathname, "method_not_allowed");
     return jsonResponse({
       error: "method_not_allowed",
       requestId
@@ -446,6 +1096,7 @@ async function handleClientLogRoute(request, env, pathname, rateLimiter) {
   }
 
   if (!isAllowedTelemetryRequest(request)) {
+    recordOpsRejection(pathname, "forbidden_origin");
     return jsonResponse({
       error: "forbidden_origin",
       requestId
@@ -469,22 +1120,32 @@ async function handleClientLogRoute(request, env, pathname, rateLimiter) {
   }
 
   const clientId = getClientIdentifier(request);
-  const rateLimitResult = rateLimiter.check(clientId);
-  if (!rateLimitResult.allowed) {
-    const retryAfter = Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000);
-    recordMetric(env, "rate_limit_exceeded", 1, { endpoint: pathname });
-    return jsonResponse({
-      error: "rate_limited",
+  const isolateRateLimitResult = rateLimiter.check(clientId);
+  if (!isolateRateLimitResult.allowed) {
+    recordMetric(env, "rate_limit_exceeded", 1, { endpoint: pathname, source: "isolate" });
+    recordOpsRejection(pathname, "rate_limited");
+    return createRateLimitExceededResponse({
       requestId,
-      retryAfter
-    }, {
-      status: 429,
-      headers: {
-        "retry-after": retryAfter.toString(),
-        "x-ratelimit-limit": TELEMETRY_RATE_LIMIT_CONFIG.requests.toString(),
-        "x-ratelimit-remaining": "0"
-      }
-    }, request.method);
+      requestMethod: request.method,
+      limit: TELEMETRY_RATE_LIMIT_CONFIG.requests,
+      remaining: 0,
+      resetAt: isolateRateLimitResult.resetAt,
+      source: "isolate"
+    });
+  }
+
+  const globalRateLimitResult = await checkGlobalRateLimit(request, env, GLOBAL_RATE_LIMIT_SCOPE_TELEMETRY);
+  if (globalRateLimitResult.applied && !globalRateLimitResult.allowed) {
+    recordMetric(env, "rate_limit_exceeded", 1, { endpoint: pathname, source: globalRateLimitResult.source });
+    recordOpsRejection(pathname, "rate_limited");
+    return createRateLimitExceededResponse({
+      requestId,
+      requestMethod: request.method,
+      limit: globalRateLimitResult.limit,
+      remaining: globalRateLimitResult.remaining,
+      resetAt: globalRateLimitResult.resetAt,
+      source: globalRateLimitResult.source
+    });
   }
 
   try {
@@ -492,6 +1153,7 @@ async function handleClientLogRoute(request, env, pathname, rateLimiter) {
 
     // Validate required fields
     if (!payload.sessionId || !payload.entries || !Array.isArray(payload.entries)) {
+      recordOpsRejection(pathname, "invalid_payload");
       return jsonResponse({
         error: "invalid_payload",
         requestId
@@ -500,6 +1162,7 @@ async function handleClientLogRoute(request, env, pathname, rateLimiter) {
 
     // Validate payload size limits
     if (payload.entries.length > 100) {
+      recordOpsRejection(pathname, "too_many_entries");
       return jsonResponse({
         error: "too_many_entries",
         requestId,
@@ -510,6 +1173,7 @@ async function handleClientLogRoute(request, env, pathname, rateLimiter) {
     // Sanitize and validate sessionId
     const sanitizedSessionId = String(payload.sessionId).replace(/[^a-zA-Z0-9_-]/g, "").substring(0, 32);
     if (!sanitizedSessionId || sanitizedSessionId.length < 8) {
+      recordOpsRejection(pathname, "invalid_session_id");
       return jsonResponse({
         error: "invalid_session_id",
         requestId
@@ -584,6 +1248,7 @@ async function handleClientLogRoute(request, env, pathname, rateLimiter) {
       processed: Math.min(payload.entries.length, 100)
     });
   } catch (parseError) {
+    recordOpsRejection(pathname, "invalid_json");
     return jsonResponse({
       error: "invalid_json",
       requestId,
@@ -599,38 +1264,55 @@ async function handleOpsRoute(request, env, pathname, rateLimiter) {
 
   const requestId = makeRequestId(request);
   const clientId = getClientIdentifier(request);
-  const rateLimitResult = rateLimiter.check(clientId);
+  const isolateRateLimitResult = rateLimiter.check(clientId);
 
-  if (!rateLimitResult.allowed) {
-    recordMetric(env, "rate_limit_exceeded", 1, { endpoint: pathname });
-    return jsonResponse({
-      error: "rate_limited",
+  if (!isolateRateLimitResult.allowed) {
+    recordMetric(env, "rate_limit_exceeded", 1, { endpoint: pathname, source: "isolate" });
+    recordOpsRejection(pathname, "rate_limited");
+    return createRateLimitExceededResponse({
       requestId,
-      retryAfter: Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)
-    }, {
-      status: 429,
-      headers: {
-        "retry-after": Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000).toString(),
-        "x-ratelimit-limit": RATE_LIMIT_CONFIG.requests.toString(),
-        "x-ratelimit-remaining": "0"
-      }
-    }, request.method);
+      requestMethod: request.method,
+      limit: RATE_LIMIT_CONFIG.requests,
+      remaining: 0,
+      resetAt: isolateRateLimitResult.resetAt,
+      source: "isolate"
+    });
   }
 
-  const invalidMethodResponse = ensureOpsMethod(request, requestId);
+  const globalRateLimitResult = await checkGlobalRateLimit(request, env, GLOBAL_RATE_LIMIT_SCOPE_OPS);
+  if (globalRateLimitResult.applied && !globalRateLimitResult.allowed) {
+    recordMetric(env, "rate_limit_exceeded", 1, { endpoint: pathname, source: globalRateLimitResult.source });
+    recordOpsRejection(pathname, "rate_limited");
+    return createRateLimitExceededResponse({
+      requestId,
+      requestMethod: request.method,
+      limit: globalRateLimitResult.limit,
+      remaining: globalRateLimitResult.remaining,
+      resetAt: globalRateLimitResult.resetAt,
+      source: globalRateLimitResult.source
+    });
+  }
+
+  const invalidMethodResponse = ensureOpsMethod(request, requestId, pathname);
   if (invalidMethodResponse) {
     return invalidMethodResponse;
   }
 
   if (pathname === "/_ops/health") {
     recordMetric(env, "health_check", 1, { status: "ok" });
+    const effectiveLimit = globalRateLimitResult.applied
+      ? Math.min(RATE_LIMIT_CONFIG.requests, globalRateLimitResult.limit)
+      : RATE_LIMIT_CONFIG.requests;
     return jsonResponse({
       status: "ok",
       timestamp: new Date().toISOString(),
       requestId,
       rateLimit: {
-        limit: RATE_LIMIT_CONFIG.requests,
-        remaining: rateLimitResult.remaining
+        limit: effectiveLimit,
+        remaining: globalRateLimitResult.applied
+          ? Math.min(isolateRateLimitResult.remaining, globalRateLimitResult.remaining)
+          : isolateRateLimitResult.remaining,
+        source: globalRateLimitResult.applied ? globalRateLimitResult.source : "isolate"
       },
       ...readVersion(env)
     }, {}, request.method);
@@ -645,27 +1327,50 @@ async function handleOpsRoute(request, env, pathname, rateLimiter) {
   }
 
   if (pathname === "/_ops/metrics") {
-    if (!requireOpsToken(request, env)) {
+    const metricsToken = getOpsMetricsToken(env);
+    if (!metricsToken) {
+      recordOpsRejection(pathname, "metrics_token_missing");
+      return jsonResponse({
+        error: "metrics_token_missing",
+        requestId,
+        message: "Set OPS_METRICS_TOKEN (or OPS_LOG_TOKEN) before scraping /_ops/metrics"
+      }, { status: 503 }, request.method);
+    }
+
+    if (request.headers.get("x-ops-token") !== metricsToken) {
+      recordOpsRejection(pathname, "unauthorized");
       return jsonResponse({
         error: "unauthorized",
         requestId
       }, { status: 401 }, request.method);
     }
 
-    return jsonResponse({
-      timestamp: new Date().toISOString(),
-      requestId,
-      metrics: {
-        rateLimit: {
-          limit: RATE_LIMIT_CONFIG.requests,
-          window: RATE_LIMIT_CONFIG.window
-        }
+    const url = new URL(request.url);
+    const format = (url.searchParams.get("format") || "prom").toLowerCase();
+
+    if (format === "json") {
+      return jsonResponse(buildOpsMetricsSnapshot(env), {}, request.method);
+    }
+
+    if (format !== "prom") {
+      recordOpsRejection(pathname, "unsupported_format");
+      return jsonResponse({
+        error: "unsupported_format",
+        requestId,
+        supportedFormats: ["prom", "json"]
+      }, { status: 400 }, request.method);
+    }
+
+    return textResponse(buildOpsPrometheusMetrics(env), {
+      headers: {
+        "content-type": "text/plain; version=0.0.4; charset=utf-8"
       }
-    }, {}, request.method);
+    }, request.method);
   }
 
   if (pathname === "/_ops/log-ping") {
     if (!requireOpsToken(request, env)) {
+      recordOpsRejection(pathname, "unauthorized");
       return jsonResponse({
         error: "unauthorized",
         requestId
@@ -695,6 +1400,7 @@ async function handleOpsRoute(request, env, pathname, rateLimiter) {
     }, {}, request.method);
   }
 
+  recordOpsRejection(pathname, "not_found");
   return jsonResponse({
     error: "not_found",
     requestId
@@ -721,6 +1427,7 @@ export default {
       const logResponse = await handleClientLogRoute(request, env, pathname, SHARED_RATE_LIMITERS.telemetry);
       if (logResponse) {
         const duration = Date.now() - startTime;
+        recordOpsRequest(pathname, request.method, logResponse.status, duration);
         recordMetric(env, "response_time_ms", duration, {
           endpoint: pathname,
           type: "log"
@@ -732,6 +1439,7 @@ export default {
       const opsResponse = await handleOpsRoute(request, env, pathname, SHARED_RATE_LIMITERS.ops);
       if (opsResponse) {
         const duration = Date.now() - startTime;
+        recordOpsRequest(pathname, request.method, opsResponse.status, duration);
         recordMetric(env, "response_time_ms", duration, {
           endpoint: pathname,
           type: "ops"
@@ -843,6 +1551,7 @@ export default {
       return finalResponse;
     } catch (error) {
       const duration = Date.now() - startTime;
+      recordOpsRequest(pathname, request.method, 503, duration);
       recordMetric(env, "error", 1, {
         type: "asset_fetch_error",
         message: error.message?.slice(0, 50) || "unknown"

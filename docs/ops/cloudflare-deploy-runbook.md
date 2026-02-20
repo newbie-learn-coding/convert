@@ -46,10 +46,28 @@ Do not commit `wrangler.toml` or any secret-bearing `.env*` file.
 ### Optional but recommended
 
 - `CF_OPS_LOG_TOKEN` (if `/_ops/log-ping` is protected)
+- `CF_OPS_METRICS_TOKEN` (if Prometheus/Grafana scrapes `/_ops/metrics`)
 - `CF_APP_VERSION` (otherwise package version is used)
 - `CF_BUILD_SHA` (otherwise current git short SHA is used)
 - `CF_DEPLOY_BASE_URL` (used by `bun run cf:logs:check`)
 - `CF_ALLOW_INTERACTIVE=1` (only for local interactive wrangler auth fallback)
+
+### Global limiter flags (feature-flagged, default-safe)
+
+Default behavior is safe fallback (`RATE_LIMIT_GLOBAL_ENABLED=false`), so isolate-level in-memory limiter remains active.
+
+- `CF_RATE_LIMIT_GLOBAL_ENABLED` → `true|false` (default `false`)
+- `CF_RATE_LIMIT_GLOBAL_PROVIDER` → `durable_object|kv` (default `durable_object`)
+- `CF_RATE_LIMIT_GLOBAL_DO_NAME` → Durable Object instance name (default `global-rate-limiter-v1`)
+- `CF_RATE_LIMIT_GLOBAL_TELEMETRY_ENABLED` → enable global limiter for `/_ops/logs|/_ops/logging` (default `false`)
+- `CF_RATE_LIMIT_GLOBAL_ALLOW_KV_FALLBACK` → must be `true` before KV mode is allowed (default `false`, KV not recommended)
+- Optional fine-tuning:
+  - `CF_RATE_LIMIT_GLOBAL_OPS_REQUESTS`
+  - `CF_RATE_LIMIT_GLOBAL_OPS_WINDOW_SECONDS`
+  - `CF_RATE_LIMIT_GLOBAL_TELEMETRY_REQUESTS`
+  - `CF_RATE_LIMIT_GLOBAL_TELEMETRY_WINDOW_SECONDS`
+
+Wrangler config now declares `GLOBAL_RATE_LIMITER` Durable Object binding and `v1-global-rate-limiter` migration (`new_sqlite_classes = ["GlobalRateLimiter"]`).
 
 ## 4) Production deploy sequence (safe order)
 
@@ -146,4 +164,3 @@ Typical blockers:
 - Missing `CLOUDFLARE_ACCOUNT_ID`
 - Missing local `wrangler.toml` (create via `cp wrangler.toml.example wrangler.toml`)
 - Invalid `CF_DEPLOY_BASE_URL` / wrong host for production gate
-

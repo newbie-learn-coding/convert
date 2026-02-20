@@ -208,6 +208,7 @@ APP_VERSION = "1.0.0"  # Auto-populated
 
 # Optional: Add to environment
 OPS_LOG_TOKEN = "your-token-here"  # For protected ops endpoints
+OPS_METRICS_TOKEN = "your-metrics-token"  # Required for /_ops/metrics scraping
 ```
 
 ### Tuning Parameters

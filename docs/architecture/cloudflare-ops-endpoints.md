@@ -1,6 +1,6 @@
 # Cloudflare ops endpoint strategy (minimal backend layer)
 
-Last updated: 2026-02-19
+Last updated: 2026-02-20
 
 ## Goal
 
@@ -19,6 +19,7 @@ Keep the app primarily static while adding a minimal Cloudflare-native backend p
 |---|---|---|---|
 | `/_ops/health` | GET | Liveness + deployment metadata | Public |
 | `/_ops/version` | GET | Version/build visibility for support and incident triage | Public |
+| `/_ops/metrics` | GET | Prometheus scrape endpoint for `/_ops` SLOs (supports `?format=json`) | Required `x-ops-token` (`OPS_METRICS_TOKEN` or `OPS_LOG_TOKEN`) |
 | `/_ops/log-ping` | GET | Emits structured log marker (`ops.log_ping`) for tail verification | Optional token via `OPS_LOG_TOKEN` |
 
 ## Logging model
@@ -37,6 +38,7 @@ This enables deterministic deploy verification with `wrangler tail --search <cor
 
 - No secrets hardcoded in repo.
 - Optional secret gate for log marker endpoint (`OPS_LOG_TOKEN`).
+- Required secret gate for metrics scrape endpoint (`OPS_METRICS_TOKEN`, fallback `OPS_LOG_TOKEN`).
 - `/_ops/*` enforces `GET/HEAD` only (`405` otherwise).
 - Ops responses include `X-Robots-Tag: noindex, nofollow, noarchive` + baseline security headers.
 - User-provided correlation ids are sanitized and length-bounded before logging.

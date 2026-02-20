@@ -2,6 +2,13 @@ import { describe, expect, test } from "bun:test";
 import worker from "../cloudflare/worker/index.mjs";
 
 type AssetsBinding = { fetch: (request: Request) => Promise<Response> | Response };
+type GlobalLimiterCall = {
+  name: string;
+  scope: string;
+  clientId: string;
+  limit: number;
+  windowSeconds: number;
+};
 
 // Mock the caches API for Cloudflare Workers
 globalThis.caches = {
@@ -39,6 +46,57 @@ function createTelemetryPayload() {
     ],
     metrics: {
       conversionsSucceeded: 1
+    }
+  };
+}
+
+function createMockGlobalLimiterBinding() {
+  const counters = new Map<string, { windowStart: number; count: number }>();
+  const calls: GlobalLimiterCall[] = [];
+
+  return {
+    calls,
+    binding: {
+      getByName: (name: string) => ({
+        consume: async ({ scope, clientId, limit, windowSeconds, now = Date.now() }: {
+          scope: string;
+          clientId: string;
+          limit: number;
+          windowSeconds: number;
+          now?: number;
+        }) => {
+          calls.push({ name, scope, clientId, limit, windowSeconds });
+
+          const safeWindowSeconds = Math.max(1, windowSeconds);
+          const windowMs = safeWindowSeconds * 1000;
+          const windowStart = Math.floor(now / windowMs) * windowMs;
+          const key = `${scope}:${clientId}`;
+          const entry = counters.get(key);
+          const currentCount = entry && entry.windowStart === windowStart ? entry.count : 0;
+
+          if (currentCount >= limit) {
+            return {
+              allowed: false,
+              remaining: 0,
+              resetAt: windowStart + windowMs,
+              limit,
+              windowSeconds: safeWindowSeconds,
+              source: "global:durable_object"
+            };
+          }
+
+          const nextCount = currentCount + 1;
+          counters.set(key, { windowStart, count: nextCount });
+          return {
+            allowed: true,
+            remaining: Math.max(0, limit - nextCount),
+            resetAt: windowStart + windowMs,
+            limit,
+            windowSeconds: safeWindowSeconds,
+            source: "global:durable_object"
+          };
+        }
+      })
     }
   };
 }
@@ -117,6 +175,59 @@ describe("Cloudflare worker hardening", () => {
     expect(body.error).toBe("rate_limited");
   });
 
+  test("uses durable object global limiter for /_ops when feature flag enabled", async () => {
+    const mockGlobalLimiter = createMockGlobalLimiterBinding();
+    const env = createEnv({
+      RATE_LIMIT_GLOBAL_ENABLED: "true",
+      RATE_LIMIT_GLOBAL_PROVIDER: "durable_object",
+      RATE_LIMIT_GLOBAL_OPS_REQUESTS: "2",
+      GLOBAL_RATE_LIMITER: mockGlobalLimiter.binding
+    });
+
+    const request = () =>
+      new Request("https://converttoit.com/_ops/health", {
+        headers: {
+          "cf-connecting-ip": "203.0.113.210"
+        }
+      });
+
+    const first = await worker.fetch(request(), env);
+    const second = await worker.fetch(request(), env);
+    const third = await worker.fetch(request(), env);
+    const thirdBody = await third.json();
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(third.status).toBe(429);
+    expect(thirdBody.source).toBe("global:durable_object");
+    expect(third.headers.get("x-ratelimit-source")).toBe("global:durable_object");
+    expect(mockGlobalLimiter.calls.length).toBe(3);
+    expect(mockGlobalLimiter.calls[0]?.scope).toBe("ops");
+  });
+
+  test("falls back to isolate limiter when global limiter flag is enabled but DO binding is missing", async () => {
+    const env = createEnv({
+      RATE_LIMIT_GLOBAL_ENABLED: "true",
+      RATE_LIMIT_GLOBAL_PROVIDER: "durable_object"
+    });
+    let lastResponse: Response | null = null;
+
+    for (let index = 0; index < 101; index++) {
+      lastResponse = await worker.fetch(
+        new Request("https://converttoit.com/_ops/health", {
+          headers: {
+            "cf-connecting-ip": "203.0.113.211"
+          }
+        }),
+        env
+      );
+    }
+
+    expect(lastResponse).not.toBeNull();
+    expect(lastResponse?.status).toBe(429);
+    expect(lastResponse?.headers.get("x-ratelimit-source")).toBe("isolate");
+  });
+
   test("enforces OPS_LOG_TOKEN on log-ping", async () => {
     const env = createEnv({ OPS_LOG_TOKEN: "super-secret-token" });
     const unauthorized = await worker.fetch(new Request("https://converttoit.com/_ops/log-ping"), env);
@@ -134,6 +245,51 @@ describe("Cloudflare worker hardening", () => {
     expect(unauthorized.status).toBe(401);
     expect(queryTokenAttempt.status).toBe(401);
     expect(authorized.status).toBe(200);
+  });
+
+  test("requires configured metrics token and returns Prometheus format", async () => {
+    const withoutToken = await worker.fetch(new Request("https://converttoit.com/_ops/metrics"), createEnv());
+    const missingTokenBody = await withoutToken.json();
+    expect(withoutToken.status).toBe(503);
+    expect(missingTokenBody.error).toBe("metrics_token_missing");
+
+    const env = createEnv({ OPS_METRICS_TOKEN: "metrics-secret-token" });
+    await worker.fetch(new Request("https://converttoit.com/_ops/health"), env);
+
+    const unauthorized = await worker.fetch(new Request("https://converttoit.com/_ops/metrics"), env);
+    expect(unauthorized.status).toBe(401);
+
+    const authorized = await worker.fetch(
+      new Request("https://converttoit.com/_ops/metrics", {
+        headers: { "x-ops-token": "metrics-secret-token" }
+      }),
+      env
+    );
+    const metricsText = await authorized.text();
+
+    expect(authorized.status).toBe(200);
+    expect(authorized.headers.get("content-type")).toContain("text/plain");
+    expect(metricsText).toContain("converttoit_ops_requests_total");
+    expect(metricsText).toContain("converttoit_ops_request_duration_seconds_bucket");
+    expect(metricsText).toContain('endpoint="/_ops/health"');
+  });
+
+  test("supports json schema output for metrics endpoint", async () => {
+    const env = createEnv({ OPS_METRICS_TOKEN: "metrics-json-token" });
+    await worker.fetch(new Request("https://converttoit.com/_ops/version"), env);
+
+    const response = await worker.fetch(
+      new Request("https://converttoit.com/_ops/metrics?format=json", {
+        headers: { "x-ops-token": "metrics-json-token" }
+      }),
+      env
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.schemaVersion).toBe("2026-02-20");
+    expect(body.sloTargets.availability).toBe(0.999);
+    expect(Array.isArray(body.requests)).toBe(true);
   });
 
   test("sanitizes and bounds correlation id", async () => {
@@ -216,6 +372,64 @@ describe("Cloudflare worker hardening", () => {
     const body = await lastResponse!.json();
     expect(body.error).toBe("rate_limited");
     expect(lastResponse!.headers.get("x-ratelimit-limit")).toBe("50");
+  });
+
+  test("does not apply global limiter to telemetry unless telemetry flag is enabled", async () => {
+    const mockGlobalLimiter = createMockGlobalLimiterBinding();
+    const env = createEnv({
+      RATE_LIMIT_GLOBAL_ENABLED: "true",
+      RATE_LIMIT_GLOBAL_PROVIDER: "durable_object",
+      RATE_LIMIT_GLOBAL_OPS_REQUESTS: "1",
+      GLOBAL_RATE_LIMITER: mockGlobalLimiter.binding
+    });
+
+    const response = await worker.fetch(
+      new Request("https://converttoit.com/_ops/logs", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "https://converttoit.com",
+          "cf-connecting-ip": "198.51.100.251"
+        },
+        body: JSON.stringify(createTelemetryPayload())
+      }),
+      env
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockGlobalLimiter.calls.length).toBe(0);
+  });
+
+  test("can enable global telemetry limiter via dedicated feature flag", async () => {
+    const mockGlobalLimiter = createMockGlobalLimiterBinding();
+    const env = createEnv({
+      RATE_LIMIT_GLOBAL_ENABLED: "true",
+      RATE_LIMIT_GLOBAL_PROVIDER: "durable_object",
+      RATE_LIMIT_GLOBAL_TELEMETRY_ENABLED: "true",
+      RATE_LIMIT_GLOBAL_TELEMETRY_REQUESTS: "1",
+      GLOBAL_RATE_LIMITER: mockGlobalLimiter.binding
+    });
+
+    const request = () =>
+      new Request("https://converttoit.com/_ops/logging", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "https://converttoit.com",
+          "cf-connecting-ip": "198.51.100.252"
+        },
+        body: JSON.stringify(createTelemetryPayload())
+      });
+
+    const first = await worker.fetch(request(), env);
+    const second = await worker.fetch(request(), env);
+    const secondBody = await second.json();
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(429);
+    expect(secondBody.source).toBe("global:durable_object");
+    expect(second.headers.get("x-ratelimit-source")).toBe("global:durable_object");
+    expect(mockGlobalLimiter.calls[0]?.scope).toBe("telemetry");
   });
 
   test("returns empty body for HEAD ops requests", async () => {

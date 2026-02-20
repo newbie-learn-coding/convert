@@ -24,6 +24,15 @@ Environment variables:
   CF_ALLOW_INTERACTIVE   Set to 1 to allow deploy without CLOUDFLARE_API_TOKEN
   CF_SKIP_POLICY_CHECKS  Set to 1 to skip SEO/domain integrity preflight checks
   WRANGLER_CONFIG_PATH   Config path (default: ./wrangler.toml)
+  CF_RATE_LIMIT_GLOBAL_ENABLED            Override RATE_LIMIT_GLOBAL_ENABLED
+  CF_RATE_LIMIT_GLOBAL_PROVIDER           Override RATE_LIMIT_GLOBAL_PROVIDER (durable_object|kv)
+  CF_RATE_LIMIT_GLOBAL_DO_NAME            Override RATE_LIMIT_GLOBAL_DO_NAME
+  CF_RATE_LIMIT_GLOBAL_TELEMETRY_ENABLED  Override RATE_LIMIT_GLOBAL_TELEMETRY_ENABLED
+  CF_RATE_LIMIT_GLOBAL_ALLOW_KV_FALLBACK  Override RATE_LIMIT_GLOBAL_ALLOW_KV_FALLBACK (not recommended)
+  CF_RATE_LIMIT_GLOBAL_OPS_REQUESTS       Optional override for global /_ops limit
+  CF_RATE_LIMIT_GLOBAL_OPS_WINDOW_SECONDS Optional override for global /_ops window
+  CF_RATE_LIMIT_GLOBAL_TELEMETRY_REQUESTS Optional override for global telemetry limit
+  CF_RATE_LIMIT_GLOBAL_TELEMETRY_WINDOW_SECONDS Optional override for global telemetry window
 USAGE
 }
 
@@ -141,6 +150,24 @@ DEPLOY_ARGS=(
   --var "BUILD_SHA:$BUILD_SHA"
   --var "ENVIRONMENT:$ENVIRONMENT_LABEL"
 )
+
+append_optional_var() {
+  local var_name="$1"
+  local var_value="${2:-}"
+  if [ -n "$var_value" ]; then
+    DEPLOY_ARGS+=(--var "${var_name}:${var_value}")
+  fi
+}
+
+append_optional_var "RATE_LIMIT_GLOBAL_ENABLED" "${CF_RATE_LIMIT_GLOBAL_ENABLED:-}"
+append_optional_var "RATE_LIMIT_GLOBAL_PROVIDER" "${CF_RATE_LIMIT_GLOBAL_PROVIDER:-}"
+append_optional_var "RATE_LIMIT_GLOBAL_DO_NAME" "${CF_RATE_LIMIT_GLOBAL_DO_NAME:-}"
+append_optional_var "RATE_LIMIT_GLOBAL_TELEMETRY_ENABLED" "${CF_RATE_LIMIT_GLOBAL_TELEMETRY_ENABLED:-}"
+append_optional_var "RATE_LIMIT_GLOBAL_ALLOW_KV_FALLBACK" "${CF_RATE_LIMIT_GLOBAL_ALLOW_KV_FALLBACK:-}"
+append_optional_var "RATE_LIMIT_GLOBAL_OPS_REQUESTS" "${CF_RATE_LIMIT_GLOBAL_OPS_REQUESTS:-}"
+append_optional_var "RATE_LIMIT_GLOBAL_OPS_WINDOW_SECONDS" "${CF_RATE_LIMIT_GLOBAL_OPS_WINDOW_SECONDS:-}"
+append_optional_var "RATE_LIMIT_GLOBAL_TELEMETRY_REQUESTS" "${CF_RATE_LIMIT_GLOBAL_TELEMETRY_REQUESTS:-}"
+append_optional_var "RATE_LIMIT_GLOBAL_TELEMETRY_WINDOW_SECONDS" "${CF_RATE_LIMIT_GLOBAL_TELEMETRY_WINDOW_SECONDS:-}"
 
 if [ "$TARGET_ENV" != "production" ]; then
   DEPLOY_ARGS+=(--env "$TARGET_ENV")
