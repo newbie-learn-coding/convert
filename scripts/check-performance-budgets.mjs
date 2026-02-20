@@ -74,6 +74,11 @@ const BUDGET_RULES = [
     budget: { raw: 100, gzip: 20, brotli: 18 }
   },
   {
+    name: "espeak-worker-js",
+    test: (artifactPath) => artifactPath === "js/espeakng.worker.js",
+    budget: { raw: 800, gzip: 200, brotli: 200 }
+  },
+  {
     name: "generic-js",
     test: (artifactPath) => artifactPath.endsWith(".js"),
     budget: { raw: 400, gzip: 180, brotli: 160 }

@@ -37,13 +37,13 @@ export class espeakngHandler implements FormatHandler {
 
   async doConvert (
     inputFiles: FileData[],
-    inputFormat: FileFormat,
-    outputFormat: FileFormat
+    _inputFormat: FileFormat,
+    _outputFormat: FileFormat
   ): Promise<FileData[]> {
     const tts = await this.getTTS();
     return Promise.all(inputFiles.map(async(file) => {
       const audio = await new Promise<AudioBuffer>(resolve => {
-        tts.speak(new TextDecoder().decode(file.bytes), (audio: Float32Array, sampleRate: number) => {
+        tts.speak(new TextDecoder().decode(file.bytes), (audio: Float32Array, _sampleRate: number) => {
           resolve(SimpleTTS.createAudioBuffer(audio, tts.sampleRate) as AudioBuffer);
         })
       });

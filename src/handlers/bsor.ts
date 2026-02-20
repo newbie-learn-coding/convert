@@ -28,7 +28,7 @@ class bsorHandler implements FormatHandler {
 
   async doConvert (
     inputFiles: FileData[],
-    inputFormat: FileFormat,
+    _inputFormat: FileFormat,
     outputFormat: FileFormat
   ): Promise<FileData[]> {
     let frameIndex = 0;

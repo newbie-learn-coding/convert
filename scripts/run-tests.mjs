@@ -14,8 +14,19 @@ const rootDir = join(__dirname, "..");
 
 const testSuites = [
   { name: "Core Unit Tests", command: ["bun", "test", "src/fileValidator.unit.test.ts", "src/performance.unit.test.ts", "src/logging.unit.test.ts"] },
-  { name: "Traversion Graph", command: ["bun", "test", "tests/TraversionGraph.test.ts"] },
-  { name: "Handler Error Normalization", command: ["bun", "test", "tests/handlerErrorNormalization.test.ts"] },
+  { name: "Traversion Graph", command: ["bun", "test", "test/TraversionGraph.test.ts"] },
+  { name: "Handler Error Normalization", command: ["bun", "test", "test/handlerErrorNormalization.test.ts"] },
+  {
+    name: "Ops Hardening",
+    command: [
+      "bun",
+      "test",
+      "test/seoDomainPolicy.test.ts",
+      "test/criticalFileIntegrity.test.ts",
+      "test/cloudflareWorkerHardening.test.ts",
+      "test/deployScriptHardening.test.ts",
+    ],
+  },
 ];
 
 async function runTest(suite) {

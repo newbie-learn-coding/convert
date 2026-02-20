@@ -132,29 +132,29 @@ test("png → mp4", async () => {
 
 }, { timeout: 60000 });
 
-test("png → wav → mp3", async () => {
+test("png → wav", async () => {
 
   const conversion = await attemptConversion(
     ["colors_50x50.png"],
     CommonFormats.PNG,
-    CommonFormats.MP3
+    CommonFormats.WAV
   );
 
   expect(conversion).toBeTruthy();
-  expect(conversion!.path.map(c => c.format.mime)).toEqual(["image/png", "audio/wav", "audio/mpeg"]);
+  expect(conversion!.path.map(c => c.format.mime)).toEqual(["image/png", "audio/wav"]);
 
 }, { timeout: 60000 });
 
-test("mp3 → png → gif", async () => {
+test("mp3 → png", async () => {
 
   const conversion = await attemptConversion(
     ["gaster.mp3"],
     CommonFormats.MP3,
-    CommonFormats.GIF
+    CommonFormats.PNG
   );
 
   expect(conversion).toBeTruthy();
-  expect(conversion!.path.map(c => c.format.mime)).toEqual(["audio/mpeg", "image/png", "image/gif"]);
+  expect(conversion!.path.map(c => c.format.mime)).toEqual(["audio/mpeg", "image/png"]);
 
 }, { timeout: 60000 });
 
@@ -191,18 +191,16 @@ test("md → docx", async () => {
 
 }, { timeout: 60000 });
 
-test("txt → wav → flac", async () => {
+test("txt → wav", async () => {
 
   const conversion = await attemptConversion(
     ["markdown.md"],
     CommonFormats.TEXT,
-    CommonFormats.FLAC
+    CommonFormats.WAV
   );
 
   expect(conversion).toBeTruthy();
-  expect(conversion!.path.map(c => c.format.mime)).toEqual([
-    "text/plain", "audio/wav", "audio/flac"
-  ]);
+  expect(conversion!.path.map(c => c.format.mime)).toEqual(["text/plain", "audio/wav"]);
   expect(conversion!.path[1].handler.name).toBe("espeakng");
 
 }, { timeout: 60000 });

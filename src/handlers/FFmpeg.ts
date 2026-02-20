@@ -5,7 +5,22 @@ import type { LogEvent } from "@ffmpeg/ffmpeg";
 
 import mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
+import { wasmAssetPath, withBasePath } from "../assetPath.ts";
 import CommonFormats from "src/CommonFormats.ts";
+
+const DEFAULT_FFMPEG_CORE_BASE_URL = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm";
+
+function resolveCoreAssetUrl(value: string): string {
+  if (/^https?:\/\//i.test(value)) return value;
+  return withBasePath(value.replace(/^\/+/, ""));
+}
+
+function resolveCoreUrl(baseOrFile: string | undefined): string | undefined {
+  const trimmed = `${baseOrFile ?? ""}`.trim();
+  if (!trimmed) return undefined;
+  if (trimmed.endsWith(".js")) return resolveCoreAssetUrl(trimmed);
+  return `${resolveCoreAssetUrl(trimmed).replace(/\/+$/, "")}/ffmpeg-core.js`;
+}
 
 class FFmpegHandler implements FormatHandler {
 
@@ -33,9 +48,26 @@ class FFmpegHandler implements FormatHandler {
 
   async loadFFmpeg () {
     if (!this.#ffmpeg) return;
-    return await this.#ffmpeg.load({
-      coreURL: "/convert/wasm/ffmpeg-core.js"
-    });
+
+    const configuredCoreUrl = resolveCoreUrl(import.meta.env.VITE_FFMPEG_CORE_BASE_URL);
+    const defaultCoreUrl = resolveCoreUrl(DEFAULT_FFMPEG_CORE_BASE_URL);
+    const localCoreUrl = wasmAssetPath("ffmpeg-core.js");
+    const coreCandidates = Array.from(new Set([
+      configuredCoreUrl,
+      defaultCoreUrl,
+      localCoreUrl
+    ].filter((value): value is string => typeof value === "string" && value.length > 0)));
+
+    let lastError: unknown;
+    for (const coreURL of coreCandidates) {
+      try {
+        return await this.#ffmpeg.load({ coreURL });
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError ?? new Error("Failed to load FFmpeg core assets.");
   }
   terminateFFmpeg () {
     if (!this.#ffmpeg) return;
