@@ -399,13 +399,8 @@ async function buildOptionList () {
     await buildOptionList();
     console.log("Built initial format list.");
 
-    // Deep-linking: pre-select formats and enable embed mode via URL params
+    // Deep-linking: pre-select formats via URL params (?from=png&to=jpg)
     const params = new URLSearchParams(window.location.search);
-
-    if (params.get("embed") === "1") {
-      document.body.classList.add("embed-mode");
-    }
-
     const fromParam = params.get("from")?.toLowerCase();
     const toParam = params.get("to")?.toLowerCase();
 

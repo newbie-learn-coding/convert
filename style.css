@@ -2113,23 +2113,6 @@ button.selected {
 }
 
 /* ============================================
-   EMBED MODE - Stripped-down for iframe usage
-   ============================================ */
-body.embed-mode .site-header,
-body.embed-mode .site-footer,
-body.embed-mode #secondary-content,
-body.embed-mode #side-panel,
-body.embed-mode .skip-link,
-body.embed-mode #tool-hero {
-  display: none !important;
-}
-
-body.embed-mode #tool-shell {
-  margin: 0;
-  padding: 12px;
-}
-
-/* ============================================
    PRINT STYLES
    ============================================ */
 @media print {
