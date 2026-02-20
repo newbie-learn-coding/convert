@@ -398,6 +398,44 @@ async function buildOptionList () {
   } finally {
     await buildOptionList();
     console.log("Built initial format list.");
+
+    // Deep-linking: pre-select formats and enable embed mode via URL params
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("embed") === "1") {
+      document.body.classList.add("embed-mode");
+    }
+
+    const fromParam = params.get("from")?.toLowerCase();
+    const toParam = params.get("to")?.toLowerCase();
+
+    if (fromParam) {
+      for (const btn of Array.from(ui.inputList.children)) {
+        if (!(btn instanceof HTMLButtonElement)) continue;
+        const idx = btn.getAttribute("format-index");
+        if (!idx) continue;
+        const opt = allOptions[parseInt(idx)];
+        if (!opt) continue;
+        if (opt.format.extension.toLowerCase() === fromParam || opt.format.format.toLowerCase() === fromParam) {
+          btn.click();
+          break;
+        }
+      }
+    }
+
+    if (toParam) {
+      for (const btn of Array.from(ui.outputList.children)) {
+        if (!(btn instanceof HTMLButtonElement)) continue;
+        const idx = btn.getAttribute("format-index");
+        if (!idx) continue;
+        const opt = allOptions[parseInt(idx)];
+        if (!opt) continue;
+        if (opt.format.extension.toLowerCase() === toParam || opt.format.format.toLowerCase() === toParam) {
+          btn.click();
+          break;
+        }
+      }
+    }
   }
 })();
 

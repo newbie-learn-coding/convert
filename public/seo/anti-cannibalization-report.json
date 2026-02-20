@@ -26,9 +26,9 @@
   },
   "summary": {
     "pagesEvaluated": 23,
-    "minRawMeaningfulUniqueness": 0.5537,
-    "minMeaningfulUniquenessStrategyScore": 81.72,
-    "averageMeaningfulUniquenessStrategyScore": 85.88
+    "minRawMeaningfulUniqueness": 0.5515,
+    "minMeaningfulUniquenessStrategyScore": 81.51,
+    "averageMeaningfulUniquenessStrategyScore": 85.77
   },
   "strategy": [
     "One primary keyword per URL path.",
@@ -44,12 +44,12 @@
       "primaryKeyword": "convert png to jpg",
       "family": "format",
       "cluster": "image-conversion",
-      "minMeaningfulUniqueness": 0.6151,
-      "meaningfulUniquenessStrategyScore": 84.6,
+      "minMeaningfulUniqueness": 0.6108,
+      "meaningfulUniquenessStrategyScore": 84.43,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.5921,
+      "maxRenderedTextSimilarity": 0.5988,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 61.51,
+        "contentUniquenessFloor": 61.08,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -61,12 +61,12 @@
       "primaryKeyword": "convert jpg to png",
       "family": "format",
       "cluster": "image-conversion",
-      "minMeaningfulUniqueness": 0.6151,
-      "meaningfulUniquenessStrategyScore": 84.6,
+      "minMeaningfulUniqueness": 0.6108,
+      "meaningfulUniquenessStrategyScore": 84.43,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.5921,
+      "maxRenderedTextSimilarity": 0.5988,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 61.51,
+        "contentUniquenessFloor": 61.08,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -78,12 +78,12 @@
       "primaryKeyword": "convert webp to png",
       "family": "format",
       "cluster": "image-conversion",
-      "minMeaningfulUniqueness": 0.5537,
-      "meaningfulUniquenessStrategyScore": 82.15,
+      "minMeaningfulUniqueness": 0.5515,
+      "meaningfulUniquenessStrategyScore": 82.06,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.6866,
+      "maxRenderedTextSimilarity": 0.69,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 55.37,
+        "contentUniquenessFloor": 55.15,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -95,12 +95,12 @@
       "primaryKeyword": "convert svg to png",
       "family": "format",
       "cluster": "design-asset-conversion",
-      "minMeaningfulUniqueness": 0.6443,
-      "meaningfulUniquenessStrategyScore": 85.77,
+      "minMeaningfulUniqueness": 0.6426,
+      "meaningfulUniquenessStrategyScore": 85.7,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.5473,
+      "maxRenderedTextSimilarity": 0.5499,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 64.43,
+        "contentUniquenessFloor": 64.26,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -112,12 +112,12 @@
       "primaryKeyword": "convert pdf to jpg",
       "family": "format",
       "cluster": "document-conversion",
-      "minMeaningfulUniqueness": 0.7488,
-      "meaningfulUniquenessStrategyScore": 89.95,
+      "minMeaningfulUniqueness": 0.7471,
+      "meaningfulUniquenessStrategyScore": 89.88,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.3865,
+      "maxRenderedTextSimilarity": 0.3891,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 74.88,
+        "contentUniquenessFloor": 74.71,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -129,12 +129,12 @@
       "primaryKeyword": "convert mov to mp4",
       "family": "format",
       "cluster": "video-conversion",
-      "minMeaningfulUniqueness": 0.6663,
-      "meaningfulUniquenessStrategyScore": 86.65,
+      "minMeaningfulUniqueness": 0.6619,
+      "meaningfulUniquenessStrategyScore": 86.48,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.5134,
+      "maxRenderedTextSimilarity": 0.5202,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 66.63,
+        "contentUniquenessFloor": 66.19,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -146,12 +146,12 @@
       "primaryKeyword": "convert wav to mp3",
       "family": "format",
       "cluster": "audio-conversion",
-      "minMeaningfulUniqueness": 0.6337,
-      "meaningfulUniquenessStrategyScore": 85.35,
+      "minMeaningfulUniqueness": 0.6272,
+      "meaningfulUniquenessStrategyScore": 85.09,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.5636,
+      "maxRenderedTextSimilarity": 0.5735,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 63.37,
+        "contentUniquenessFloor": 62.72,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -163,12 +163,12 @@
       "primaryKeyword": "convert jpg to webp",
       "family": "format",
       "cluster": "image-conversion",
-      "minMeaningfulUniqueness": 0.6386,
-      "meaningfulUniquenessStrategyScore": 83.54,
+      "minMeaningfulUniqueness": 0.6393,
+      "meaningfulUniquenessStrategyScore": 83.57,
       "maxSignalOverlap": 0.1,
-      "maxRenderedTextSimilarity": 0.556,
+      "maxRenderedTextSimilarity": 0.5549,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 63.86,
+        "contentUniquenessFloor": 63.93,
         "keywordOwnership": 100,
         "signalIsolation": 90,
         "urlPatternCompliance": 100
@@ -180,12 +180,12 @@
       "primaryKeyword": "convert png to webp",
       "family": "format",
       "cluster": "image-conversion",
-      "minMeaningfulUniqueness": 0.5537,
-      "meaningfulUniquenessStrategyScore": 82.15,
+      "minMeaningfulUniqueness": 0.5515,
+      "meaningfulUniquenessStrategyScore": 82.06,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.6866,
+      "maxRenderedTextSimilarity": 0.69,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 55.37,
+        "contentUniquenessFloor": 55.15,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -197,12 +197,12 @@
       "primaryKeyword": "convert mp4 to gif",
       "family": "format",
       "cluster": "video-conversion",
-      "minMeaningfulUniqueness": 0.5929,
-      "meaningfulUniquenessStrategyScore": 83.72,
+      "minMeaningfulUniqueness": 0.5878,
+      "meaningfulUniquenessStrategyScore": 83.51,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.6263,
+      "maxRenderedTextSimilarity": 0.6342,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 59.29,
+        "contentUniquenessFloor": 58.78,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -214,12 +214,12 @@
       "primaryKeyword": "convert avi to mp4",
       "family": "format",
       "cluster": "video-conversion",
-      "minMeaningfulUniqueness": 0.7454,
-      "meaningfulUniquenessStrategyScore": 89.82,
+      "minMeaningfulUniqueness": 0.744,
+      "meaningfulUniquenessStrategyScore": 89.76,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.3917,
+      "maxRenderedTextSimilarity": 0.3938,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 74.54,
+        "contentUniquenessFloor": 74.4,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -231,12 +231,12 @@
       "primaryKeyword": "convert mp3 to wav",
       "family": "format",
       "cluster": "audio-conversion",
-      "minMeaningfulUniqueness": 0.6337,
-      "meaningfulUniquenessStrategyScore": 85.35,
+      "minMeaningfulUniqueness": 0.6272,
+      "meaningfulUniquenessStrategyScore": 85.09,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.5636,
+      "maxRenderedTextSimilarity": 0.5735,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 63.37,
+        "contentUniquenessFloor": 62.72,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -248,12 +248,12 @@
       "primaryKeyword": "convert flac to mp3",
       "family": "format",
       "cluster": "audio-conversion",
-      "minMeaningfulUniqueness": 0.7061,
-      "meaningfulUniquenessStrategyScore": 88.24,
+      "minMeaningfulUniqueness": 0.7057,
+      "meaningfulUniquenessStrategyScore": 88.23,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.4522,
+      "maxRenderedTextSimilarity": 0.4527,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 70.61,
+        "contentUniquenessFloor": 70.57,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -265,12 +265,12 @@
       "primaryKeyword": "convert docx to pdf",
       "family": "format",
       "cluster": "document-conversion",
-      "minMeaningfulUniqueness": 0.688,
-      "meaningfulUniquenessStrategyScore": 87.52,
+      "minMeaningfulUniqueness": 0.6843,
+      "meaningfulUniquenessStrategyScore": 87.37,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.48,
+      "maxRenderedTextSimilarity": 0.4857,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 68.8,
+        "contentUniquenessFloor": 68.43,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -282,12 +282,12 @@
       "primaryKeyword": "convert txt to pdf",
       "family": "format",
       "cluster": "document-conversion",
-      "minMeaningfulUniqueness": 0.7328,
-      "meaningfulUniquenessStrategyScore": 89.31,
+      "minMeaningfulUniqueness": 0.7307,
+      "meaningfulUniquenessStrategyScore": 89.23,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.4111,
+      "maxRenderedTextSimilarity": 0.4143,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 73.28,
+        "contentUniquenessFloor": 73.07,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -299,12 +299,12 @@
       "primaryKeyword": "convert heic to jpg",
       "family": "format",
       "cluster": "image-conversion",
-      "minMeaningfulUniqueness": 0.7933,
-      "meaningfulUniquenessStrategyScore": 91.73,
+      "minMeaningfulUniqueness": 0.7905,
+      "meaningfulUniquenessStrategyScore": 91.62,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.318,
+      "maxRenderedTextSimilarity": 0.3223,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 79.33,
+        "contentUniquenessFloor": 79.05,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -316,12 +316,12 @@
       "primaryKeyword": "convert gif to mp4",
       "family": "format",
       "cluster": "video-conversion",
-      "minMeaningfulUniqueness": 0.5929,
-      "meaningfulUniquenessStrategyScore": 81.72,
+      "minMeaningfulUniqueness": 0.5878,
+      "meaningfulUniquenessStrategyScore": 81.51,
       "maxSignalOverlap": 0.1,
-      "maxRenderedTextSimilarity": 0.6263,
+      "maxRenderedTextSimilarity": 0.6342,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 59.29,
+        "contentUniquenessFloor": 58.78,
         "keywordOwnership": 100,
         "signalIsolation": 90,
         "urlPatternCompliance": 100
@@ -333,12 +333,12 @@
       "primaryKeyword": "png vs jpg",
       "family": "compare",
       "cluster": "image-format-comparison",
-      "minMeaningfulUniqueness": 0.6001,
-      "meaningfulUniquenessStrategyScore": 84,
+      "minMeaningfulUniqueness": 0.6012,
+      "meaningfulUniquenessStrategyScore": 84.05,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.6153,
+      "maxRenderedTextSimilarity": 0.6135,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 60.01,
+        "contentUniquenessFloor": 60.12,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -350,12 +350,12 @@
       "primaryKeyword": "jpg vs webp",
       "family": "compare",
       "cluster": "image-format-comparison",
-      "minMeaningfulUniqueness": 0.6001,
-      "meaningfulUniquenessStrategyScore": 84,
+      "minMeaningfulUniqueness": 0.6012,
+      "meaningfulUniquenessStrategyScore": 84.05,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.6153,
+      "maxRenderedTextSimilarity": 0.6135,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 60.01,
+        "contentUniquenessFloor": 60.12,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -367,12 +367,12 @@
       "primaryKeyword": "svg vs png",
       "family": "compare",
       "cluster": "design-format-comparison",
-      "minMeaningfulUniqueness": 0.6124,
-      "meaningfulUniquenessStrategyScore": 84.5,
+      "minMeaningfulUniqueness": 0.6136,
+      "meaningfulUniquenessStrategyScore": 84.54,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.5963,
+      "maxRenderedTextSimilarity": 0.5944,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 61.24,
+        "contentUniquenessFloor": 61.36,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -384,12 +384,12 @@
       "primaryKeyword": "mov vs mp4",
       "family": "compare",
       "cluster": "video-format-comparison",
-      "minMeaningfulUniqueness": 0.6663,
-      "meaningfulUniquenessStrategyScore": 86.65,
+      "minMeaningfulUniqueness": 0.6619,
+      "meaningfulUniquenessStrategyScore": 86.48,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.5134,
+      "maxRenderedTextSimilarity": 0.5202,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 66.63,
+        "contentUniquenessFloor": 66.19,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -401,12 +401,12 @@
       "primaryKeyword": "wav vs mp3",
       "family": "compare",
       "cluster": "audio-format-comparison",
-      "minMeaningfulUniqueness": 0.658,
-      "meaningfulUniquenessStrategyScore": 86.32,
+      "minMeaningfulUniqueness": 0.6556,
+      "meaningfulUniquenessStrategyScore": 86.22,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.5262,
+      "maxRenderedTextSimilarity": 0.5298,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 65.8,
+        "contentUniquenessFloor": 65.56,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -418,12 +418,12 @@
       "primaryKeyword": "pdf vs docx",
       "family": "compare",
       "cluster": "document-format-comparison",
-      "minMeaningfulUniqueness": 0.688,
-      "meaningfulUniquenessStrategyScore": 87.52,
+      "minMeaningfulUniqueness": 0.6843,
+      "meaningfulUniquenessStrategyScore": 87.37,
       "maxSignalOverlap": 0,
-      "maxRenderedTextSimilarity": 0.48,
+      "maxRenderedTextSimilarity": 0.4857,
       "scoreBreakdown": {
-        "contentUniquenessFloor": 68.8,
+        "contentUniquenessFloor": 68.43,
         "keywordOwnership": 100,
         "signalIsolation": 100,
         "urlPatternCompliance": 100
@@ -436,109 +436,157 @@
       "pageA": "/format/png-to-jpg/",
       "pageB": "/format/jpg-to-png/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.5921,
-      "combinedSimilarity": 0.3849,
-      "meaningfulUniqueness": 0.6151
+      "renderedTextSimilarity": 0.5988,
+      "combinedSimilarity": 0.3892,
+      "meaningfulUniqueness": 0.6108
     },
     {
       "pageA": "/format/png-to-jpg/",
       "pageB": "/format/webp-to-png/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2926,
-      "combinedSimilarity": 0.1902,
-      "meaningfulUniqueness": 0.8098
+      "renderedTextSimilarity": 0.2956,
+      "combinedSimilarity": 0.1921,
+      "meaningfulUniqueness": 0.8079
     },
     {
       "pageA": "/format/png-to-jpg/",
       "pageB": "/format/svg-to-png/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.269,
-      "combinedSimilarity": 0.1749,
-      "meaningfulUniqueness": 0.8251
+      "renderedTextSimilarity": 0.2734,
+      "combinedSimilarity": 0.1777,
+      "meaningfulUniqueness": 0.8223
     },
     {
       "pageA": "/format/png-to-jpg/",
       "pageB": "/format/pdf-to-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.3267,
-      "combinedSimilarity": 0.2124,
-      "meaningfulUniqueness": 0.7876
+      "renderedTextSimilarity": 0.3307,
+      "combinedSimilarity": 0.215,
+      "meaningfulUniqueness": 0.785
     },
     {
       "pageA": "/format/png-to-jpg/",
       "pageB": "/format/mov-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0255,
-      "combinedSimilarity": 0.0166,
-      "meaningfulUniqueness": 0.9834
+      "renderedTextSimilarity": 0.0251,
+      "combinedSimilarity": 0.0163,
+      "meaningfulUniqueness": 0.9837
     },
     {
       "pageA": "/format/png-to-jpg/",
       "pageB": "/format/wav-to-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.031,
-      "combinedSimilarity": 0.0202,
-      "meaningfulUniqueness": 0.9798
+      "renderedTextSimilarity": 0.0304,
+      "combinedSimilarity": 0.0198,
+      "meaningfulUniqueness": 0.9802
     },
     {
       "pageA": "/format/png-to-jpg/",
       "pageB": "/format/jpg-to-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.3031,
-      "combinedSimilarity": 0.197,
-      "meaningfulUniqueness": 0.803
+      "renderedTextSimilarity": 0.3075,
+      "combinedSimilarity": 0.1999,
+      "meaningfulUniqueness": 0.8001
     },
     {
       "pageA": "/format/png-to-jpg/",
       "pageB": "/format/png-to-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2892,
-      "combinedSimilarity": 0.188,
-      "meaningfulUniqueness": 0.812
+      "renderedTextSimilarity": 0.2918,
+      "combinedSimilarity": 0.1897,
+      "meaningfulUniqueness": 0.8103
     },
     {
       "pageA": "/format/png-to-jpg/",
       "pageB": "/format/mp4-to-gif/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.026,
-      "combinedSimilarity": 0.0169,
-      "meaningfulUniqueness": 0.9831
+      "renderedTextSimilarity": 0.0252,
+      "combinedSimilarity": 0.0164,
+      "meaningfulUniqueness": 0.9836
     },
     {
       "pageA": "/format/png-to-jpg/",
       "pageB": "/format/avi-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0086,
-      "combinedSimilarity": 0.0056,
-      "meaningfulUniqueness": 0.9944
+      "renderedTextSimilarity": 0.0085,
+      "combinedSimilarity": 0.0055,
+      "meaningfulUniqueness": 0.9945
     },
     {
       "pageA": "/format/png-to-jpg/",
       "pageB": "/format/mp3-to-wav/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0219,
-      "combinedSimilarity": 0.0142,
-      "meaningfulUniqueness": 0.9858
+      "renderedTextSimilarity": 0.0215,
+      "combinedSimilarity": 0.014,
+      "meaningfulUniqueness": 0.986
     },
     {
       "pageA": "/format/png-to-jpg/",
       "pageB": "/format/flac-to-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.018,
-      "combinedSimilarity": 0.0117,
-      "meaningfulUniqueness": 0.9883
+      "renderedTextSimilarity": 0.0177,
+      "combinedSimilarity": 0.0115,
+      "meaningfulUniqueness": 0.9885
     },
     {
       "pageA": "/format/png-to-jpg/",
       "pageB": "/format/docx-to-pdf/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0346,
-      "combinedSimilarity": 0.0225,
-      "meaningfulUniqueness": 0.9775
+      "renderedTextSimilarity": 0.0338,
+      "combinedSimilarity": 0.022,
+      "meaningfulUniqueness": 0.978
     },
     {
       "pageA": "/format/png-to-jpg/",
       "pageB": "/format/txt-to-pdf/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0482,
+      "combinedSimilarity": 0.0313,
+      "meaningfulUniqueness": 0.9687
+    },
+    {
+      "pageA": "/format/png-to-jpg/",
+      "pageB": "/format/heic-to-jpg/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.3223,
+      "combinedSimilarity": 0.2095,
+      "meaningfulUniqueness": 0.7905
+    },
+    {
+      "pageA": "/format/png-to-jpg/",
+      "pageB": "/format/gif-to-mp4/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0351,
+      "combinedSimilarity": 0.0228,
+      "meaningfulUniqueness": 0.9772
+    },
+    {
+      "pageA": "/format/png-to-jpg/",
+      "pageB": "/compare/png-vs-jpg/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.5398,
+      "combinedSimilarity": 0.3509,
+      "meaningfulUniqueness": 0.6491
+    },
+    {
+      "pageA": "/format/png-to-jpg/",
+      "pageB": "/compare/jpg-vs-webp/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.323,
+      "combinedSimilarity": 0.21,
+      "meaningfulUniqueness": 0.79
+    },
+    {
+      "pageA": "/format/png-to-jpg/",
+      "pageB": "/compare/svg-vs-png/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.2327,
+      "combinedSimilarity": 0.1513,
+      "meaningfulUniqueness": 0.8487
+    },
+    {
+      "pageA": "/format/png-to-jpg/",
+      "pageB": "/compare/mov-vs-mp4/",
       "overlap": 0,
       "renderedTextSimilarity": 0.0499,
       "combinedSimilarity": 0.0324,
@@ -546,97 +594,49 @@
     },
     {
       "pageA": "/format/png-to-jpg/",
-      "pageB": "/format/heic-to-jpg/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.318,
-      "combinedSimilarity": 0.2067,
-      "meaningfulUniqueness": 0.7933
-    },
-    {
-      "pageA": "/format/png-to-jpg/",
-      "pageB": "/format/gif-to-mp4/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.036,
-      "combinedSimilarity": 0.0234,
-      "meaningfulUniqueness": 0.9766
-    },
-    {
-      "pageA": "/format/png-to-jpg/",
-      "pageB": "/compare/png-vs-jpg/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.5366,
-      "combinedSimilarity": 0.3488,
-      "meaningfulUniqueness": 0.6512
-    },
-    {
-      "pageA": "/format/png-to-jpg/",
-      "pageB": "/compare/jpg-vs-webp/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.3222,
-      "combinedSimilarity": 0.2094,
-      "meaningfulUniqueness": 0.7906
-    },
-    {
-      "pageA": "/format/png-to-jpg/",
-      "pageB": "/compare/svg-vs-png/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.2307,
-      "combinedSimilarity": 0.15,
-      "meaningfulUniqueness": 0.85
-    },
-    {
-      "pageA": "/format/png-to-jpg/",
-      "pageB": "/compare/mov-vs-mp4/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0501,
-      "combinedSimilarity": 0.0326,
-      "meaningfulUniqueness": 0.9674
-    },
-    {
-      "pageA": "/format/png-to-jpg/",
       "pageB": "/compare/wav-vs-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.047,
-      "combinedSimilarity": 0.0306,
-      "meaningfulUniqueness": 0.9694
+      "renderedTextSimilarity": 0.0467,
+      "combinedSimilarity": 0.0304,
+      "meaningfulUniqueness": 0.9696
     },
     {
       "pageA": "/format/png-to-jpg/",
       "pageB": "/compare/pdf-vs-docx/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0465,
-      "combinedSimilarity": 0.0302,
-      "meaningfulUniqueness": 0.9698
+      "renderedTextSimilarity": 0.0462,
+      "combinedSimilarity": 0.03,
+      "meaningfulUniqueness": 0.97
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/format/webp-to-png/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.3522,
-      "combinedSimilarity": 0.2289,
-      "meaningfulUniqueness": 0.7711
+      "renderedTextSimilarity": 0.3543,
+      "combinedSimilarity": 0.2303,
+      "meaningfulUniqueness": 0.7697
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/format/svg-to-png/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.3398,
-      "combinedSimilarity": 0.2209,
-      "meaningfulUniqueness": 0.7791
+      "renderedTextSimilarity": 0.3433,
+      "combinedSimilarity": 0.2231,
+      "meaningfulUniqueness": 0.7769
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/format/pdf-to-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2595,
-      "combinedSimilarity": 0.1687,
-      "meaningfulUniqueness": 0.8313
+      "renderedTextSimilarity": 0.2641,
+      "combinedSimilarity": 0.1717,
+      "meaningfulUniqueness": 0.8283
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/format/mov-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0073,
+      "renderedTextSimilarity": 0.0072,
       "combinedSimilarity": 0.0047,
       "meaningfulUniqueness": 0.9953
     },
@@ -644,161 +644,161 @@
       "pageA": "/format/jpg-to-png/",
       "pageB": "/format/wav-to-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0171,
-      "combinedSimilarity": 0.0111,
-      "meaningfulUniqueness": 0.9889
+      "renderedTextSimilarity": 0.0167,
+      "combinedSimilarity": 0.0109,
+      "meaningfulUniqueness": 0.9891
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/format/jpg-to-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2007,
-      "combinedSimilarity": 0.1305,
-      "meaningfulUniqueness": 0.8695
+      "renderedTextSimilarity": 0.2062,
+      "combinedSimilarity": 0.134,
+      "meaningfulUniqueness": 0.866
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/format/png-to-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2985,
-      "combinedSimilarity": 0.194,
-      "meaningfulUniqueness": 0.806
+      "renderedTextSimilarity": 0.3021,
+      "combinedSimilarity": 0.1964,
+      "meaningfulUniqueness": 0.8036
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/format/mp4-to-gif/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0209,
-      "combinedSimilarity": 0.0136,
-      "meaningfulUniqueness": 0.9864
+      "renderedTextSimilarity": 0.0201,
+      "combinedSimilarity": 0.0131,
+      "meaningfulUniqueness": 0.9869
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/format/avi-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0109,
-      "combinedSimilarity": 0.0071,
-      "meaningfulUniqueness": 0.9929
+      "renderedTextSimilarity": 0.0107,
+      "combinedSimilarity": 0.007,
+      "meaningfulUniqueness": 0.993
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/format/mp3-to-wav/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.063,
-      "combinedSimilarity": 0.041,
-      "meaningfulUniqueness": 0.959
+      "renderedTextSimilarity": 0.0609,
+      "combinedSimilarity": 0.0396,
+      "meaningfulUniqueness": 0.9604
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/format/flac-to-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0203,
-      "combinedSimilarity": 0.0132,
-      "meaningfulUniqueness": 0.9868
+      "renderedTextSimilarity": 0.02,
+      "combinedSimilarity": 0.013,
+      "meaningfulUniqueness": 0.987
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/format/docx-to-pdf/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0258,
-      "combinedSimilarity": 0.0168,
-      "meaningfulUniqueness": 0.9832
+      "renderedTextSimilarity": 0.0253,
+      "combinedSimilarity": 0.0164,
+      "meaningfulUniqueness": 0.9836
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/format/txt-to-pdf/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0229,
-      "combinedSimilarity": 0.0149,
-      "meaningfulUniqueness": 0.9851
+      "renderedTextSimilarity": 0.022,
+      "combinedSimilarity": 0.0143,
+      "meaningfulUniqueness": 0.9857
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/format/heic-to-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2629,
-      "combinedSimilarity": 0.1709,
-      "meaningfulUniqueness": 0.8291
+      "renderedTextSimilarity": 0.2673,
+      "combinedSimilarity": 0.1737,
+      "meaningfulUniqueness": 0.8263
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/format/gif-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0184,
-      "combinedSimilarity": 0.012,
-      "meaningfulUniqueness": 0.988
+      "renderedTextSimilarity": 0.018,
+      "combinedSimilarity": 0.0117,
+      "meaningfulUniqueness": 0.9883
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/compare/png-vs-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.5236,
-      "combinedSimilarity": 0.3403,
-      "meaningfulUniqueness": 0.6597
+      "renderedTextSimilarity": 0.5267,
+      "combinedSimilarity": 0.3424,
+      "meaningfulUniqueness": 0.6576
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/compare/jpg-vs-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2512,
-      "combinedSimilarity": 0.1633,
-      "meaningfulUniqueness": 0.8367
+      "renderedTextSimilarity": 0.2535,
+      "combinedSimilarity": 0.1648,
+      "meaningfulUniqueness": 0.8352
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/compare/svg-vs-png/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.3045,
-      "combinedSimilarity": 0.1979,
-      "meaningfulUniqueness": 0.8021
+      "renderedTextSimilarity": 0.305,
+      "combinedSimilarity": 0.1983,
+      "meaningfulUniqueness": 0.8017
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/compare/mov-vs-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0646,
-      "combinedSimilarity": 0.042,
-      "meaningfulUniqueness": 0.958
+      "renderedTextSimilarity": 0.0644,
+      "combinedSimilarity": 0.0419,
+      "meaningfulUniqueness": 0.9581
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/compare/wav-vs-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0628,
-      "combinedSimilarity": 0.0408,
-      "meaningfulUniqueness": 0.9592
+      "renderedTextSimilarity": 0.0625,
+      "combinedSimilarity": 0.0406,
+      "meaningfulUniqueness": 0.9594
     },
     {
       "pageA": "/format/jpg-to-png/",
       "pageB": "/compare/pdf-vs-docx/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0594,
-      "combinedSimilarity": 0.0386,
-      "meaningfulUniqueness": 0.9614
+      "renderedTextSimilarity": 0.0592,
+      "combinedSimilarity": 0.0385,
+      "meaningfulUniqueness": 0.9615
     },
     {
       "pageA": "/format/webp-to-png/",
       "pageB": "/format/svg-to-png/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2979,
-      "combinedSimilarity": 0.1936,
-      "meaningfulUniqueness": 0.8064
+      "renderedTextSimilarity": 0.3017,
+      "combinedSimilarity": 0.1961,
+      "meaningfulUniqueness": 0.8039
     },
     {
       "pageA": "/format/webp-to-png/",
       "pageB": "/format/pdf-to-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0463,
-      "combinedSimilarity": 0.0301,
-      "meaningfulUniqueness": 0.9699
+      "renderedTextSimilarity": 0.0456,
+      "combinedSimilarity": 0.0296,
+      "meaningfulUniqueness": 0.9704
     },
     {
       "pageA": "/format/webp-to-png/",
       "pageB": "/format/mov-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0229,
-      "combinedSimilarity": 0.0149,
-      "meaningfulUniqueness": 0.9851
+      "renderedTextSimilarity": 0.0225,
+      "combinedSimilarity": 0.0146,
+      "meaningfulUniqueness": 0.9854
     },
     {
       "pageA": "/format/webp-to-png/",
@@ -812,409 +812,409 @@
       "pageA": "/format/webp-to-png/",
       "pageB": "/format/jpg-to-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.4637,
-      "combinedSimilarity": 0.3014,
-      "meaningfulUniqueness": 0.6986
+      "renderedTextSimilarity": 0.4638,
+      "combinedSimilarity": 0.3015,
+      "meaningfulUniqueness": 0.6985
     },
     {
       "pageA": "/format/webp-to-png/",
       "pageB": "/format/png-to-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.6866,
-      "combinedSimilarity": 0.4463,
-      "meaningfulUniqueness": 0.5537
+      "renderedTextSimilarity": 0.69,
+      "combinedSimilarity": 0.4485,
+      "meaningfulUniqueness": 0.5515
     },
     {
       "pageA": "/format/webp-to-png/",
       "pageB": "/format/mp4-to-gif/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0124,
-      "combinedSimilarity": 0.0081,
-      "meaningfulUniqueness": 0.9919
+      "renderedTextSimilarity": 0.0121,
+      "combinedSimilarity": 0.0079,
+      "meaningfulUniqueness": 0.9921
     },
     {
       "pageA": "/format/webp-to-png/",
       "pageB": "/format/avi-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0426,
-      "combinedSimilarity": 0.0277,
-      "meaningfulUniqueness": 0.9723
+      "renderedTextSimilarity": 0.0413,
+      "combinedSimilarity": 0.0268,
+      "meaningfulUniqueness": 0.9732
     },
     {
       "pageA": "/format/webp-to-png/",
       "pageB": "/format/mp3-to-wav/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0486,
-      "combinedSimilarity": 0.0316,
-      "meaningfulUniqueness": 0.9684
+      "renderedTextSimilarity": 0.0473,
+      "combinedSimilarity": 0.0307,
+      "meaningfulUniqueness": 0.9693
     },
     {
       "pageA": "/format/webp-to-png/",
       "pageB": "/format/flac-to-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0138,
-      "combinedSimilarity": 0.009,
-      "meaningfulUniqueness": 0.991
+      "renderedTextSimilarity": 0.0136,
+      "combinedSimilarity": 0.0088,
+      "meaningfulUniqueness": 0.9912
     },
     {
       "pageA": "/format/webp-to-png/",
       "pageB": "/format/docx-to-pdf/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0444,
-      "combinedSimilarity": 0.0289,
-      "meaningfulUniqueness": 0.9711
+      "renderedTextSimilarity": 0.0432,
+      "combinedSimilarity": 0.0281,
+      "meaningfulUniqueness": 0.9719
     },
     {
       "pageA": "/format/webp-to-png/",
       "pageB": "/format/txt-to-pdf/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0091,
-      "combinedSimilarity": 0.0059,
-      "meaningfulUniqueness": 0.9941
+      "renderedTextSimilarity": 0.0089,
+      "combinedSimilarity": 0.0058,
+      "meaningfulUniqueness": 0.9942
     },
     {
       "pageA": "/format/webp-to-png/",
       "pageB": "/format/heic-to-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0839,
-      "combinedSimilarity": 0.0545,
-      "meaningfulUniqueness": 0.9455
+      "renderedTextSimilarity": 0.0827,
+      "combinedSimilarity": 0.0538,
+      "meaningfulUniqueness": 0.9462
     },
     {
       "pageA": "/format/webp-to-png/",
       "pageB": "/format/gif-to-mp4/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0271,
-      "combinedSimilarity": 0.0176,
-      "meaningfulUniqueness": 0.9824
-    },
-    {
-      "pageA": "/format/webp-to-png/",
-      "pageB": "/compare/png-vs-jpg/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.2913,
-      "combinedSimilarity": 0.1893,
-      "meaningfulUniqueness": 0.8107
-    },
-    {
-      "pageA": "/format/webp-to-png/",
-      "pageB": "/compare/jpg-vs-webp/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.3397,
-      "combinedSimilarity": 0.2208,
-      "meaningfulUniqueness": 0.7792
-    },
-    {
-      "pageA": "/format/webp-to-png/",
-      "pageB": "/compare/svg-vs-png/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.2564,
-      "combinedSimilarity": 0.1667,
-      "meaningfulUniqueness": 0.8333
-    },
-    {
-      "pageA": "/format/webp-to-png/",
-      "pageB": "/compare/mov-vs-mp4/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0541,
-      "combinedSimilarity": 0.0352,
-      "meaningfulUniqueness": 0.9648
-    },
-    {
-      "pageA": "/format/webp-to-png/",
-      "pageB": "/compare/wav-vs-mp3/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0406,
-      "combinedSimilarity": 0.0264,
-      "meaningfulUniqueness": 0.9736
-    },
-    {
-      "pageA": "/format/webp-to-png/",
-      "pageB": "/compare/pdf-vs-docx/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.033,
-      "combinedSimilarity": 0.0215,
-      "meaningfulUniqueness": 0.9785
-    },
-    {
-      "pageA": "/format/svg-to-png/",
-      "pageB": "/format/pdf-to-jpg/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0634,
-      "combinedSimilarity": 0.0412,
-      "meaningfulUniqueness": 0.9588
-    },
-    {
-      "pageA": "/format/svg-to-png/",
-      "pageB": "/format/mov-to-mp4/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0147,
-      "combinedSimilarity": 0.0096,
-      "meaningfulUniqueness": 0.9904
-    },
-    {
-      "pageA": "/format/svg-to-png/",
-      "pageB": "/format/wav-to-mp3/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0057,
-      "combinedSimilarity": 0.0037,
-      "meaningfulUniqueness": 0.9963
-    },
-    {
-      "pageA": "/format/svg-to-png/",
-      "pageB": "/format/jpg-to-webp/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0516,
-      "combinedSimilarity": 0.0335,
-      "meaningfulUniqueness": 0.9665
-    },
-    {
-      "pageA": "/format/svg-to-png/",
-      "pageB": "/format/png-to-webp/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.2575,
-      "combinedSimilarity": 0.1674,
-      "meaningfulUniqueness": 0.8326
-    },
-    {
-      "pageA": "/format/svg-to-png/",
-      "pageB": "/format/mp4-to-gif/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0261,
-      "combinedSimilarity": 0.017,
-      "meaningfulUniqueness": 0.983
-    },
-    {
-      "pageA": "/format/svg-to-png/",
-      "pageB": "/format/avi-to-mp4/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0137,
-      "combinedSimilarity": 0.0089,
-      "meaningfulUniqueness": 0.9911
-    },
-    {
-      "pageA": "/format/svg-to-png/",
-      "pageB": "/format/mp3-to-wav/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0196,
-      "combinedSimilarity": 0.0127,
-      "meaningfulUniqueness": 0.9873
-    },
-    {
-      "pageA": "/format/svg-to-png/",
-      "pageB": "/format/flac-to-mp3/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0097,
-      "combinedSimilarity": 0.0063,
-      "meaningfulUniqueness": 0.9937
-    },
-    {
-      "pageA": "/format/svg-to-png/",
-      "pageB": "/format/docx-to-pdf/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0409,
-      "combinedSimilarity": 0.0266,
-      "meaningfulUniqueness": 0.9734
-    },
-    {
-      "pageA": "/format/svg-to-png/",
-      "pageB": "/format/txt-to-pdf/",
       "overlap": 0,
       "renderedTextSimilarity": 0.0265,
       "combinedSimilarity": 0.0172,
       "meaningfulUniqueness": 0.9828
     },
     {
+      "pageA": "/format/webp-to-png/",
+      "pageB": "/compare/png-vs-jpg/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.2927,
+      "combinedSimilarity": 0.1903,
+      "meaningfulUniqueness": 0.8097
+    },
+    {
+      "pageA": "/format/webp-to-png/",
+      "pageB": "/compare/jpg-vs-webp/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.3392,
+      "combinedSimilarity": 0.2205,
+      "meaningfulUniqueness": 0.7795
+    },
+    {
+      "pageA": "/format/webp-to-png/",
+      "pageB": "/compare/svg-vs-png/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.2577,
+      "combinedSimilarity": 0.1675,
+      "meaningfulUniqueness": 0.8325
+    },
+    {
+      "pageA": "/format/webp-to-png/",
+      "pageB": "/compare/mov-vs-mp4/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0539,
+      "combinedSimilarity": 0.035,
+      "meaningfulUniqueness": 0.965
+    },
+    {
+      "pageA": "/format/webp-to-png/",
+      "pageB": "/compare/wav-vs-mp3/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0404,
+      "combinedSimilarity": 0.0263,
+      "meaningfulUniqueness": 0.9737
+    },
+    {
+      "pageA": "/format/webp-to-png/",
+      "pageB": "/compare/pdf-vs-docx/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0328,
+      "combinedSimilarity": 0.0213,
+      "meaningfulUniqueness": 0.9787
+    },
+    {
+      "pageA": "/format/svg-to-png/",
+      "pageB": "/format/pdf-to-jpg/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0618,
+      "combinedSimilarity": 0.0402,
+      "meaningfulUniqueness": 0.9598
+    },
+    {
+      "pageA": "/format/svg-to-png/",
+      "pageB": "/format/mov-to-mp4/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0142,
+      "combinedSimilarity": 0.0092,
+      "meaningfulUniqueness": 0.9908
+    },
+    {
+      "pageA": "/format/svg-to-png/",
+      "pageB": "/format/wav-to-mp3/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0055,
+      "combinedSimilarity": 0.0036,
+      "meaningfulUniqueness": 0.9964
+    },
+    {
+      "pageA": "/format/svg-to-png/",
+      "pageB": "/format/jpg-to-webp/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0506,
+      "combinedSimilarity": 0.0329,
+      "meaningfulUniqueness": 0.9671
+    },
+    {
+      "pageA": "/format/svg-to-png/",
+      "pageB": "/format/png-to-webp/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.2623,
+      "combinedSimilarity": 0.1705,
+      "meaningfulUniqueness": 0.8295
+    },
+    {
+      "pageA": "/format/svg-to-png/",
+      "pageB": "/format/mp4-to-gif/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0249,
+      "combinedSimilarity": 0.0162,
+      "meaningfulUniqueness": 0.9838
+    },
+    {
+      "pageA": "/format/svg-to-png/",
+      "pageB": "/format/avi-to-mp4/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0134,
+      "combinedSimilarity": 0.0087,
+      "meaningfulUniqueness": 0.9913
+    },
+    {
+      "pageA": "/format/svg-to-png/",
+      "pageB": "/format/mp3-to-wav/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0191,
+      "combinedSimilarity": 0.0124,
+      "meaningfulUniqueness": 0.9876
+    },
+    {
+      "pageA": "/format/svg-to-png/",
+      "pageB": "/format/flac-to-mp3/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0096,
+      "combinedSimilarity": 0.0062,
+      "meaningfulUniqueness": 0.9938
+    },
+    {
+      "pageA": "/format/svg-to-png/",
+      "pageB": "/format/docx-to-pdf/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0394,
+      "combinedSimilarity": 0.0256,
+      "meaningfulUniqueness": 0.9744
+    },
+    {
+      "pageA": "/format/svg-to-png/",
+      "pageB": "/format/txt-to-pdf/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0256,
+      "combinedSimilarity": 0.0166,
+      "meaningfulUniqueness": 0.9834
+    },
+    {
       "pageA": "/format/svg-to-png/",
       "pageB": "/format/heic-to-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0482,
-      "combinedSimilarity": 0.0313,
-      "meaningfulUniqueness": 0.9687
+      "renderedTextSimilarity": 0.0477,
+      "combinedSimilarity": 0.031,
+      "meaningfulUniqueness": 0.969
     },
     {
       "pageA": "/format/svg-to-png/",
       "pageB": "/format/gif-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0115,
-      "combinedSimilarity": 0.0075,
-      "meaningfulUniqueness": 0.9925
+      "renderedTextSimilarity": 0.0112,
+      "combinedSimilarity": 0.0073,
+      "meaningfulUniqueness": 0.9927
     },
     {
       "pageA": "/format/svg-to-png/",
       "pageB": "/compare/png-vs-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2572,
-      "combinedSimilarity": 0.1672,
-      "meaningfulUniqueness": 0.8328
+      "renderedTextSimilarity": 0.2593,
+      "combinedSimilarity": 0.1685,
+      "meaningfulUniqueness": 0.8315
     },
     {
       "pageA": "/format/svg-to-png/",
       "pageB": "/compare/jpg-vs-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0365,
-      "combinedSimilarity": 0.0237,
-      "meaningfulUniqueness": 0.9763
+      "renderedTextSimilarity": 0.036,
+      "combinedSimilarity": 0.0234,
+      "meaningfulUniqueness": 0.9766
     },
     {
       "pageA": "/format/svg-to-png/",
       "pageB": "/compare/svg-vs-png/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.5473,
-      "combinedSimilarity": 0.3557,
-      "meaningfulUniqueness": 0.6443
+      "renderedTextSimilarity": 0.5499,
+      "combinedSimilarity": 0.3574,
+      "meaningfulUniqueness": 0.6426
     },
     {
       "pageA": "/format/svg-to-png/",
       "pageB": "/compare/mov-vs-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0299,
-      "combinedSimilarity": 0.0194,
-      "meaningfulUniqueness": 0.9806
+      "renderedTextSimilarity": 0.0295,
+      "combinedSimilarity": 0.0192,
+      "meaningfulUniqueness": 0.9808
     },
     {
       "pageA": "/format/svg-to-png/",
       "pageB": "/compare/wav-vs-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0124,
-      "combinedSimilarity": 0.0081,
-      "meaningfulUniqueness": 0.9919
+      "renderedTextSimilarity": 0.0122,
+      "combinedSimilarity": 0.0079,
+      "meaningfulUniqueness": 0.9921
     },
     {
       "pageA": "/format/svg-to-png/",
       "pageB": "/compare/pdf-vs-docx/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0147,
-      "combinedSimilarity": 0.0096,
-      "meaningfulUniqueness": 0.9904
+      "renderedTextSimilarity": 0.0144,
+      "combinedSimilarity": 0.0094,
+      "meaningfulUniqueness": 0.9906
     },
     {
       "pageA": "/format/pdf-to-jpg/",
       "pageB": "/format/mov-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0201,
-      "combinedSimilarity": 0.0131,
-      "meaningfulUniqueness": 0.9869
+      "renderedTextSimilarity": 0.0194,
+      "combinedSimilarity": 0.0126,
+      "meaningfulUniqueness": 0.9874
     },
     {
       "pageA": "/format/pdf-to-jpg/",
       "pageB": "/format/wav-to-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0216,
-      "combinedSimilarity": 0.014,
-      "meaningfulUniqueness": 0.986
+      "renderedTextSimilarity": 0.021,
+      "combinedSimilarity": 0.0137,
+      "meaningfulUniqueness": 0.9863
     },
     {
       "pageA": "/format/pdf-to-jpg/",
       "pageB": "/format/jpg-to-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2128,
-      "combinedSimilarity": 0.1383,
-      "meaningfulUniqueness": 0.8617
+      "renderedTextSimilarity": 0.217,
+      "combinedSimilarity": 0.1411,
+      "meaningfulUniqueness": 0.8589
     },
     {
       "pageA": "/format/pdf-to-jpg/",
       "pageB": "/format/png-to-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0465,
-      "combinedSimilarity": 0.0302,
-      "meaningfulUniqueness": 0.9698
+      "renderedTextSimilarity": 0.0458,
+      "combinedSimilarity": 0.0298,
+      "meaningfulUniqueness": 0.9702
     },
     {
       "pageA": "/format/pdf-to-jpg/",
       "pageB": "/format/mp4-to-gif/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0319,
-      "combinedSimilarity": 0.0207,
-      "meaningfulUniqueness": 0.9793
+      "renderedTextSimilarity": 0.0307,
+      "combinedSimilarity": 0.02,
+      "meaningfulUniqueness": 0.98
     },
     {
       "pageA": "/format/pdf-to-jpg/",
       "pageB": "/format/avi-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0225,
-      "combinedSimilarity": 0.0146,
-      "meaningfulUniqueness": 0.9854
+      "renderedTextSimilarity": 0.0219,
+      "combinedSimilarity": 0.0142,
+      "meaningfulUniqueness": 0.9858
     },
     {
       "pageA": "/format/pdf-to-jpg/",
       "pageB": "/format/mp3-to-wav/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0161,
-      "combinedSimilarity": 0.0105,
-      "meaningfulUniqueness": 0.9895
+      "renderedTextSimilarity": 0.0158,
+      "combinedSimilarity": 0.0103,
+      "meaningfulUniqueness": 0.9897
     },
     {
       "pageA": "/format/pdf-to-jpg/",
       "pageB": "/format/flac-to-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0339,
-      "combinedSimilarity": 0.022,
-      "meaningfulUniqueness": 0.978
+      "renderedTextSimilarity": 0.0332,
+      "combinedSimilarity": 0.0216,
+      "meaningfulUniqueness": 0.9784
     },
     {
       "pageA": "/format/pdf-to-jpg/",
       "pageB": "/format/docx-to-pdf/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.3796,
-      "combinedSimilarity": 0.2467,
-      "meaningfulUniqueness": 0.7533
+      "renderedTextSimilarity": 0.3832,
+      "combinedSimilarity": 0.2491,
+      "meaningfulUniqueness": 0.7509
     },
     {
       "pageA": "/format/pdf-to-jpg/",
       "pageB": "/format/txt-to-pdf/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.3865,
-      "combinedSimilarity": 0.2512,
-      "meaningfulUniqueness": 0.7488
+      "renderedTextSimilarity": 0.3891,
+      "combinedSimilarity": 0.2529,
+      "meaningfulUniqueness": 0.7471
     },
     {
       "pageA": "/format/pdf-to-jpg/",
       "pageB": "/format/heic-to-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2587,
-      "combinedSimilarity": 0.1682,
-      "meaningfulUniqueness": 0.8318
+      "renderedTextSimilarity": 0.2623,
+      "combinedSimilarity": 0.1705,
+      "meaningfulUniqueness": 0.8295
     },
     {
       "pageA": "/format/pdf-to-jpg/",
       "pageB": "/format/gif-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0207,
-      "combinedSimilarity": 0.0135,
-      "meaningfulUniqueness": 0.9865
+      "renderedTextSimilarity": 0.0203,
+      "combinedSimilarity": 0.0132,
+      "meaningfulUniqueness": 0.9868
     },
     {
       "pageA": "/format/pdf-to-jpg/",
       "pageB": "/compare/png-vs-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2479,
-      "combinedSimilarity": 0.1611,
-      "meaningfulUniqueness": 0.8389
+      "renderedTextSimilarity": 0.2504,
+      "combinedSimilarity": 0.1628,
+      "meaningfulUniqueness": 0.8372
     },
     {
       "pageA": "/format/pdf-to-jpg/",
       "pageB": "/compare/jpg-vs-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2308,
-      "combinedSimilarity": 0.15,
-      "meaningfulUniqueness": 0.85
+      "renderedTextSimilarity": 0.2338,
+      "combinedSimilarity": 0.152,
+      "meaningfulUniqueness": 0.848
     },
     {
       "pageA": "/format/pdf-to-jpg/",
       "pageB": "/compare/svg-vs-png/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0322,
-      "combinedSimilarity": 0.0209,
-      "meaningfulUniqueness": 0.9791
+      "renderedTextSimilarity": 0.0318,
+      "combinedSimilarity": 0.0207,
+      "meaningfulUniqueness": 0.9793
     },
     {
       "pageA": "/format/pdf-to-jpg/",
       "pageB": "/compare/mov-vs-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0187,
-      "combinedSimilarity": 0.0122,
-      "meaningfulUniqueness": 0.9878
+      "renderedTextSimilarity": 0.0186,
+      "combinedSimilarity": 0.0121,
+      "meaningfulUniqueness": 0.9879
     },
     {
       "pageA": "/format/pdf-to-jpg/",
@@ -1228,209 +1228,209 @@
       "pageA": "/format/pdf-to-jpg/",
       "pageB": "/compare/pdf-vs-docx/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2574,
-      "combinedSimilarity": 0.1673,
-      "meaningfulUniqueness": 0.8327
+      "renderedTextSimilarity": 0.2599,
+      "combinedSimilarity": 0.1689,
+      "meaningfulUniqueness": 0.8311
     },
     {
       "pageA": "/format/mov-to-mp4/",
       "pageB": "/format/wav-to-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0508,
-      "combinedSimilarity": 0.033,
-      "meaningfulUniqueness": 0.967
+      "renderedTextSimilarity": 0.0492,
+      "combinedSimilarity": 0.032,
+      "meaningfulUniqueness": 0.968
     },
     {
       "pageA": "/format/mov-to-mp4/",
       "pageB": "/format/jpg-to-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0362,
-      "combinedSimilarity": 0.0235,
-      "meaningfulUniqueness": 0.9765
+      "renderedTextSimilarity": 0.0357,
+      "combinedSimilarity": 0.0232,
+      "meaningfulUniqueness": 0.9768
     },
     {
       "pageA": "/format/mov-to-mp4/",
       "pageB": "/format/png-to-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0293,
-      "combinedSimilarity": 0.019,
-      "meaningfulUniqueness": 0.981
+      "renderedTextSimilarity": 0.0289,
+      "combinedSimilarity": 0.0188,
+      "meaningfulUniqueness": 0.9812
     },
     {
       "pageA": "/format/mov-to-mp4/",
       "pageB": "/format/mp4-to-gif/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.3444,
-      "combinedSimilarity": 0.2239,
-      "meaningfulUniqueness": 0.7761
+      "renderedTextSimilarity": 0.3479,
+      "combinedSimilarity": 0.2261,
+      "meaningfulUniqueness": 0.7739
     },
     {
       "pageA": "/format/mov-to-mp4/",
       "pageB": "/format/avi-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.3917,
-      "combinedSimilarity": 0.2546,
-      "meaningfulUniqueness": 0.7454
+      "renderedTextSimilarity": 0.3938,
+      "combinedSimilarity": 0.256,
+      "meaningfulUniqueness": 0.744
     },
     {
       "pageA": "/format/mov-to-mp4/",
       "pageB": "/format/mp3-to-wav/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0327,
-      "combinedSimilarity": 0.0213,
-      "meaningfulUniqueness": 0.9787
+      "renderedTextSimilarity": 0.0317,
+      "combinedSimilarity": 0.0206,
+      "meaningfulUniqueness": 0.9794
     },
     {
       "pageA": "/format/mov-to-mp4/",
       "pageB": "/format/flac-to-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0538,
-      "combinedSimilarity": 0.035,
-      "meaningfulUniqueness": 0.965
+      "renderedTextSimilarity": 0.0519,
+      "combinedSimilarity": 0.0337,
+      "meaningfulUniqueness": 0.9663
     },
     {
       "pageA": "/format/mov-to-mp4/",
       "pageB": "/format/docx-to-pdf/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0312,
-      "combinedSimilarity": 0.0203,
-      "meaningfulUniqueness": 0.9797
+      "renderedTextSimilarity": 0.03,
+      "combinedSimilarity": 0.0195,
+      "meaningfulUniqueness": 0.9805
     },
     {
       "pageA": "/format/mov-to-mp4/",
       "pageB": "/format/txt-to-pdf/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0125,
-      "combinedSimilarity": 0.0081,
-      "meaningfulUniqueness": 0.9919
+      "renderedTextSimilarity": 0.0122,
+      "combinedSimilarity": 0.0079,
+      "meaningfulUniqueness": 0.9921
     },
     {
       "pageA": "/format/mov-to-mp4/",
       "pageB": "/format/heic-to-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0812,
-      "combinedSimilarity": 0.0528,
-      "meaningfulUniqueness": 0.9472
+      "renderedTextSimilarity": 0.0791,
+      "combinedSimilarity": 0.0514,
+      "meaningfulUniqueness": 0.9486
     },
     {
       "pageA": "/format/mov-to-mp4/",
       "pageB": "/format/gif-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.35,
-      "combinedSimilarity": 0.2275,
-      "meaningfulUniqueness": 0.7725
+      "renderedTextSimilarity": 0.3542,
+      "combinedSimilarity": 0.2302,
+      "meaningfulUniqueness": 0.7698
     },
     {
       "pageA": "/format/mov-to-mp4/",
       "pageB": "/compare/png-vs-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0426,
-      "combinedSimilarity": 0.0277,
-      "meaningfulUniqueness": 0.9723
+      "renderedTextSimilarity": 0.0421,
+      "combinedSimilarity": 0.0274,
+      "meaningfulUniqueness": 0.9726
     },
     {
       "pageA": "/format/mov-to-mp4/",
       "pageB": "/compare/jpg-vs-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0498,
-      "combinedSimilarity": 0.0324,
-      "meaningfulUniqueness": 0.9676
+      "renderedTextSimilarity": 0.0491,
+      "combinedSimilarity": 0.0319,
+      "meaningfulUniqueness": 0.9681
     },
     {
       "pageA": "/format/mov-to-mp4/",
       "pageB": "/compare/svg-vs-png/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0415,
-      "combinedSimilarity": 0.027,
-      "meaningfulUniqueness": 0.973
+      "renderedTextSimilarity": 0.0409,
+      "combinedSimilarity": 0.0266,
+      "meaningfulUniqueness": 0.9734
     },
     {
       "pageA": "/format/mov-to-mp4/",
       "pageB": "/compare/mov-vs-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.5134,
-      "combinedSimilarity": 0.3337,
-      "meaningfulUniqueness": 0.6663
+      "renderedTextSimilarity": 0.5202,
+      "combinedSimilarity": 0.3381,
+      "meaningfulUniqueness": 0.6619
     },
     {
       "pageA": "/format/mov-to-mp4/",
       "pageB": "/compare/wav-vs-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0586,
-      "combinedSimilarity": 0.0381,
-      "meaningfulUniqueness": 0.9619
+      "renderedTextSimilarity": 0.0577,
+      "combinedSimilarity": 0.0375,
+      "meaningfulUniqueness": 0.9625
     },
     {
       "pageA": "/format/mov-to-mp4/",
       "pageB": "/compare/pdf-vs-docx/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0391,
-      "combinedSimilarity": 0.0254,
-      "meaningfulUniqueness": 0.9746
+      "renderedTextSimilarity": 0.0386,
+      "combinedSimilarity": 0.0251,
+      "meaningfulUniqueness": 0.9749
     },
     {
       "pageA": "/format/wav-to-mp3/",
       "pageB": "/format/jpg-to-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0235,
-      "combinedSimilarity": 0.0153,
-      "meaningfulUniqueness": 0.9847
+      "renderedTextSimilarity": 0.0231,
+      "combinedSimilarity": 0.015,
+      "meaningfulUniqueness": 0.985
     },
     {
       "pageA": "/format/wav-to-mp3/",
       "pageB": "/format/png-to-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0246,
-      "combinedSimilarity": 0.016,
-      "meaningfulUniqueness": 0.984
+      "renderedTextSimilarity": 0.0241,
+      "combinedSimilarity": 0.0157,
+      "meaningfulUniqueness": 0.9843
     },
     {
       "pageA": "/format/wav-to-mp3/",
       "pageB": "/format/mp4-to-gif/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0395,
-      "combinedSimilarity": 0.0257,
-      "meaningfulUniqueness": 0.9743
+      "renderedTextSimilarity": 0.0384,
+      "combinedSimilarity": 0.025,
+      "meaningfulUniqueness": 0.975
     },
     {
       "pageA": "/format/wav-to-mp3/",
       "pageB": "/format/avi-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0281,
-      "combinedSimilarity": 0.0183,
-      "meaningfulUniqueness": 0.9817
+      "renderedTextSimilarity": 0.0273,
+      "combinedSimilarity": 0.0177,
+      "meaningfulUniqueness": 0.9823
     },
     {
       "pageA": "/format/wav-to-mp3/",
       "pageB": "/format/mp3-to-wav/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.5636,
-      "combinedSimilarity": 0.3663,
-      "meaningfulUniqueness": 0.6337
+      "renderedTextSimilarity": 0.5735,
+      "combinedSimilarity": 0.3728,
+      "meaningfulUniqueness": 0.6272
     },
     {
       "pageA": "/format/wav-to-mp3/",
       "pageB": "/format/flac-to-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.4522,
-      "combinedSimilarity": 0.2939,
-      "meaningfulUniqueness": 0.7061
+      "renderedTextSimilarity": 0.4527,
+      "combinedSimilarity": 0.2943,
+      "meaningfulUniqueness": 0.7057
     },
     {
       "pageA": "/format/wav-to-mp3/",
       "pageB": "/format/docx-to-pdf/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0121,
-      "combinedSimilarity": 0.0079,
-      "meaningfulUniqueness": 0.9921
+      "renderedTextSimilarity": 0.0118,
+      "combinedSimilarity": 0.0077,
+      "meaningfulUniqueness": 0.9923
     },
     {
       "pageA": "/format/wav-to-mp3/",
       "pageB": "/format/txt-to-pdf/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0139,
-      "combinedSimilarity": 0.009,
-      "meaningfulUniqueness": 0.991
+      "renderedTextSimilarity": 0.0135,
+      "combinedSimilarity": 0.0088,
+      "meaningfulUniqueness": 0.9912
     },
     {
       "pageA": "/format/wav-to-mp3/",
@@ -1444,39 +1444,39 @@
       "pageA": "/format/wav-to-mp3/",
       "pageB": "/format/gif-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0232,
-      "combinedSimilarity": 0.0151,
-      "meaningfulUniqueness": 0.9849
+      "renderedTextSimilarity": 0.0228,
+      "combinedSimilarity": 0.0148,
+      "meaningfulUniqueness": 0.9852
     },
     {
       "pageA": "/format/wav-to-mp3/",
       "pageB": "/compare/png-vs-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.033,
-      "combinedSimilarity": 0.0215,
-      "meaningfulUniqueness": 0.9785
+      "renderedTextSimilarity": 0.0325,
+      "combinedSimilarity": 0.0211,
+      "meaningfulUniqueness": 0.9789
     },
     {
       "pageA": "/format/wav-to-mp3/",
       "pageB": "/compare/jpg-vs-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0321,
-      "combinedSimilarity": 0.0209,
-      "meaningfulUniqueness": 0.9791
+      "renderedTextSimilarity": 0.0317,
+      "combinedSimilarity": 0.0206,
+      "meaningfulUniqueness": 0.9794
     },
     {
       "pageA": "/format/wav-to-mp3/",
       "pageB": "/compare/svg-vs-png/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0231,
-      "combinedSimilarity": 0.015,
-      "meaningfulUniqueness": 0.985
+      "renderedTextSimilarity": 0.0229,
+      "combinedSimilarity": 0.0149,
+      "meaningfulUniqueness": 0.9851
     },
     {
       "pageA": "/format/wav-to-mp3/",
       "pageB": "/compare/mov-vs-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0265,
+      "renderedTextSimilarity": 0.0264,
       "combinedSimilarity": 0.0172,
       "meaningfulUniqueness": 0.9828
     },
@@ -1484,60 +1484,172 @@
       "pageA": "/format/wav-to-mp3/",
       "pageB": "/compare/wav-vs-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.5262,
-      "combinedSimilarity": 0.342,
-      "meaningfulUniqueness": 0.658
+      "renderedTextSimilarity": 0.5298,
+      "combinedSimilarity": 0.3444,
+      "meaningfulUniqueness": 0.6556
     },
     {
       "pageA": "/format/wav-to-mp3/",
       "pageB": "/compare/pdf-vs-docx/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0257,
-      "combinedSimilarity": 0.0167,
-      "meaningfulUniqueness": 0.9833
+      "renderedTextSimilarity": 0.0254,
+      "combinedSimilarity": 0.0165,
+      "meaningfulUniqueness": 0.9835
     },
     {
       "pageA": "/format/jpg-to-webp/",
       "pageB": "/format/png-to-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.556,
-      "combinedSimilarity": 0.3614,
-      "meaningfulUniqueness": 0.6386
+      "renderedTextSimilarity": 0.5549,
+      "combinedSimilarity": 0.3607,
+      "meaningfulUniqueness": 0.6393
     },
     {
       "pageA": "/format/jpg-to-webp/",
       "pageB": "/format/mp4-to-gif/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0296,
-      "combinedSimilarity": 0.0192,
-      "meaningfulUniqueness": 0.9808
+      "renderedTextSimilarity": 0.029,
+      "combinedSimilarity": 0.0189,
+      "meaningfulUniqueness": 0.9811
     },
     {
       "pageA": "/format/jpg-to-webp/",
       "pageB": "/format/avi-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0432,
-      "combinedSimilarity": 0.0281,
-      "meaningfulUniqueness": 0.9719
+      "renderedTextSimilarity": 0.0423,
+      "combinedSimilarity": 0.0275,
+      "meaningfulUniqueness": 0.9725
     },
     {
       "pageA": "/format/jpg-to-webp/",
       "pageB": "/format/mp3-to-wav/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0175,
-      "combinedSimilarity": 0.0114,
-      "meaningfulUniqueness": 0.9886
+      "renderedTextSimilarity": 0.0173,
+      "combinedSimilarity": 0.0112,
+      "meaningfulUniqueness": 0.9888
     },
     {
       "pageA": "/format/jpg-to-webp/",
       "pageB": "/format/flac-to-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0186,
-      "combinedSimilarity": 0.0121,
-      "meaningfulUniqueness": 0.9879
+      "renderedTextSimilarity": 0.0184,
+      "combinedSimilarity": 0.012,
+      "meaningfulUniqueness": 0.988
     },
     {
       "pageA": "/format/jpg-to-webp/",
+      "pageB": "/format/docx-to-pdf/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0312,
+      "combinedSimilarity": 0.0203,
+      "meaningfulUniqueness": 0.9797
+    },
+    {
+      "pageA": "/format/jpg-to-webp/",
+      "pageB": "/format/txt-to-pdf/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0176,
+      "combinedSimilarity": 0.0114,
+      "meaningfulUniqueness": 0.9886
+    },
+    {
+      "pageA": "/format/jpg-to-webp/",
+      "pageB": "/format/heic-to-jpg/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.2488,
+      "combinedSimilarity": 0.1617,
+      "meaningfulUniqueness": 0.8383
+    },
+    {
+      "pageA": "/format/jpg-to-webp/",
+      "pageB": "/format/gif-to-mp4/",
+      "overlap": 0.1,
+      "renderedTextSimilarity": 0.0859,
+      "combinedSimilarity": 0.0908,
+      "meaningfulUniqueness": 0.9092
+    },
+    {
+      "pageA": "/format/jpg-to-webp/",
+      "pageB": "/compare/png-vs-jpg/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.2404,
+      "combinedSimilarity": 0.1563,
+      "meaningfulUniqueness": 0.8437
+    },
+    {
+      "pageA": "/format/jpg-to-webp/",
+      "pageB": "/compare/jpg-vs-webp/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.5449,
+      "combinedSimilarity": 0.3542,
+      "meaningfulUniqueness": 0.6458
+    },
+    {
+      "pageA": "/format/jpg-to-webp/",
+      "pageB": "/compare/svg-vs-png/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0457,
+      "combinedSimilarity": 0.0297,
+      "meaningfulUniqueness": 0.9703
+    },
+    {
+      "pageA": "/format/jpg-to-webp/",
+      "pageB": "/compare/mov-vs-mp4/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0316,
+      "combinedSimilarity": 0.0205,
+      "meaningfulUniqueness": 0.9795
+    },
+    {
+      "pageA": "/format/jpg-to-webp/",
+      "pageB": "/compare/wav-vs-mp3/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0216,
+      "combinedSimilarity": 0.014,
+      "meaningfulUniqueness": 0.986
+    },
+    {
+      "pageA": "/format/jpg-to-webp/",
+      "pageB": "/compare/pdf-vs-docx/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0162,
+      "combinedSimilarity": 0.0105,
+      "meaningfulUniqueness": 0.9895
+    },
+    {
+      "pageA": "/format/png-to-webp/",
+      "pageB": "/format/mp4-to-gif/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0211,
+      "combinedSimilarity": 0.0137,
+      "meaningfulUniqueness": 0.9863
+    },
+    {
+      "pageA": "/format/png-to-webp/",
+      "pageB": "/format/avi-to-mp4/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0452,
+      "combinedSimilarity": 0.0294,
+      "meaningfulUniqueness": 0.9706
+    },
+    {
+      "pageA": "/format/png-to-webp/",
+      "pageB": "/format/mp3-to-wav/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.014,
+      "combinedSimilarity": 0.0091,
+      "meaningfulUniqueness": 0.9909
+    },
+    {
+      "pageA": "/format/png-to-webp/",
+      "pageB": "/format/flac-to-mp3/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0338,
+      "combinedSimilarity": 0.022,
+      "meaningfulUniqueness": 0.978
+    },
+    {
+      "pageA": "/format/png-to-webp/",
       "pageB": "/format/docx-to-pdf/",
       "overlap": 0,
       "renderedTextSimilarity": 0.0319,
@@ -1545,170 +1657,58 @@
       "meaningfulUniqueness": 0.9793
     },
     {
-      "pageA": "/format/jpg-to-webp/",
-      "pageB": "/format/txt-to-pdf/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0178,
-      "combinedSimilarity": 0.0116,
-      "meaningfulUniqueness": 0.9884
-    },
-    {
-      "pageA": "/format/jpg-to-webp/",
-      "pageB": "/format/heic-to-jpg/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.2461,
-      "combinedSimilarity": 0.16,
-      "meaningfulUniqueness": 0.84
-    },
-    {
-      "pageA": "/format/jpg-to-webp/",
-      "pageB": "/format/gif-to-mp4/",
-      "overlap": 0.1,
-      "renderedTextSimilarity": 0.088,
-      "combinedSimilarity": 0.0922,
-      "meaningfulUniqueness": 0.9078
-    },
-    {
-      "pageA": "/format/jpg-to-webp/",
-      "pageB": "/compare/png-vs-jpg/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.2372,
-      "combinedSimilarity": 0.1542,
-      "meaningfulUniqueness": 0.8458
-    },
-    {
-      "pageA": "/format/jpg-to-webp/",
-      "pageB": "/compare/jpg-vs-webp/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.5411,
-      "combinedSimilarity": 0.3517,
-      "meaningfulUniqueness": 0.6483
-    },
-    {
-      "pageA": "/format/jpg-to-webp/",
-      "pageB": "/compare/svg-vs-png/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0465,
-      "combinedSimilarity": 0.0302,
-      "meaningfulUniqueness": 0.9698
-    },
-    {
-      "pageA": "/format/jpg-to-webp/",
-      "pageB": "/compare/mov-vs-mp4/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0318,
-      "combinedSimilarity": 0.0207,
-      "meaningfulUniqueness": 0.9793
-    },
-    {
-      "pageA": "/format/jpg-to-webp/",
-      "pageB": "/compare/wav-vs-mp3/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0217,
-      "combinedSimilarity": 0.0141,
-      "meaningfulUniqueness": 0.9859
-    },
-    {
-      "pageA": "/format/jpg-to-webp/",
-      "pageB": "/compare/pdf-vs-docx/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0163,
-      "combinedSimilarity": 0.0106,
-      "meaningfulUniqueness": 0.9894
-    },
-    {
-      "pageA": "/format/png-to-webp/",
-      "pageB": "/format/mp4-to-gif/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0215,
-      "combinedSimilarity": 0.014,
-      "meaningfulUniqueness": 0.986
-    },
-    {
-      "pageA": "/format/png-to-webp/",
-      "pageB": "/format/avi-to-mp4/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0463,
-      "combinedSimilarity": 0.0301,
-      "meaningfulUniqueness": 0.9699
-    },
-    {
-      "pageA": "/format/png-to-webp/",
-      "pageB": "/format/mp3-to-wav/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0142,
-      "combinedSimilarity": 0.0092,
-      "meaningfulUniqueness": 0.9908
-    },
-    {
-      "pageA": "/format/png-to-webp/",
-      "pageB": "/format/flac-to-mp3/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0344,
-      "combinedSimilarity": 0.0224,
-      "meaningfulUniqueness": 0.9776
-    },
-    {
-      "pageA": "/format/png-to-webp/",
-      "pageB": "/format/docx-to-pdf/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0327,
-      "combinedSimilarity": 0.0213,
-      "meaningfulUniqueness": 0.9787
-    },
-    {
       "pageA": "/format/png-to-webp/",
       "pageB": "/format/txt-to-pdf/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.011,
-      "combinedSimilarity": 0.0072,
-      "meaningfulUniqueness": 0.9928
+      "renderedTextSimilarity": 0.0107,
+      "combinedSimilarity": 0.007,
+      "meaningfulUniqueness": 0.993
     },
     {
       "pageA": "/format/png-to-webp/",
       "pageB": "/format/heic-to-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0768,
-      "combinedSimilarity": 0.0499,
-      "meaningfulUniqueness": 0.9501
+      "renderedTextSimilarity": 0.0762,
+      "combinedSimilarity": 0.0495,
+      "meaningfulUniqueness": 0.9505
     },
     {
       "pageA": "/format/png-to-webp/",
       "pageB": "/format/gif-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.08,
-      "combinedSimilarity": 0.052,
-      "meaningfulUniqueness": 0.948
+      "renderedTextSimilarity": 0.0782,
+      "combinedSimilarity": 0.0508,
+      "meaningfulUniqueness": 0.9492
     },
     {
       "pageA": "/format/png-to-webp/",
       "pageB": "/compare/png-vs-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2667,
-      "combinedSimilarity": 0.1734,
-      "meaningfulUniqueness": 0.8266
+      "renderedTextSimilarity": 0.2687,
+      "combinedSimilarity": 0.1747,
+      "meaningfulUniqueness": 0.8253
     },
     {
       "pageA": "/format/png-to-webp/",
       "pageB": "/compare/jpg-vs-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.3471,
-      "combinedSimilarity": 0.2256,
-      "meaningfulUniqueness": 0.7744
+      "renderedTextSimilarity": 0.3465,
+      "combinedSimilarity": 0.2252,
+      "meaningfulUniqueness": 0.7748
     },
     {
       "pageA": "/format/png-to-webp/",
       "pageB": "/compare/svg-vs-png/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2017,
-      "combinedSimilarity": 0.1311,
-      "meaningfulUniqueness": 0.8689
+      "renderedTextSimilarity": 0.2041,
+      "combinedSimilarity": 0.1327,
+      "meaningfulUniqueness": 0.8673
     },
     {
       "pageA": "/format/png-to-webp/",
       "pageB": "/compare/mov-vs-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0262,
+      "renderedTextSimilarity": 0.0261,
       "combinedSimilarity": 0.017,
       "meaningfulUniqueness": 0.983
     },
@@ -1716,9 +1716,9 @@
       "pageA": "/format/png-to-webp/",
       "pageB": "/compare/wav-vs-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0207,
-      "combinedSimilarity": 0.0135,
-      "meaningfulUniqueness": 0.9865
+      "renderedTextSimilarity": 0.0205,
+      "combinedSimilarity": 0.0133,
+      "meaningfulUniqueness": 0.9867
     },
     {
       "pageA": "/format/png-to-webp/",
@@ -1732,199 +1732,199 @@
       "pageA": "/format/mp4-to-gif/",
       "pageB": "/format/avi-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2943,
-      "combinedSimilarity": 0.1913,
-      "meaningfulUniqueness": 0.8087
+      "renderedTextSimilarity": 0.2974,
+      "combinedSimilarity": 0.1933,
+      "meaningfulUniqueness": 0.8067
     },
     {
       "pageA": "/format/mp4-to-gif/",
       "pageB": "/format/mp3-to-wav/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.03,
-      "combinedSimilarity": 0.0195,
-      "meaningfulUniqueness": 0.9805
+      "renderedTextSimilarity": 0.0291,
+      "combinedSimilarity": 0.0189,
+      "meaningfulUniqueness": 0.9811
     },
     {
       "pageA": "/format/mp4-to-gif/",
       "pageB": "/format/flac-to-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0408,
-      "combinedSimilarity": 0.0265,
-      "meaningfulUniqueness": 0.9735
+      "renderedTextSimilarity": 0.04,
+      "combinedSimilarity": 0.026,
+      "meaningfulUniqueness": 0.974
     },
     {
       "pageA": "/format/mp4-to-gif/",
       "pageB": "/format/docx-to-pdf/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.007,
-      "combinedSimilarity": 0.0046,
-      "meaningfulUniqueness": 0.9954
+      "renderedTextSimilarity": 0.0068,
+      "combinedSimilarity": 0.0044,
+      "meaningfulUniqueness": 0.9956
     },
     {
       "pageA": "/format/mp4-to-gif/",
       "pageB": "/format/txt-to-pdf/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0352,
-      "combinedSimilarity": 0.0229,
-      "meaningfulUniqueness": 0.9771
+      "renderedTextSimilarity": 0.0342,
+      "combinedSimilarity": 0.0222,
+      "meaningfulUniqueness": 0.9778
     },
     {
       "pageA": "/format/mp4-to-gif/",
       "pageB": "/format/heic-to-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0396,
-      "combinedSimilarity": 0.0257,
-      "meaningfulUniqueness": 0.9743
+      "renderedTextSimilarity": 0.0389,
+      "combinedSimilarity": 0.0253,
+      "meaningfulUniqueness": 0.9747
     },
     {
       "pageA": "/format/mp4-to-gif/",
       "pageB": "/format/gif-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.6263,
-      "combinedSimilarity": 0.4071,
-      "meaningfulUniqueness": 0.5929
+      "renderedTextSimilarity": 0.6342,
+      "combinedSimilarity": 0.4122,
+      "meaningfulUniqueness": 0.5878
     },
     {
       "pageA": "/format/mp4-to-gif/",
       "pageB": "/compare/png-vs-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0349,
-      "combinedSimilarity": 0.0227,
-      "meaningfulUniqueness": 0.9773
+      "renderedTextSimilarity": 0.0344,
+      "combinedSimilarity": 0.0224,
+      "meaningfulUniqueness": 0.9776
     },
     {
       "pageA": "/format/mp4-to-gif/",
       "pageB": "/compare/jpg-vs-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0262,
-      "combinedSimilarity": 0.017,
-      "meaningfulUniqueness": 0.983
+      "renderedTextSimilarity": 0.0259,
+      "combinedSimilarity": 0.0168,
+      "meaningfulUniqueness": 0.9832
     },
     {
       "pageA": "/format/mp4-to-gif/",
       "pageB": "/compare/svg-vs-png/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0382,
-      "combinedSimilarity": 0.0248,
-      "meaningfulUniqueness": 0.9752
+      "renderedTextSimilarity": 0.0376,
+      "combinedSimilarity": 0.0244,
+      "meaningfulUniqueness": 0.9756
     },
     {
       "pageA": "/format/mp4-to-gif/",
       "pageB": "/compare/mov-vs-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2167,
-      "combinedSimilarity": 0.1409,
-      "meaningfulUniqueness": 0.8591
+      "renderedTextSimilarity": 0.2211,
+      "combinedSimilarity": 0.1437,
+      "meaningfulUniqueness": 0.8563
     },
     {
       "pageA": "/format/mp4-to-gif/",
       "pageB": "/compare/wav-vs-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0392,
-      "combinedSimilarity": 0.0255,
-      "meaningfulUniqueness": 0.9745
+      "renderedTextSimilarity": 0.0387,
+      "combinedSimilarity": 0.0252,
+      "meaningfulUniqueness": 0.9748
     },
     {
       "pageA": "/format/mp4-to-gif/",
       "pageB": "/compare/pdf-vs-docx/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0236,
-      "combinedSimilarity": 0.0153,
-      "meaningfulUniqueness": 0.9847
+      "renderedTextSimilarity": 0.0234,
+      "combinedSimilarity": 0.0152,
+      "meaningfulUniqueness": 0.9848
     },
     {
       "pageA": "/format/avi-to-mp4/",
       "pageB": "/format/mp3-to-wav/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0408,
-      "combinedSimilarity": 0.0265,
-      "meaningfulUniqueness": 0.9735
+      "renderedTextSimilarity": 0.0394,
+      "combinedSimilarity": 0.0256,
+      "meaningfulUniqueness": 0.9744
     },
     {
       "pageA": "/format/avi-to-mp4/",
       "pageB": "/format/flac-to-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.056,
-      "combinedSimilarity": 0.0364,
-      "meaningfulUniqueness": 0.9636
+      "renderedTextSimilarity": 0.0545,
+      "combinedSimilarity": 0.0354,
+      "meaningfulUniqueness": 0.9646
     },
     {
       "pageA": "/format/avi-to-mp4/",
       "pageB": "/format/docx-to-pdf/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0457,
-      "combinedSimilarity": 0.0297,
-      "meaningfulUniqueness": 0.9703
+      "renderedTextSimilarity": 0.044,
+      "combinedSimilarity": 0.0286,
+      "meaningfulUniqueness": 0.9714
     },
     {
       "pageA": "/format/avi-to-mp4/",
       "pageB": "/format/txt-to-pdf/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0266,
-      "combinedSimilarity": 0.0173,
-      "meaningfulUniqueness": 0.9827
+      "renderedTextSimilarity": 0.0259,
+      "combinedSimilarity": 0.0168,
+      "meaningfulUniqueness": 0.9832
     },
     {
       "pageA": "/format/avi-to-mp4/",
       "pageB": "/format/heic-to-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0556,
-      "combinedSimilarity": 0.0361,
-      "meaningfulUniqueness": 0.9639
+      "renderedTextSimilarity": 0.0552,
+      "combinedSimilarity": 0.0359,
+      "meaningfulUniqueness": 0.9641
     },
     {
       "pageA": "/format/avi-to-mp4/",
       "pageB": "/format/gif-to-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.3287,
-      "combinedSimilarity": 0.2137,
-      "meaningfulUniqueness": 0.7863
+      "renderedTextSimilarity": 0.3309,
+      "combinedSimilarity": 0.2151,
+      "meaningfulUniqueness": 0.7849
     },
     {
       "pageA": "/format/avi-to-mp4/",
       "pageB": "/compare/png-vs-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0204,
-      "combinedSimilarity": 0.0133,
-      "meaningfulUniqueness": 0.9867
+      "renderedTextSimilarity": 0.0202,
+      "combinedSimilarity": 0.0131,
+      "meaningfulUniqueness": 0.9869
     },
     {
       "pageA": "/format/avi-to-mp4/",
       "pageB": "/compare/jpg-vs-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0366,
-      "combinedSimilarity": 0.0238,
-      "meaningfulUniqueness": 0.9762
+      "renderedTextSimilarity": 0.036,
+      "combinedSimilarity": 0.0234,
+      "meaningfulUniqueness": 0.9766
     },
     {
       "pageA": "/format/avi-to-mp4/",
       "pageB": "/compare/svg-vs-png/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0147,
-      "combinedSimilarity": 0.0096,
-      "meaningfulUniqueness": 0.9904
+      "renderedTextSimilarity": 0.0146,
+      "combinedSimilarity": 0.0095,
+      "meaningfulUniqueness": 0.9905
     },
     {
       "pageA": "/format/avi-to-mp4/",
       "pageB": "/compare/mov-vs-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.2262,
-      "combinedSimilarity": 0.147,
-      "meaningfulUniqueness": 0.853
+      "renderedTextSimilarity": 0.2304,
+      "combinedSimilarity": 0.1498,
+      "meaningfulUniqueness": 0.8502
     },
     {
       "pageA": "/format/avi-to-mp4/",
       "pageB": "/compare/wav-vs-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0306,
-      "combinedSimilarity": 0.0199,
-      "meaningfulUniqueness": 0.9801
+      "renderedTextSimilarity": 0.0301,
+      "combinedSimilarity": 0.0196,
+      "meaningfulUniqueness": 0.9804
     },
     {
       "pageA": "/format/avi-to-mp4/",
       "pageB": "/compare/pdf-vs-docx/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0159,
+      "renderedTextSimilarity": 0.0158,
       "combinedSimilarity": 0.0103,
       "meaningfulUniqueness": 0.9897
     },
@@ -1932,529 +1932,529 @@
       "pageA": "/format/mp3-to-wav/",
       "pageB": "/format/flac-to-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.3547,
-      "combinedSimilarity": 0.2306,
-      "meaningfulUniqueness": 0.7694
+      "renderedTextSimilarity": 0.3579,
+      "combinedSimilarity": 0.2326,
+      "meaningfulUniqueness": 0.7674
     },
     {
       "pageA": "/format/mp3-to-wav/",
       "pageB": "/format/docx-to-pdf/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0333,
-      "combinedSimilarity": 0.0216,
-      "meaningfulUniqueness": 0.9784
-    },
-    {
-      "pageA": "/format/mp3-to-wav/",
-      "pageB": "/format/txt-to-pdf/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0213,
-      "combinedSimilarity": 0.0138,
-      "meaningfulUniqueness": 0.9862
-    },
-    {
-      "pageA": "/format/mp3-to-wav/",
-      "pageB": "/format/heic-to-jpg/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0494,
-      "combinedSimilarity": 0.0321,
-      "meaningfulUniqueness": 0.9679
-    },
-    {
-      "pageA": "/format/mp3-to-wav/",
-      "pageB": "/format/gif-to-mp4/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.02,
-      "combinedSimilarity": 0.013,
-      "meaningfulUniqueness": 0.987
-    },
-    {
-      "pageA": "/format/mp3-to-wav/",
-      "pageB": "/compare/png-vs-jpg/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0301,
-      "combinedSimilarity": 0.0196,
-      "meaningfulUniqueness": 0.9804
-    },
-    {
-      "pageA": "/format/mp3-to-wav/",
-      "pageB": "/compare/jpg-vs-webp/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0286,
-      "combinedSimilarity": 0.0186,
-      "meaningfulUniqueness": 0.9814
-    },
-    {
-      "pageA": "/format/mp3-to-wav/",
-      "pageB": "/compare/svg-vs-png/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0338,
-      "combinedSimilarity": 0.022,
-      "meaningfulUniqueness": 0.978
-    },
-    {
-      "pageA": "/format/mp3-to-wav/",
-      "pageB": "/compare/mov-vs-mp4/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0652,
-      "combinedSimilarity": 0.0424,
-      "meaningfulUniqueness": 0.9576
-    },
-    {
-      "pageA": "/format/mp3-to-wav/",
-      "pageB": "/compare/wav-vs-mp3/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.4941,
-      "combinedSimilarity": 0.3212,
-      "meaningfulUniqueness": 0.6788
-    },
-    {
-      "pageA": "/format/mp3-to-wav/",
-      "pageB": "/compare/pdf-vs-docx/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0286,
-      "combinedSimilarity": 0.0186,
-      "meaningfulUniqueness": 0.9814
-    },
-    {
-      "pageA": "/format/flac-to-mp3/",
-      "pageB": "/format/docx-to-pdf/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0407,
-      "combinedSimilarity": 0.0265,
-      "meaningfulUniqueness": 0.9735
-    },
-    {
-      "pageA": "/format/flac-to-mp3/",
-      "pageB": "/format/txt-to-pdf/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0225,
-      "combinedSimilarity": 0.0146,
-      "meaningfulUniqueness": 0.9854
-    },
-    {
-      "pageA": "/format/flac-to-mp3/",
-      "pageB": "/format/heic-to-jpg/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0363,
-      "combinedSimilarity": 0.0236,
-      "meaningfulUniqueness": 0.9764
-    },
-    {
-      "pageA": "/format/flac-to-mp3/",
-      "pageB": "/format/gif-to-mp4/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0283,
-      "combinedSimilarity": 0.0184,
-      "meaningfulUniqueness": 0.9816
-    },
-    {
-      "pageA": "/format/flac-to-mp3/",
-      "pageB": "/compare/png-vs-jpg/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0207,
-      "combinedSimilarity": 0.0135,
-      "meaningfulUniqueness": 0.9865
-    },
-    {
-      "pageA": "/format/flac-to-mp3/",
-      "pageB": "/compare/jpg-vs-webp/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0213,
-      "combinedSimilarity": 0.0138,
-      "meaningfulUniqueness": 0.9862
-    },
-    {
-      "pageA": "/format/flac-to-mp3/",
-      "pageB": "/compare/svg-vs-png/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0149,
-      "combinedSimilarity": 0.0097,
-      "meaningfulUniqueness": 0.9903
-    },
-    {
-      "pageA": "/format/flac-to-mp3/",
-      "pageB": "/compare/mov-vs-mp4/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0244,
-      "combinedSimilarity": 0.0159,
-      "meaningfulUniqueness": 0.9841
-    },
-    {
-      "pageA": "/format/flac-to-mp3/",
-      "pageB": "/compare/wav-vs-mp3/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.3204,
-      "combinedSimilarity": 0.2083,
-      "meaningfulUniqueness": 0.7917
-    },
-    {
-      "pageA": "/format/flac-to-mp3/",
-      "pageB": "/compare/pdf-vs-docx/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0137,
-      "combinedSimilarity": 0.0089,
-      "meaningfulUniqueness": 0.9911
-    },
-    {
-      "pageA": "/format/docx-to-pdf/",
-      "pageB": "/format/txt-to-pdf/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.4111,
-      "combinedSimilarity": 0.2672,
-      "meaningfulUniqueness": 0.7328
-    },
-    {
-      "pageA": "/format/docx-to-pdf/",
-      "pageB": "/format/heic-to-jpg/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0639,
-      "combinedSimilarity": 0.0415,
-      "meaningfulUniqueness": 0.9585
-    },
-    {
-      "pageA": "/format/docx-to-pdf/",
-      "pageB": "/format/gif-to-mp4/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.023,
-      "combinedSimilarity": 0.0149,
-      "meaningfulUniqueness": 0.9851
-    },
-    {
-      "pageA": "/format/docx-to-pdf/",
-      "pageB": "/compare/png-vs-jpg/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0333,
-      "combinedSimilarity": 0.0216,
-      "meaningfulUniqueness": 0.9784
-    },
-    {
-      "pageA": "/format/docx-to-pdf/",
-      "pageB": "/compare/jpg-vs-webp/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0229,
-      "combinedSimilarity": 0.0149,
-      "meaningfulUniqueness": 0.9851
-    },
-    {
-      "pageA": "/format/docx-to-pdf/",
-      "pageB": "/compare/svg-vs-png/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0288,
-      "combinedSimilarity": 0.0187,
-      "meaningfulUniqueness": 0.9813
-    },
-    {
-      "pageA": "/format/docx-to-pdf/",
-      "pageB": "/compare/mov-vs-mp4/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0186,
-      "combinedSimilarity": 0.0121,
-      "meaningfulUniqueness": 0.9879
-    },
-    {
-      "pageA": "/format/docx-to-pdf/",
-      "pageB": "/compare/wav-vs-mp3/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0165,
-      "combinedSimilarity": 0.0107,
-      "meaningfulUniqueness": 0.9893
-    },
-    {
-      "pageA": "/format/docx-to-pdf/",
-      "pageB": "/compare/pdf-vs-docx/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.48,
-      "combinedSimilarity": 0.312,
-      "meaningfulUniqueness": 0.688
-    },
-    {
-      "pageA": "/format/txt-to-pdf/",
-      "pageB": "/format/heic-to-jpg/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0163,
-      "combinedSimilarity": 0.0106,
-      "meaningfulUniqueness": 0.9894
-    },
-    {
-      "pageA": "/format/txt-to-pdf/",
-      "pageB": "/format/gif-to-mp4/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0152,
-      "combinedSimilarity": 0.0099,
-      "meaningfulUniqueness": 0.9901
-    },
-    {
-      "pageA": "/format/txt-to-pdf/",
-      "pageB": "/compare/png-vs-jpg/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0454,
-      "combinedSimilarity": 0.0295,
-      "meaningfulUniqueness": 0.9705
-    },
-    {
-      "pageA": "/format/txt-to-pdf/",
-      "pageB": "/compare/jpg-vs-webp/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0145,
-      "combinedSimilarity": 0.0094,
-      "meaningfulUniqueness": 0.9906
-    },
-    {
-      "pageA": "/format/txt-to-pdf/",
-      "pageB": "/compare/svg-vs-png/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0176,
-      "combinedSimilarity": 0.0114,
-      "meaningfulUniqueness": 0.9886
-    },
-    {
-      "pageA": "/format/txt-to-pdf/",
-      "pageB": "/compare/mov-vs-mp4/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0131,
-      "combinedSimilarity": 0.0085,
-      "meaningfulUniqueness": 0.9915
-    },
-    {
-      "pageA": "/format/txt-to-pdf/",
-      "pageB": "/compare/wav-vs-mp3/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0101,
-      "combinedSimilarity": 0.0066,
-      "meaningfulUniqueness": 0.9934
-    },
-    {
-      "pageA": "/format/txt-to-pdf/",
-      "pageB": "/compare/pdf-vs-docx/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.266,
-      "combinedSimilarity": 0.1729,
-      "meaningfulUniqueness": 0.8271
-    },
-    {
-      "pageA": "/format/heic-to-jpg/",
-      "pageB": "/format/gif-to-mp4/",
       "overlap": 0,
       "renderedTextSimilarity": 0.0322,
       "combinedSimilarity": 0.0209,
       "meaningfulUniqueness": 0.9791
     },
     {
-      "pageA": "/format/heic-to-jpg/",
+      "pageA": "/format/mp3-to-wav/",
+      "pageB": "/format/txt-to-pdf/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0204,
+      "combinedSimilarity": 0.0133,
+      "meaningfulUniqueness": 0.9867
+    },
+    {
+      "pageA": "/format/mp3-to-wav/",
+      "pageB": "/format/heic-to-jpg/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0484,
+      "combinedSimilarity": 0.0315,
+      "meaningfulUniqueness": 0.9685
+    },
+    {
+      "pageA": "/format/mp3-to-wav/",
+      "pageB": "/format/gif-to-mp4/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0195,
+      "combinedSimilarity": 0.0127,
+      "meaningfulUniqueness": 0.9873
+    },
+    {
+      "pageA": "/format/mp3-to-wav/",
       "pageB": "/compare/png-vs-jpg/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.275,
-      "combinedSimilarity": 0.1788,
-      "meaningfulUniqueness": 0.8212
+      "renderedTextSimilarity": 0.0299,
+      "combinedSimilarity": 0.0194,
+      "meaningfulUniqueness": 0.9806
     },
     {
-      "pageA": "/format/heic-to-jpg/",
+      "pageA": "/format/mp3-to-wav/",
       "pageB": "/compare/jpg-vs-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.247,
-      "combinedSimilarity": 0.1605,
-      "meaningfulUniqueness": 0.8395
+      "renderedTextSimilarity": 0.0283,
+      "combinedSimilarity": 0.0184,
+      "meaningfulUniqueness": 0.9816
     },
     {
-      "pageA": "/format/heic-to-jpg/",
+      "pageA": "/format/mp3-to-wav/",
       "pageB": "/compare/svg-vs-png/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.05,
-      "combinedSimilarity": 0.0325,
-      "meaningfulUniqueness": 0.9675
+      "renderedTextSimilarity": 0.0335,
+      "combinedSimilarity": 0.0218,
+      "meaningfulUniqueness": 0.9782
     },
     {
-      "pageA": "/format/heic-to-jpg/",
+      "pageA": "/format/mp3-to-wav/",
       "pageB": "/compare/mov-vs-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0562,
-      "combinedSimilarity": 0.0365,
-      "meaningfulUniqueness": 0.9635
+      "renderedTextSimilarity": 0.0643,
+      "combinedSimilarity": 0.0418,
+      "meaningfulUniqueness": 0.9582
     },
     {
-      "pageA": "/format/heic-to-jpg/",
+      "pageA": "/format/mp3-to-wav/",
       "pageB": "/compare/wav-vs-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.0279,
+      "renderedTextSimilarity": 0.499,
+      "combinedSimilarity": 0.3244,
+      "meaningfulUniqueness": 0.6756
+    },
+    {
+      "pageA": "/format/mp3-to-wav/",
+      "pageB": "/compare/pdf-vs-docx/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0284,
+      "combinedSimilarity": 0.0185,
+      "meaningfulUniqueness": 0.9815
+    },
+    {
+      "pageA": "/format/flac-to-mp3/",
+      "pageB": "/format/docx-to-pdf/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0396,
+      "combinedSimilarity": 0.0257,
+      "meaningfulUniqueness": 0.9743
+    },
+    {
+      "pageA": "/format/flac-to-mp3/",
+      "pageB": "/format/txt-to-pdf/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0221,
+      "combinedSimilarity": 0.0144,
+      "meaningfulUniqueness": 0.9856
+    },
+    {
+      "pageA": "/format/flac-to-mp3/",
+      "pageB": "/format/heic-to-jpg/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0329,
+      "combinedSimilarity": 0.0214,
+      "meaningfulUniqueness": 0.9786
+    },
+    {
+      "pageA": "/format/flac-to-mp3/",
+      "pageB": "/format/gif-to-mp4/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0278,
       "combinedSimilarity": 0.0181,
       "meaningfulUniqueness": 0.9819
     },
     {
-      "pageA": "/format/heic-to-jpg/",
-      "pageB": "/compare/pdf-vs-docx/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0264,
-      "combinedSimilarity": 0.0172,
-      "meaningfulUniqueness": 0.9828
-    },
-    {
-      "pageA": "/format/gif-to-mp4/",
+      "pageA": "/format/flac-to-mp3/",
       "pageB": "/compare/png-vs-jpg/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0361,
-      "combinedSimilarity": 0.0235,
-      "meaningfulUniqueness": 0.9765
-    },
-    {
-      "pageA": "/format/gif-to-mp4/",
-      "pageB": "/compare/jpg-vs-webp/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0539,
-      "combinedSimilarity": 0.035,
-      "meaningfulUniqueness": 0.965
-    },
-    {
-      "pageA": "/format/gif-to-mp4/",
-      "pageB": "/compare/svg-vs-png/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0255,
-      "combinedSimilarity": 0.0166,
-      "meaningfulUniqueness": 0.9834
-    },
-    {
-      "pageA": "/format/gif-to-mp4/",
-      "pageB": "/compare/mov-vs-mp4/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.2331,
-      "combinedSimilarity": 0.1515,
-      "meaningfulUniqueness": 0.8485
-    },
-    {
-      "pageA": "/format/gif-to-mp4/",
-      "pageB": "/compare/wav-vs-mp3/",
-      "overlap": 0,
-      "renderedTextSimilarity": 0.0242,
-      "combinedSimilarity": 0.0157,
-      "meaningfulUniqueness": 0.9843
-    },
-    {
-      "pageA": "/format/gif-to-mp4/",
-      "pageB": "/compare/pdf-vs-docx/",
       "overlap": 0,
       "renderedTextSimilarity": 0.0189,
       "combinedSimilarity": 0.0123,
       "meaningfulUniqueness": 0.9877
     },
     {
+      "pageA": "/format/flac-to-mp3/",
+      "pageB": "/compare/jpg-vs-webp/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0195,
+      "combinedSimilarity": 0.0127,
+      "meaningfulUniqueness": 0.9873
+    },
+    {
+      "pageA": "/format/flac-to-mp3/",
+      "pageB": "/compare/svg-vs-png/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0132,
+      "combinedSimilarity": 0.0086,
+      "meaningfulUniqueness": 0.9914
+    },
+    {
+      "pageA": "/format/flac-to-mp3/",
+      "pageB": "/compare/mov-vs-mp4/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0194,
+      "combinedSimilarity": 0.0126,
+      "meaningfulUniqueness": 0.9874
+    },
+    {
+      "pageA": "/format/flac-to-mp3/",
+      "pageB": "/compare/wav-vs-mp3/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.3194,
+      "combinedSimilarity": 0.2076,
+      "meaningfulUniqueness": 0.7924
+    },
+    {
+      "pageA": "/format/flac-to-mp3/",
+      "pageB": "/compare/pdf-vs-docx/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.012,
+      "combinedSimilarity": 0.0078,
+      "meaningfulUniqueness": 0.9922
+    },
+    {
+      "pageA": "/format/docx-to-pdf/",
+      "pageB": "/format/txt-to-pdf/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.4143,
+      "combinedSimilarity": 0.2693,
+      "meaningfulUniqueness": 0.7307
+    },
+    {
+      "pageA": "/format/docx-to-pdf/",
+      "pageB": "/format/heic-to-jpg/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.063,
+      "combinedSimilarity": 0.041,
+      "meaningfulUniqueness": 0.959
+    },
+    {
+      "pageA": "/format/docx-to-pdf/",
+      "pageB": "/format/gif-to-mp4/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0222,
+      "combinedSimilarity": 0.0144,
+      "meaningfulUniqueness": 0.9856
+    },
+    {
+      "pageA": "/format/docx-to-pdf/",
+      "pageB": "/compare/png-vs-jpg/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0327,
+      "combinedSimilarity": 0.0213,
+      "meaningfulUniqueness": 0.9787
+    },
+    {
+      "pageA": "/format/docx-to-pdf/",
+      "pageB": "/compare/jpg-vs-webp/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0225,
+      "combinedSimilarity": 0.0146,
+      "meaningfulUniqueness": 0.9854
+    },
+    {
+      "pageA": "/format/docx-to-pdf/",
+      "pageB": "/compare/svg-vs-png/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0284,
+      "combinedSimilarity": 0.0185,
+      "meaningfulUniqueness": 0.9815
+    },
+    {
+      "pageA": "/format/docx-to-pdf/",
+      "pageB": "/compare/mov-vs-mp4/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0183,
+      "combinedSimilarity": 0.0119,
+      "meaningfulUniqueness": 0.9881
+    },
+    {
+      "pageA": "/format/docx-to-pdf/",
+      "pageB": "/compare/wav-vs-mp3/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0163,
+      "combinedSimilarity": 0.0106,
+      "meaningfulUniqueness": 0.9894
+    },
+    {
+      "pageA": "/format/docx-to-pdf/",
+      "pageB": "/compare/pdf-vs-docx/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.4857,
+      "combinedSimilarity": 0.3157,
+      "meaningfulUniqueness": 0.6843
+    },
+    {
+      "pageA": "/format/txt-to-pdf/",
+      "pageB": "/format/heic-to-jpg/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0161,
+      "combinedSimilarity": 0.0105,
+      "meaningfulUniqueness": 0.9895
+    },
+    {
+      "pageA": "/format/txt-to-pdf/",
+      "pageB": "/format/gif-to-mp4/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0148,
+      "combinedSimilarity": 0.0096,
+      "meaningfulUniqueness": 0.9904
+    },
+    {
+      "pageA": "/format/txt-to-pdf/",
+      "pageB": "/compare/png-vs-jpg/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0441,
+      "combinedSimilarity": 0.0287,
+      "meaningfulUniqueness": 0.9713
+    },
+    {
+      "pageA": "/format/txt-to-pdf/",
+      "pageB": "/compare/jpg-vs-webp/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0143,
+      "combinedSimilarity": 0.0093,
+      "meaningfulUniqueness": 0.9907
+    },
+    {
+      "pageA": "/format/txt-to-pdf/",
+      "pageB": "/compare/svg-vs-png/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0173,
+      "combinedSimilarity": 0.0112,
+      "meaningfulUniqueness": 0.9888
+    },
+    {
+      "pageA": "/format/txt-to-pdf/",
+      "pageB": "/compare/mov-vs-mp4/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.013,
+      "combinedSimilarity": 0.0084,
+      "meaningfulUniqueness": 0.9916
+    },
+    {
+      "pageA": "/format/txt-to-pdf/",
+      "pageB": "/compare/wav-vs-mp3/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.01,
+      "combinedSimilarity": 0.0065,
+      "meaningfulUniqueness": 0.9935
+    },
+    {
+      "pageA": "/format/txt-to-pdf/",
+      "pageB": "/compare/pdf-vs-docx/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.2693,
+      "combinedSimilarity": 0.175,
+      "meaningfulUniqueness": 0.825
+    },
+    {
+      "pageA": "/format/heic-to-jpg/",
+      "pageB": "/format/gif-to-mp4/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0319,
+      "combinedSimilarity": 0.0207,
+      "meaningfulUniqueness": 0.9793
+    },
+    {
+      "pageA": "/format/heic-to-jpg/",
+      "pageB": "/compare/png-vs-jpg/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.2756,
+      "combinedSimilarity": 0.1791,
+      "meaningfulUniqueness": 0.8209
+    },
+    {
+      "pageA": "/format/heic-to-jpg/",
+      "pageB": "/compare/jpg-vs-webp/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.2482,
+      "combinedSimilarity": 0.1613,
+      "meaningfulUniqueness": 0.8387
+    },
+    {
+      "pageA": "/format/heic-to-jpg/",
+      "pageB": "/compare/svg-vs-png/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.048,
+      "combinedSimilarity": 0.0312,
+      "meaningfulUniqueness": 0.9688
+    },
+    {
+      "pageA": "/format/heic-to-jpg/",
+      "pageB": "/compare/mov-vs-mp4/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0533,
+      "combinedSimilarity": 0.0346,
+      "meaningfulUniqueness": 0.9654
+    },
+    {
+      "pageA": "/format/heic-to-jpg/",
+      "pageB": "/compare/wav-vs-mp3/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0262,
+      "combinedSimilarity": 0.017,
+      "meaningfulUniqueness": 0.983
+    },
+    {
+      "pageA": "/format/heic-to-jpg/",
+      "pageB": "/compare/pdf-vs-docx/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0248,
+      "combinedSimilarity": 0.0161,
+      "meaningfulUniqueness": 0.9839
+    },
+    {
+      "pageA": "/format/gif-to-mp4/",
+      "pageB": "/compare/png-vs-jpg/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0355,
+      "combinedSimilarity": 0.0231,
+      "meaningfulUniqueness": 0.9769
+    },
+    {
+      "pageA": "/format/gif-to-mp4/",
+      "pageB": "/compare/jpg-vs-webp/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.053,
+      "combinedSimilarity": 0.0345,
+      "meaningfulUniqueness": 0.9655
+    },
+    {
+      "pageA": "/format/gif-to-mp4/",
+      "pageB": "/compare/svg-vs-png/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0252,
+      "combinedSimilarity": 0.0164,
+      "meaningfulUniqueness": 0.9836
+    },
+    {
+      "pageA": "/format/gif-to-mp4/",
+      "pageB": "/compare/mov-vs-mp4/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.2371,
+      "combinedSimilarity": 0.1541,
+      "meaningfulUniqueness": 0.8459
+    },
+    {
+      "pageA": "/format/gif-to-mp4/",
+      "pageB": "/compare/wav-vs-mp3/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.024,
+      "combinedSimilarity": 0.0156,
+      "meaningfulUniqueness": 0.9844
+    },
+    {
+      "pageA": "/format/gif-to-mp4/",
+      "pageB": "/compare/pdf-vs-docx/",
+      "overlap": 0,
+      "renderedTextSimilarity": 0.0187,
+      "combinedSimilarity": 0.0122,
+      "meaningfulUniqueness": 0.9878
+    },
+    {
       "pageA": "/compare/png-vs-jpg/",
       "pageB": "/compare/jpg-vs-webp/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.6153,
-      "combinedSimilarity": 0.3999,
-      "meaningfulUniqueness": 0.6001
+      "renderedTextSimilarity": 0.6135,
+      "combinedSimilarity": 0.3988,
+      "meaningfulUniqueness": 0.6012
     },
     {
       "pageA": "/compare/png-vs-jpg/",
       "pageB": "/compare/svg-vs-png/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.5963,
-      "combinedSimilarity": 0.3876,
-      "meaningfulUniqueness": 0.6124
+      "renderedTextSimilarity": 0.5944,
+      "combinedSimilarity": 0.3864,
+      "meaningfulUniqueness": 0.6136
     },
     {
       "pageA": "/compare/png-vs-jpg/",
       "pageB": "/compare/mov-vs-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.4279,
-      "combinedSimilarity": 0.2781,
-      "meaningfulUniqueness": 0.7219
+      "renderedTextSimilarity": 0.4263,
+      "combinedSimilarity": 0.2771,
+      "meaningfulUniqueness": 0.7229
     },
     {
       "pageA": "/compare/png-vs-jpg/",
       "pageB": "/compare/wav-vs-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.4201,
-      "combinedSimilarity": 0.2731,
-      "meaningfulUniqueness": 0.7269
+      "renderedTextSimilarity": 0.4177,
+      "combinedSimilarity": 0.2715,
+      "meaningfulUniqueness": 0.7285
     },
     {
       "pageA": "/compare/png-vs-jpg/",
       "pageB": "/compare/pdf-vs-docx/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.4139,
-      "combinedSimilarity": 0.269,
-      "meaningfulUniqueness": 0.731
+      "renderedTextSimilarity": 0.4111,
+      "combinedSimilarity": 0.2672,
+      "meaningfulUniqueness": 0.7328
     },
     {
       "pageA": "/compare/jpg-vs-webp/",
       "pageB": "/compare/svg-vs-png/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.4012,
-      "combinedSimilarity": 0.2608,
-      "meaningfulUniqueness": 0.7392
+      "renderedTextSimilarity": 0.3989,
+      "combinedSimilarity": 0.2593,
+      "meaningfulUniqueness": 0.7407
     },
     {
       "pageA": "/compare/jpg-vs-webp/",
       "pageB": "/compare/mov-vs-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.4276,
-      "combinedSimilarity": 0.2779,
-      "meaningfulUniqueness": 0.7221
+      "renderedTextSimilarity": 0.4262,
+      "combinedSimilarity": 0.277,
+      "meaningfulUniqueness": 0.723
     },
     {
       "pageA": "/compare/jpg-vs-webp/",
       "pageB": "/compare/wav-vs-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.4069,
-      "combinedSimilarity": 0.2645,
-      "meaningfulUniqueness": 0.7355
+      "renderedTextSimilarity": 0.4046,
+      "combinedSimilarity": 0.263,
+      "meaningfulUniqueness": 0.737
     },
     {
       "pageA": "/compare/jpg-vs-webp/",
       "pageB": "/compare/pdf-vs-docx/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.4084,
-      "combinedSimilarity": 0.2655,
-      "meaningfulUniqueness": 0.7345
+      "renderedTextSimilarity": 0.4057,
+      "combinedSimilarity": 0.2637,
+      "meaningfulUniqueness": 0.7363
     },
     {
       "pageA": "/compare/svg-vs-png/",
       "pageB": "/compare/mov-vs-mp4/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.4304,
-      "combinedSimilarity": 0.2798,
-      "meaningfulUniqueness": 0.7202
+      "renderedTextSimilarity": 0.4289,
+      "combinedSimilarity": 0.2788,
+      "meaningfulUniqueness": 0.7212
     },
     {
       "pageA": "/compare/svg-vs-png/",
       "pageB": "/compare/wav-vs-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.4067,
-      "combinedSimilarity": 0.2644,
-      "meaningfulUniqueness": 0.7356
+      "renderedTextSimilarity": 0.4043,
+      "combinedSimilarity": 0.2628,
+      "meaningfulUniqueness": 0.7372
     },
     {
       "pageA": "/compare/svg-vs-png/",
       "pageB": "/compare/pdf-vs-docx/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.4183,
-      "combinedSimilarity": 0.2719,
-      "meaningfulUniqueness": 0.7281
+      "renderedTextSimilarity": 0.4157,
+      "combinedSimilarity": 0.2702,
+      "meaningfulUniqueness": 0.7298
     },
     {
       "pageA": "/compare/mov-vs-mp4/",
       "pageB": "/compare/wav-vs-mp3/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.448,
-      "combinedSimilarity": 0.2912,
-      "meaningfulUniqueness": 0.7088
+      "renderedTextSimilarity": 0.4465,
+      "combinedSimilarity": 0.2902,
+      "meaningfulUniqueness": 0.7098
     },
     {
       "pageA": "/compare/mov-vs-mp4/",
       "pageB": "/compare/pdf-vs-docx/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.442,
-      "combinedSimilarity": 0.2873,
-      "meaningfulUniqueness": 0.7127
+      "renderedTextSimilarity": 0.44,
+      "combinedSimilarity": 0.286,
+      "meaningfulUniqueness": 0.714
     },
     {
       "pageA": "/compare/wav-vs-mp3/",
       "pageB": "/compare/pdf-vs-docx/",
       "overlap": 0,
-      "renderedTextSimilarity": 0.4297,
-      "combinedSimilarity": 0.2793,
-      "meaningfulUniqueness": 0.7207
+      "renderedTextSimilarity": 0.4269,
+      "combinedSimilarity": 0.2775,
+      "meaningfulUniqueness": 0.7225
     }
   ]
 }

@@ -8,8 +8,23 @@ const TODAY = new Date().toISOString().slice(0, 10);
 
 const URL_PATTERNS = {
   format: "/format/{from}-to-{to}/",
-  compare: "/compare/{format-a}-vs-{format-b}/"
+  compare: "/compare/{format-a}-vs-{format-b}/",
+  category: "/format/{category}/"
 };
+
+const CATEGORIES = {
+  image: { label: "Image", slug: "image", description: "Convert between image formats like PNG, JPG, WEBP, SVG, GIF, and HEIC.", clusters: ["image-conversion", "design-asset-conversion"] },
+  video: { label: "Video", slug: "video", description: "Convert between video formats like MP4, MOV, AVI, and GIF.", clusters: ["video-conversion"] },
+  audio: { label: "Audio", slug: "audio", description: "Convert between audio formats like MP3, WAV, FLAC, and OGG.", clusters: ["audio-conversion"] },
+  document: { label: "Document", slug: "document", description: "Convert between document formats like PDF, DOCX, TXT, and HTML.", clusters: ["document-conversion"] }
+};
+
+function getCategoryForPage(page) {
+  for (const [key, cat] of Object.entries(CATEGORIES)) {
+    if (cat.clusters.includes(page.cluster)) return key;
+  }
+  return null;
+}
 
 const formatPages = [
   {
@@ -1297,6 +1312,26 @@ function navBlock() {
 </nav>`;
 }
 
+function categoryNavBlock(activeCategory = null) {
+  const tabs = Object.entries(CATEGORIES).map(([key, cat]) => {
+    const isActive = key === activeCategory;
+    return `<a href="${BASE_URL}/format/${cat.slug}/" class="category-tab${isActive ? ' active' : ''}"${isActive ? ' aria-current="page"' : ''}>${cat.label}</a>`;
+  }).join("");
+  return `<nav class="category-nav" aria-label="Format categories">
+    <a href="${BASE_URL}/format/" class="category-tab${activeCategory === null ? ' active' : ''}">All</a>
+    ${tabs}
+  </nav>`;
+}
+
+function breadcrumbNav(items) {
+  const lis = items.map((item, i) => {
+    const isLast = i === items.length - 1;
+    if (isLast) return `<li aria-current="page">${safeText(item.label)}</li>`;
+    return `<li><a href="${item.href}">${safeText(item.label)}</a></li>`;
+  }).join("");
+  return `<nav class="breadcrumb" aria-label="Breadcrumb"><ol>${lis}</ol></nav>`;
+}
+
 function linkList(items) {
   return `<ul>${items.map((item) => `<li><a href="${item.href}">${safeText(item.label)}</a></li>`).join("")}</ul>`;
 }
@@ -1450,6 +1485,196 @@ function ensureBodyWordCount(label, body, minWords = 1000) {
   return count;
 }
 
+function renderCategoryPage(categoryKey, allFormatPages, compareMap) {
+  const cat = CATEGORIES[categoryKey];
+  const catPages = allFormatPages.filter((p) => getCategoryForPage(p) === categoryKey);
+  const canonicalPath = `/format/${cat.slug}/`;
+  const pageUrl = `${BASE_URL}${canonicalPath}`;
+  const title = `${cat.label} Conversion Guides: Quality-First Steps | ConvertToIt`;
+  const primaryKeyword = `${cat.label.toLowerCase()} format conversion guides`;
+  const description = `Discover ${cat.label.toLowerCase()} format conversion guides with quality gates, pitfall checks, and compatibility links to publish cleaner ${cat.label.toLowerCase()} assets with fewer retries.`;
+  ensureLengthInRange(`Title for ${canonicalPath}`, title, 50, 65);
+  ensureLengthInRange(`Meta description for ${canonicalPath}`, description, 150, 165);
+
+  const planningRows = catPages.map((page, index) => {
+    const risk = page.pitfalls[0] ?? "Quality drift during delivery.";
+    return `<tr><td>${index + 1}</td><td>${safeText(page.from)} → ${safeText(page.to)}</td><td>${safeText(page.userGoal)}</td><td>${safeText(risk)}</td><td><a href="${BASE_URL}/format/${page.slug}/">Open guide</a></td></tr>`;
+  }).join("");
+
+  const relatedCompareLinks = [];
+  for (const [, cp] of compareMap) {
+    const cpFormats = [cp.a.toUpperCase(), cp.b.toUpperCase()];
+    const catFormats = catPages.flatMap((p) => [p.from.toUpperCase(), p.to.toUpperCase()]);
+    if (cpFormats.some((f) => catFormats.includes(f))) {
+      relatedCompareLinks.push(`<li><a href="${BASE_URL}/compare/${cp.slug}/">${safeText(cp.a)} vs ${safeText(cp.b)}</a></li>`);
+    }
+  }
+
+  const faq = [
+    {
+      q: `How do I choose the right ${cat.label.toLowerCase()} conversion guide?`,
+      a: `Start with your final destination requirement, then open the matching ${cat.label.toLowerCase()} format conversion guides to validate compatibility, quality, and size constraints before you run batch exports.`
+    },
+    {
+      q: `Do these ${cat.label.toLowerCase()} guides include quality and rollback checks?`,
+      a: `Yes. Every ${cat.label.toLowerCase()} guide includes checklist items, common failure patterns, and practical rollback notes so teams can ship conversions with fewer regressions.`
+    },
+    {
+      q: `Should I compare ${cat.label.toLowerCase()} formats before converting?`,
+      a: `When output policy is unclear, use comparison pages first. Then return to ${cat.label.toLowerCase()} format conversion guides to execute the chosen path with production-ready steps.`
+    }
+  ];
+
+  const snippetAnswer = `<p>${cat.label} format conversion guides are operational playbooks for turning one ${cat.label.toLowerCase()} file type into another with predictable output quality. Teams use ${cat.label.toLowerCase()} format conversion guides to align conversion intent, validate compatibility constraints, and ship consistent artifacts without repeating trial-and-error in each release cycle.</p>`;
+
+  const perPageNarrative = catPages.map((page, index) => {
+    const signal = page.uniquenessSignals[0] ?? "quality control";
+    return `<p>Guide ${index + 1}: <a href="${BASE_URL}/format/${page.slug}/">${safeText(page.from)} to ${safeText(page.to)}</a> targets "${safeText(signal)}" workflows. ${safeText(page.userGoal)} The quality checklist covers ${safeText(page.qualityChecklist[0] ?? "output validation")} and warns against ${safeText(page.pitfalls[0] ?? "common conversion errors")}. Teams that standardize this path reduce rework and publish cleaner ${safeText(page.to)} output with fewer post-launch corrections.</p>`;
+  }).join("");
+
+  const governanceNarrative = catPages.map((page, index) => {
+    const trigger = page.conversionTriggers[0] ?? "standard conversion request";
+    const checklist = page.qualityChecklist[1] ?? page.qualityChecklist[0] ?? "output validation";
+    return `<p>Governance note ${index + 1}: when teams execute ${safeText(page.from)} to ${safeText(page.to)} conversions triggered by "${safeText(trigger)}", apply the quality gate "${safeText(checklist)}" before publishing. Log the conversion outcome, requester intent, and selected preset so repeated ${cat.label.toLowerCase()} conversion tasks follow a consistent, auditable policy across contributors and release cycles.</p>`;
+  }).join("");
+
+  const pitfallNarrative = catPages.map((page, index) => {
+    const pitfall = page.pitfalls[0] ?? "unexpected quality drift";
+    const pitfall2 = page.pitfalls[1] ?? page.pitfalls[0] ?? "output inconsistency";
+    return `<p>Risk pattern ${index + 1} for ${safeText(page.from)} to ${safeText(page.to)}: ${safeText(pitfall)} Additionally, watch for ${safeText(pitfall2).toLowerCase()}. Run a controlled sample before batch execution and keep rollback copies of both source and output so recovery stays instant if destination rendering reveals hidden defects in the ${safeText(page.to)} output.</p>`;
+  }).join("");
+
+  const body = `
+<main class="page-wrap">
+  ${navBlock()}
+  ${breadcrumbNav([
+    { label: "Home", href: `${BASE_URL}/` },
+    { label: "Format Guides", href: `${BASE_URL}/format/` },
+    { label: cat.label }
+  ])}
+  ${categoryNavBlock(categoryKey)}
+  <header>
+    <h1>${cat.label} Format Conversion Guides</h1>
+    <p><strong>${safeText(primaryKeyword)}</strong> help teams move from format choice to production execution with clear quality gates and rollback readiness.</p>
+    <p>${safeText(cat.description)}</p>
+  </header>
+  <section>
+    <h2>What is ${cat.label.toLowerCase()} format conversion guides?</h2>
+    ${snippetAnswer}
+  </section>
+  <section>
+    <h2>How to use ${cat.label.toLowerCase()} format conversion guides in production</h2>
+    <ol>
+      <li>Identify the destination requirement (channel, file-size limits, and compatibility constraints).</li>
+      <li>Pick the matching ${cat.label.toLowerCase()} guide and run one representative sample conversion before batch execution.</li>
+      <li>Apply the quality checklist and verify output rendering in the final target environment.</li>
+      <li>Record outcomes and escalation notes so future ${cat.label.toLowerCase()} conversions follow the same validated policy.</li>
+    </ol>
+  </section>
+  <section>
+    <h2>When these ${cat.label.toLowerCase()} guides are most useful</h2>
+    <ul>
+      <li>When delivery teams need repeatable ${cat.label.toLowerCase()} conversion quality across multiple contributors.</li>
+      <li>When destination apps have strict file-size or codec requirements for ${cat.label.toLowerCase()} files.</li>
+      <li>When support teams must reproduce user-facing ${cat.label.toLowerCase()} conversion behavior with clear evidence.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>${cat.label} conversion planning matrix</h2>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Path</th><th>Primary goal</th><th>First risk to check</th><th>Guide</th></tr>
+      </thead>
+      <tbody>
+        ${planningRows}
+      </tbody>
+    </table>
+  </section>
+  <section>
+    <h2>${cat.label} conversion guides</h2>
+    <div class="card-grid">
+      ${catPages.map((page) => `<article class="card"><h3><a href="${BASE_URL}/format/${page.slug}/">${safeText(page.from)} to ${safeText(page.to)}</a></h3><p>${safeText(page.userGoal)}</p></article>`).join("")}
+    </div>
+  </section>
+  <section>
+    <h2>Detailed ${cat.label.toLowerCase()} conversion guide summaries</h2>
+    ${perPageNarrative}
+  </section>
+  <section>
+    <h2>Operational governance for ${cat.label.toLowerCase()} conversions</h2>
+    ${governanceNarrative}
+  </section>
+  <section>
+    <h2>Common ${cat.label.toLowerCase()} conversion pitfalls and risk patterns</h2>
+    ${pitfallNarrative}
+  </section>
+  <section>
+    <h2>What each ${cat.label.toLowerCase()} guide includes</h2>
+    <ul>
+      <li>Conversion workflow steps that map to real ${cat.label.toLowerCase()} publishing constraints.</li>
+      <li>Quality checks and pitfall recovery plans to reduce rework on ${cat.label.toLowerCase()} assets.</li>
+      <li>Cross-links to comparison guides so ${cat.label.toLowerCase()} format decisions stay consistent.</li>
+    </ul>
+  </section>
+  ${relatedCompareLinks.length > 0 ? `<section>
+    <h2>Related ${cat.label.toLowerCase()} format comparisons</h2>
+    <p>Not sure which ${cat.label.toLowerCase()} format to pick? Compare before converting.</p>
+    <ul>${relatedCompareLinks.join("")}</ul>
+  </section>` : ""}
+  <section>
+    <h2>FAQ</h2>
+    ${faq.map((item) => `<details><summary>${safeText(item.q)}</summary><p>${safeText(item.a)}</p></details>`).join("")}
+  </section>
+  <section>
+    <h2>Editorial method and trust signals</h2>
+    <p>This ${cat.label.toLowerCase()} category hub is refreshed on ${TODAY} by the ${BRAND} editorial workflow. Guidance is based on repeat conversion operations, destination validation, and rollback-ready execution standards.</p>
+    <ul>
+      <li>Canonical policy is locked to <a href="${pageUrl}">${pageUrl}</a>.</li>
+      <li>Each linked ${cat.label.toLowerCase()} guide maps execution steps to explicit quality and risk controls.</li>
+      <li>Related comparison links are maintained to reduce ${cat.label.toLowerCase()} format-policy drift between teams.</li>
+    </ul>
+  </section>
+</main>`;
+
+  ensureBodyWordCount(canonicalPath, body, SEO_MIN_WORD_COUNT);
+
+  const jsonLd = [
+    ...sharedGraphNodes(),
+    {
+      "@type": "CollectionPage",
+      "@id": `${pageUrl}#collection`,
+      name: `${cat.label} Format Conversion Guides`,
+      url: pageUrl,
+      description,
+      inLanguage: "en-US",
+      isPartOf: { "@id": WEBSITE_ID },
+      datePublished: CONTENT_PUBLISHED_ON,
+      dateModified: TODAY,
+      publisher: { "@id": ORGANIZATION_ID }
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: `${BASE_URL}/` },
+        { "@type": "ListItem", position: 2, name: "Format Guides", item: `${BASE_URL}/format/` },
+        { "@type": "ListItem", position: 3, name: cat.label, item: pageUrl }
+      ]
+    },
+    {
+      "@type": "ItemList",
+      name: `${cat.label} conversion guides`,
+      itemListElement: catPages.map((page, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: `${BASE_URL}/format/${page.slug}/`,
+        name: `${page.from} to ${page.to}`
+      }))
+    }
+  ];
+
+  return pageShell({ title, description, canonicalPath, body, jsonLd, ogImageAlt: `Preview card for ${cat.label.toLowerCase()} format conversion guides` });
+}
+
 function renderFormatHub(pages) {
   const title = "Convert File Formats Faster: Practical Guides | ConvertToIt";
   const description = "Discover format conversion guides for every file pair. Follow practical steps, quality gates, and related links to publish cleaner assets with fewer retries.";
@@ -1514,9 +1739,18 @@ function renderFormatHub(pages) {
   </section>
   <section>
     <h2>Popular conversion intents</h2>
-    <div class="card-grid">
-      ${pages.map((page) => `<article class="card"><h3><a href="${BASE_URL}/format/${page.slug}/">${safeText(page.from)} to ${safeText(page.to)}</a></h3><p>${safeText(page.userGoal)}</p></article>`).join("")}
-    </div>
+    ${categoryNavBlock()}
+    ${Object.entries(CATEGORIES).map(([key, cat]) => {
+      const catPages = pages.filter((p) => getCategoryForPage(p) === key);
+      if (catPages.length === 0) return "";
+      return `<section>
+      <h3><a href="${BASE_URL}/format/${cat.slug}/">${cat.label} conversions</a></h3>
+      <p>${safeText(cat.description)}</p>
+      <div class="card-grid">
+        ${catPages.map((page) => `<article class="card"><h4><a href="${BASE_URL}/format/${page.slug}/">${safeText(page.from)} to ${safeText(page.to)}</a></h4><p>${safeText(page.userGoal)}</p></article>`).join("")}
+      </div>
+    </section>`;
+    }).join("")}
   </section>
   <section>
     <h2>What each guide includes</h2>
@@ -1833,14 +2067,46 @@ function renderFormatPage(page, allFormatPages, compareMap) {
     return `<tr><td>${index + 1}</td><td>${safeText(trigger)}</td><td>${safeText(item)}</td><td>${safeText(pitfall)}</td><td>${safeText(signal)}</td></tr>`;
   }).join("");
 
+  const fromExt = page.from.toLowerCase();
+  const toExt = page.to.toLowerCase();
+  const category = getCategoryForPage(page);
+  const catLabel = category ? CATEGORIES[category].label : null;
+  const catSlug = category ? CATEGORIES[category].slug : null;
+
+  const breadcrumbItems = [
+    { label: "Home", href: `${BASE_URL}/` },
+    { label: "Format Guides", href: `${BASE_URL}/format/` },
+    ...(catSlug ? [{ label: catLabel, href: `${BASE_URL}/format/${catSlug}/` }] : []),
+    { label: `${page.from} to ${page.to}` }
+  ];
+
+  const converterWidget = `
+  <section class="converter-widget" aria-label="Convert ${safeText(page.from)} to ${safeText(page.to)} online">
+    <h2>Convert ${safeText(page.from)} to ${safeText(page.to)} now</h2>
+    <p>Drop your ${safeText(page.from)} file below to convert it to ${safeText(page.to)} instantly in your browser. No upload, no account needed.</p>
+    <iframe
+      src="${BASE_URL}/convert/?from=${fromExt}&to=${toExt}&embed=1"
+      title="Convert ${safeText(page.from)} to ${safeText(page.to)}"
+      class="converter-iframe"
+      loading="lazy"
+      allow="clipboard-read; clipboard-write"
+      sandbox="allow-scripts allow-same-origin allow-downloads"
+    ></iframe>
+    <p class="converter-widget-note">All processing happens locally in your browser. Files never leave your device.</p>
+  </section>`;
+
   const body = `
 <main class="page-wrap">
   ${navBlock()}
+  ${breadcrumbNav(breadcrumbItems)}
+  ${categoryNavBlock(category)}
   <header>
     <h1>How to convert ${safeText(page.from)} to ${safeText(page.to)}</h1>
     <p><strong>${safeText(primaryKeyword)}</strong> is useful when you need practical delivery output with fewer quality surprises.</p>
     <p>${safeText(page.userGoal)}</p>
   </header>
+
+  ${converterWidget}
 
   <section>
     <h2>What is ${safeText(primaryKeyword)} best for?</h2>
@@ -1960,7 +2226,8 @@ function renderFormatPage(page, allFormatPages, compareMap) {
       itemListElement: [
         { "@type": "ListItem", position: 1, name: "Home", item: `${BASE_URL}/` },
         { "@type": "ListItem", position: 2, name: "Format Guides", item: `${BASE_URL}/format/` },
-        { "@type": "ListItem", position: 3, name: `${page.from} to ${page.to}`, item: pageUrl }
+        ...(catSlug ? [{ "@type": "ListItem", position: 3, name: catLabel, item: `${BASE_URL}/format/${catSlug}/` }] : []),
+        { "@type": "ListItem", position: catSlug ? 4 : 3, name: `${page.from} to ${page.to}`, item: pageUrl }
       ]
     },
     {
@@ -2790,6 +3057,14 @@ function main() {
   writeFile("format/index.html", formatHub);
   generatedHtmlPages.push({ url: "/format/", html: formatHub });
 
+  const categoryHtmlPages = [];
+  for (const [categoryKey, cat] of Object.entries(CATEGORIES)) {
+    const rendered = renderCategoryPage(categoryKey, formatPages, compareMap);
+    writeFile(`format/${cat.slug}/index.html`, rendered);
+    generatedHtmlPages.push({ url: `/format/${cat.slug}/`, html: rendered });
+    categoryHtmlPages.push({ categoryKey, cat, html: rendered });
+  }
+
   const compareHub = renderCompareHub(comparePages);
   writeFile("compare/index.html", compareHub);
   generatedHtmlPages.push({ url: "/compare/", html: compareHub });
@@ -2831,6 +3106,13 @@ function main() {
       primaryKeyword: "format conversion guides",
       html: formatHub
     },
+    ...categoryHtmlPages.map(({ categoryKey, cat, html }) => ({
+      family: "hub",
+      url: `/format/${cat.slug}/`,
+      slug: cat.slug,
+      primaryKeyword: `${cat.label.toLowerCase()} format conversion guides`,
+      html
+    })),
     {
       family: "hub",
       url: "/compare/",
@@ -2852,6 +3134,7 @@ function main() {
     "/privacy.html",
     "/terms.html",
     "/format/",
+    ...Object.values(CATEGORIES).map((cat) => `/format/${cat.slug}/`),
     "/compare/",
     ...formatPages.map((page) => `/format/${page.slug}/`),
     ...comparePages.map((page) => `/compare/${page.slug}/`)
@@ -2876,7 +3159,7 @@ function main() {
     );
   }
 
-  console.log(`Generated ${formatPages.length} /format pages and ${comparePages.length} /compare pages.`);
+  console.log(`Generated ${formatPages.length} /format pages, ${Object.keys(CATEGORIES).length} category pages, and ${comparePages.length} /compare pages.`);
   if (staleCompareSlugs.length > 0) {
     console.log(`Pruned stale /compare pages: ${staleCompareSlugs.join(", ")}.`);
   }

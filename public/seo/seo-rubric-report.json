@@ -3,14 +3,14 @@
   "maxScore": 30,
   "targetMinimumScore": 24,
   "summary": {
-    "pagesEvaluated": 25,
-    "averageScore": 28.84,
-    "minScore": 26,
+    "pagesEvaluated": 29,
+    "averageScore": 28.41,
+    "minScore": 25,
     "maxScore": 29,
-    "passingPages": 25,
+    "passingPages": 29,
     "contentDepthTargetWords": 1000,
     "minWordCount": 1061,
-    "averageWordCount": 1511.2
+    "averageWordCount": 1512.9
   },
   "pageScores": [
     {
@@ -29,8 +29,84 @@
       "titleLength": 59,
       "descriptionLength": 157,
       "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 3,
+      "wordCount": 1168
+    },
+    {
+      "url": "/format/image/",
+      "score": 26,
+      "breakdown": {
+        "title": 3,
+        "meta": 4,
+        "keywordPlacement": 3,
+        "snippets": 4,
+        "internalLinks": 3,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 58,
+      "descriptionLength": 151,
+      "keywordInFirst100Words": true,
       "internalSelfLinkCount": 2,
-      "wordCount": 1118
+      "wordCount": 1962
+    },
+    {
+      "url": "/format/video/",
+      "score": 26,
+      "breakdown": {
+        "title": 3,
+        "meta": 4,
+        "keywordPlacement": 3,
+        "snippets": 4,
+        "internalLinks": 3,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 58,
+      "descriptionLength": 151,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 2,
+      "wordCount": 1310
+    },
+    {
+      "url": "/format/audio/",
+      "score": 26,
+      "breakdown": {
+        "title": 3,
+        "meta": 4,
+        "keywordPlacement": 3,
+        "snippets": 4,
+        "internalLinks": 3,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 58,
+      "descriptionLength": 151,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 2,
+      "wordCount": 1086
+    },
+    {
+      "url": "/format/document/",
+      "score": 25,
+      "breakdown": {
+        "title": 2,
+        "meta": 4,
+        "keywordPlacement": 3,
+        "snippets": 4,
+        "internalLinks": 3,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 61,
+      "descriptionLength": 157,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 2,
+      "wordCount": 1074
     },
     {
       "url": "/compare/",
@@ -68,7 +144,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1921
+      "wordCount": 1957
     },
     {
       "url": "/format/jpg-to-png/",
@@ -87,7 +163,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1907
+      "wordCount": 1943
     },
     {
       "url": "/format/webp-to-png/",
@@ -106,7 +182,7 @@
       "descriptionLength": 159,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1569
+      "wordCount": 1605
     },
     {
       "url": "/format/svg-to-png/",
@@ -125,7 +201,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1557
+      "wordCount": 1593
     },
     {
       "url": "/format/pdf-to-jpg/",
@@ -144,7 +220,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1568
+      "wordCount": 1604
     },
     {
       "url": "/format/mov-to-mp4/",
@@ -163,7 +239,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1581
+      "wordCount": 1617
     },
     {
       "url": "/format/wav-to-mp3/",
@@ -182,7 +258,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1549
+      "wordCount": 1585
     },
     {
       "url": "/format/jpg-to-webp/",
@@ -201,7 +277,7 @@
       "descriptionLength": 159,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1550
+      "wordCount": 1586
     },
     {
       "url": "/format/png-to-webp/",
@@ -220,7 +296,7 @@
       "descriptionLength": 159,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1519
+      "wordCount": 1555
     },
     {
       "url": "/format/mp4-to-gif/",
@@ -239,7 +315,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1554
+      "wordCount": 1590
     },
     {
       "url": "/format/avi-to-mp4/",
@@ -258,7 +334,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1519
+      "wordCount": 1555
     },
     {
       "url": "/format/mp3-to-wav/",
@@ -277,7 +353,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1515
+      "wordCount": 1551
     },
     {
       "url": "/format/flac-to-mp3/",
@@ -296,7 +372,7 @@
       "descriptionLength": 159,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1514
+      "wordCount": 1550
     },
     {
       "url": "/format/docx-to-pdf/",
@@ -315,7 +391,7 @@
       "descriptionLength": 159,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1503
+      "wordCount": 1539
     },
     {
       "url": "/format/txt-to-pdf/",
@@ -334,7 +410,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1483
+      "wordCount": 1519
     },
     {
       "url": "/format/heic-to-jpg/",
@@ -353,7 +429,7 @@
       "descriptionLength": 159,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1520
+      "wordCount": 1556
     },
     {
       "url": "/format/gif-to-mp4/",
@@ -372,7 +448,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1522
+      "wordCount": 1558
     },
     {
       "url": "/compare/png-vs-jpg/",

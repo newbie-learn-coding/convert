@@ -2,6 +2,7 @@
   "domain": "https://converttoit.com",
   "patterns": {
     "format": "/format/{from}-to-{to}/",
-    "compare": "/compare/{format-a}-vs-{format-b}/"
+    "compare": "/compare/{format-a}-vs-{format-b}/",
+    "category": "/format/{category}/"
   }
 }
