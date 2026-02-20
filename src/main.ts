@@ -268,6 +268,9 @@ window.showPopup = function (html: string) {
   ui.popupBackground.hidden = false;
   ui.popupBox.style.display = "block";
   ui.popupBackground.style.display = "block";
+  for (const btn of ui.popupBox.querySelectorAll<HTMLButtonElement>("button[data-dismiss]")) {
+    btn.addEventListener("click", () => window.hidePopup());
+  }
 }
 /**
  * Hide the on-screen popup.
@@ -550,7 +553,7 @@ ui.convertButton.onclick = async function () {
     window.showPopup(
       "<h2>Select an input file.</h2>" +
       "<p>Choose a file first, then pick input/output formats.</p>" +
-      "<button onclick=\"window.hidePopup()\">OK</button>"
+      "<button data-dismiss>OK</button>"
     );
     return;
   }
@@ -560,7 +563,7 @@ ui.convertButton.onclick = async function () {
     window.showPopup(
       "<h2>Pick an input format.</h2>" +
       "<p>Select the format your file is currently in.</p>" +
-      "<button onclick=\"window.hidePopup()\">OK</button>"
+      "<button data-dismiss>OK</button>"
     );
     return;
   }
@@ -570,7 +573,7 @@ ui.convertButton.onclick = async function () {
     window.showPopup(
       "<h2>Pick an output format.</h2>" +
       "<p>Select the format you want to convert to.</p>" +
-      "<button onclick=\"window.hidePopup()\">OK</button>"
+      "<button data-dismiss>OK</button>"
     );
     return;
   }
@@ -603,7 +606,7 @@ ui.convertButton.onclick = async function () {
       window.showPopup(
         "<h2>Could not find a conversion route.</h2>" +
         "<p>Try a different output format (or switch mode for more options).</p>" +
-        "<button onclick=\"window.hidePopup()\">OK</button>"
+        "<button data-dismiss>OK</button>"
       );
       return;
     }
@@ -615,7 +618,7 @@ ui.convertButton.onclick = async function () {
     window.showPopup(
       `<h2>Converted ${inputOption.format.format} to ${outputOption.format.format}!</h2>` +
       `<p>Path used: <b>${output.path.map(c => c.format.format).join(" → ")}</b>.</p>\n` +
-      `<button onclick="window.hidePopup()">OK</button>`
+      `<button data-dismiss>OK</button>`
     );
 
   } catch (e) {
@@ -623,7 +626,7 @@ ui.convertButton.onclick = async function () {
     window.showPopup(
       "<h2>Unexpected error</h2>" +
       "<p>Something went wrong while converting. Please try again.</p>" +
-      "<button onclick=\"window.hidePopup()\">OK</button>"
+      "<button data-dismiss>OK</button>"
     );
     console.error(e);
 
