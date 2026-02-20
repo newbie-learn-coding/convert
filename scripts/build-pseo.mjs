@@ -1669,6 +1669,14 @@ function renderCategoryPage(categoryKey, allFormatPages, compareMap) {
         url: `${BASE_URL}/format/${page.slug}/`,
         name: `${page.from} to ${page.to}`
       }))
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: faq.map((item) => ({
+        "@type": "Question",
+        name: item.q,
+        acceptedAnswer: { "@type": "Answer", text: item.a }
+      }))
     }
   ];
 
