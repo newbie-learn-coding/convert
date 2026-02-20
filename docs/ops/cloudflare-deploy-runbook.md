@@ -57,8 +57,12 @@ Do not commit `wrangler.toml` or any secret-bearing `.env*` file.
 Default behavior is safe fallback (`RATE_LIMIT_GLOBAL_ENABLED=false`), so isolate-level in-memory limiter remains active.
 
 - `CF_RATE_LIMIT_GLOBAL_ENABLED` → `true|false` (default `false`)
+- `CF_RATE_LIMIT_GLOBAL_MODE` → `off|shadow|enforce` (default `off`)
 - `CF_RATE_LIMIT_GLOBAL_PROVIDER` → `durable_object|kv` (default `durable_object`)
 - `CF_RATE_LIMIT_GLOBAL_DO_NAME` → Durable Object instance name (default `global-rate-limiter-v1`)
+- `CF_RATE_LIMIT_GLOBAL_DO_SHARDS` → shard count (default `32`, recommended; avoids single-DO hotspot)
+- `CF_RATE_LIMIT_GLOBAL_TIMEOUT_MS` → DO/KV check timeout (default `50`)
+- `CF_RATE_LIMIT_GLOBAL_FAIL_OPEN` → `true|false` (default `true`, recommended)
 - `CF_RATE_LIMIT_GLOBAL_TELEMETRY_ENABLED` → enable global limiter for `/_ops/logs|/_ops/logging` (default `false`)
 - `CF_RATE_LIMIT_GLOBAL_ALLOW_KV_FALLBACK` → must be `true` before KV mode is allowed (default `false`, KV not recommended)
 - Optional fine-tuning:

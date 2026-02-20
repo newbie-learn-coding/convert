@@ -236,3 +236,32 @@ test("getReachableOutputMimes should return transitive reachable MIME types", ()
   const missing = graph.getReachableOutputMimes("application/not-real");
   expect(missing.size).toBe(0);
 });
+
+test("advanced mode should find route for mixed-case handler names", async () => {
+  const mixedCaseHandler = new MockedHandler("ImageMagick", [
+    CommonFormats.PDF.supported("pdf", true, true, true),
+    CommonFormats.PNG.supported("png", true, true, true),
+  ], false);
+
+  await mixedCaseHandler.init();
+  const localHandlers: FormatHandler[] = [mixedCaseHandler];
+  const localCache = new Map<string, FileFormat[]>([
+    [mixedCaseHandler.name, mixedCaseHandler.supportedFormats!],
+  ]);
+
+  const graph = new TraversionGraph(true);
+  graph.init(localCache, localHandlers);
+
+  const paths = graph.searchPath(
+    new ConvertPathNode(mixedCaseHandler, CommonFormats.PDF.supported("pdf", true, true, true)),
+    new ConvertPathNode(mixedCaseHandler, CommonFormats.PNG.supported("png", true, true, true)),
+    false
+  );
+
+  const extractedPaths: ConvertPathNode[][] = [];
+  for await (const path of paths) extractedPaths.push(path);
+
+  expect(extractedPaths.length).toBeGreaterThan(0);
+  expect(extractedPaths[0][0].handler.name).toBe("ImageMagick");
+  expect(extractedPaths[0][extractedPaths[0].length - 1].handler.name).toBe("ImageMagick");
+});

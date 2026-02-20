@@ -39,6 +39,7 @@ This pack covers the Worker control-plane endpoints:
 - `converttoit_ops_request_duration_seconds_sum{endpoint}`
 - `converttoit_ops_request_duration_seconds_count{endpoint}`
 - `converttoit_ops_rejections_total{endpoint,reason}`
+- `converttoit_ops_shadow_rate_limited_total{endpoint,scope}`
 - `converttoit_ops_slo_target_ratio{objective}`
 - `converttoit_ops_rate_limit_limit{scope}`
 - `converttoit_ops_rate_limit_window_seconds{scope}`

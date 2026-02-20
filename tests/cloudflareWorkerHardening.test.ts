@@ -205,6 +205,68 @@ describe("Cloudflare worker hardening", () => {
     expect(mockGlobalLimiter.calls[0]?.scope).toBe("ops");
   });
 
+  test("supports shadow mode for durable object global limiter without blocking /_ops", async () => {
+    const mockGlobalLimiter = createMockGlobalLimiterBinding();
+    const env = createEnv({
+      RATE_LIMIT_GLOBAL_ENABLED: "true",
+      RATE_LIMIT_GLOBAL_MODE: "shadow",
+      RATE_LIMIT_GLOBAL_PROVIDER: "durable_object",
+      RATE_LIMIT_GLOBAL_OPS_REQUESTS: "1",
+      GLOBAL_RATE_LIMITER: mockGlobalLimiter.binding
+    });
+
+    const request = () =>
+      new Request("https://converttoit.com/_ops/health", {
+        headers: {
+          "cf-connecting-ip": "203.0.113.220"
+        }
+      });
+
+    const first = await worker.fetch(request(), env);
+    const second = await worker.fetch(request(), env);
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+
+    const secondBody = await second.json();
+    expect(secondBody.rateLimit.source).toBe("isolate");
+    expect(secondBody.globalRateLimit.applied).toBe(true);
+    expect(secondBody.globalRateLimit.mode).toBe("shadow");
+    expect(secondBody.globalRateLimit.allowed).toBe(false);
+  });
+
+  test("shards durable object global limiter and uses global client id (no colo)", async () => {
+    const mockGlobalLimiter = createMockGlobalLimiterBinding();
+    const env = createEnv({
+      RATE_LIMIT_GLOBAL_ENABLED: "true",
+      RATE_LIMIT_GLOBAL_PROVIDER: "durable_object",
+      RATE_LIMIT_GLOBAL_DO_SHARDS: "8",
+      RATE_LIMIT_GLOBAL_OPS_REQUESTS: "100",
+      GLOBAL_RATE_LIMITER: mockGlobalLimiter.binding
+    });
+
+    const request = new Request("https://converttoit.com/_ops/health", {
+      headers: {
+        "cf-connecting-ip": "203.0.113.230"
+      }
+    }) as Request & { cf?: unknown };
+    request.cf = { colo: "SJC" };
+
+    const response = await worker.fetch(request, env);
+    expect(response.status).toBe(200);
+
+    expect(mockGlobalLimiter.calls.length).toBeGreaterThanOrEqual(1);
+    const firstCall = mockGlobalLimiter.calls[0]!;
+    expect(firstCall.clientId).toBe("203.0.113.230");
+    expect(firstCall.name).toMatch(/^global-rate-limiter-v1-\d+$/);
+
+    const shardString = firstCall.name.split("-").pop()!;
+    const shard = Number.parseInt(shardString, 10);
+    expect(Number.isFinite(shard)).toBe(true);
+    expect(shard).toBeGreaterThanOrEqual(0);
+    expect(shard).toBeLessThan(8);
+  });
+
   test("falls back to isolate limiter when global limiter flag is enabled but DO binding is missing", async () => {
     const env = createEnv({
       RATE_LIMIT_GLOBAL_ENABLED: "true",

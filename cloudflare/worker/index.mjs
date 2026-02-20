@@ -73,6 +73,11 @@ const GLOBAL_RATE_LIMIT_DO_NAME = "global-rate-limiter-v1";
 const GLOBAL_RATE_LIMIT_CLIENT_ID_MAX_LENGTH = 120;
 const GLOBAL_RATE_LIMIT_SCOPE_OPS = "ops";
 const GLOBAL_RATE_LIMIT_SCOPE_TELEMETRY = "telemetry";
+const GLOBAL_RATE_LIMIT_MODE = {
+  off: "off",
+  shadow: "shadow",
+  enforce: "enforce"
+};
 
 const ERROR_TRACKING = {
   maxErrorsPerWindow: 50,
@@ -122,7 +127,8 @@ const OPS_OBSERVABILITY = {
   durationCountByEndpoint: new Map(),
   durationSumByEndpoint: new Map(),
   durationBucketByEndpoint: new Map(),
-  rejectionsTotal: new Map()
+  rejectionsTotal: new Map(),
+  shadowRateLimitedTotal: new Map()
 };
 
 function mergeDefaultHeaders(headers, defaults) {
@@ -189,6 +195,16 @@ function recordOpsRejection(pathname, reason) {
   mapIncrement(OPS_OBSERVABILITY.rejectionsTotal, key, 1);
 }
 
+function recordOpsShadowRateLimit(pathname, scope) {
+  if (!pathname.startsWith("/_ops/")) {
+    return;
+  }
+
+  const endpoint = normalizeOpsEndpoint(pathname);
+  const key = `${endpoint}\u0000${scope}`;
+  mapIncrement(OPS_OBSERVABILITY.shadowRateLimitedTotal, key, 1);
+}
+
 function recordOpsRequest(pathname, method, statusCode, durationMs) {
   if (!pathname.startsWith("/_ops/")) {
     return;
@@ -221,7 +237,8 @@ function buildOpsMetricsSnapshot(env) {
   const endpoints = new Set([
     ...OPS_OBSERVABILITY.durationCountByEndpoint.keys(),
     ...Array.from(OPS_OBSERVABILITY.requestsTotal.keys()).map((key) => key.split("\u0000", 1)[0]),
-    ...Array.from(OPS_OBSERVABILITY.rejectionsTotal.keys()).map((key) => key.split("\u0000", 1)[0])
+    ...Array.from(OPS_OBSERVABILITY.rejectionsTotal.keys()).map((key) => key.split("\u0000", 1)[0]),
+    ...Array.from(OPS_OBSERVABILITY.shadowRateLimitedTotal.keys()).map((key) => key.split("\u0000", 1)[0])
   ]);
 
   const requests = [];
@@ -266,6 +283,16 @@ function buildOpsMetricsSnapshot(env) {
     });
   }
 
+  const shadowRateLimited = [];
+  for (const [key, value] of OPS_OBSERVABILITY.shadowRateLimitedTotal.entries()) {
+    const [endpoint, scope] = key.split("\u0000");
+    shadowRateLimited.push({
+      endpoint,
+      scope,
+      total: value
+    });
+  }
+
   return {
     schemaVersion: OPS_METRICS_SCHEMA_VERSION,
     generatedAt: new Date().toISOString(),
@@ -287,7 +314,8 @@ function buildOpsMetricsSnapshot(env) {
     },
     requests,
     latency,
-    rejections
+    rejections,
+    shadowRateLimited
   };
 }
 
@@ -375,6 +403,15 @@ function buildOpsPrometheusMetrics(env) {
     addMetric(`${OPS_METRICS_PREFIX}rejections_total`, {
       endpoint: sample.endpoint,
       reason: sample.reason
+    }, sample.total);
+  }
+
+  lines.push(`# HELP ${OPS_METRICS_PREFIX}shadow_rate_limited_total Requests that would have been rate limited under shadow mode.`);
+  lines.push(`# TYPE ${OPS_METRICS_PREFIX}shadow_rate_limited_total counter`);
+  for (const sample of snapshot.shadowRateLimited || []) {
+    addMetric(`${OPS_METRICS_PREFIX}shadow_rate_limited_total`, {
+      endpoint: sample.endpoint,
+      scope: sample.scope
     }, sample.total);
   }
 
@@ -601,9 +638,38 @@ function normalizeGlobalProvider(rawValue) {
   return GLOBAL_RATE_LIMIT_PROVIDER.durableObject;
 }
 
+function normalizeGlobalMode(rawValue, enabledFlag) {
+  if (typeof rawValue === "string") {
+    const normalized = rawValue.trim().toLowerCase();
+    if (normalized === GLOBAL_RATE_LIMIT_MODE.shadow) return GLOBAL_RATE_LIMIT_MODE.shadow;
+    if (normalized === GLOBAL_RATE_LIMIT_MODE.enforce) return GLOBAL_RATE_LIMIT_MODE.enforce;
+    if (normalized === GLOBAL_RATE_LIMIT_MODE.off) return GLOBAL_RATE_LIMIT_MODE.off;
+  }
+
+  return enabledFlag ? GLOBAL_RATE_LIMIT_MODE.enforce : GLOBAL_RATE_LIMIT_MODE.off;
+}
+
+function withTimeout(promise, timeoutMs) {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return promise;
+  }
+
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("timeout")), timeoutMs);
+    })
+  ]);
+}
+
 function getGlobalRateLimitSettings(env) {
+  const enabledFlag = parseBooleanFlag(env.RATE_LIMIT_GLOBAL_ENABLED, false);
+  const mode = normalizeGlobalMode(env.RATE_LIMIT_GLOBAL_MODE, enabledFlag);
+  const enabled = mode !== GLOBAL_RATE_LIMIT_MODE.off;
+
   return {
-    enabled: parseBooleanFlag(env.RATE_LIMIT_GLOBAL_ENABLED, false),
+    enabled,
+    mode,
     provider: normalizeGlobalProvider(env.RATE_LIMIT_GLOBAL_PROVIDER),
     allowKvFallback: parseBooleanFlag(env.RATE_LIMIT_GLOBAL_ALLOW_KV_FALLBACK, false),
     telemetryEnabled: parseBooleanFlag(env.RATE_LIMIT_GLOBAL_TELEMETRY_ENABLED, false),
@@ -611,6 +677,9 @@ function getGlobalRateLimitSettings(env) {
       typeof env.RATE_LIMIT_GLOBAL_DO_NAME === "string" && env.RATE_LIMIT_GLOBAL_DO_NAME.trim().length > 0
         ? env.RATE_LIMIT_GLOBAL_DO_NAME.trim()
         : GLOBAL_RATE_LIMIT_DO_NAME,
+    durableObjectShards: parsePositiveInteger(env.RATE_LIMIT_GLOBAL_DO_SHARDS, 32, 1, 256),
+    timeoutMs: parsePositiveInteger(env.RATE_LIMIT_GLOBAL_TIMEOUT_MS, 50, 1, 10_000),
+    failOpen: parseBooleanFlag(env.RATE_LIMIT_GLOBAL_FAIL_OPEN, true),
     limits: {
       [GLOBAL_RATE_LIMIT_SCOPE_OPS]: {
         requests: parsePositiveInteger(env.RATE_LIMIT_GLOBAL_OPS_REQUESTS, RATE_LIMIT_CONFIG.requests, 1, 100_000),
@@ -758,6 +827,31 @@ function getClientIdentifier(request) {
   return request.headers.get("cf-connecting-ip") || "unknown";
 }
 
+function getGlobalClientIdentifier(request) {
+  return request.headers.get("cf-connecting-ip") || "unknown";
+}
+
+function fnv1aHash32(input) {
+  const str = String(input);
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < str.length; i += 1) {
+    hash ^= str.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return hash >>> 0;
+}
+
+function getGlobalLimiterShardName(baseName, shards, scope, clientId) {
+  const safeShards = Number.isFinite(shards) ? Math.max(1, Math.floor(shards)) : 1;
+  if (safeShards === 1) {
+    return baseName;
+  }
+
+  const hash = fnv1aHash32(`${scope}:${clientId}`);
+  const shard = hash % safeShards;
+  return `${baseName}-${shard}`;
+}
+
 function normalizeGlobalLimiterResult(result, fallbackLimit, fallbackWindow, source) {
   const allowed = result?.allowed !== false;
   const remaining = Number.isFinite(result?.remaining)
@@ -788,18 +882,24 @@ async function checkGlobalRateLimitDO(env, settings, scope, clientId, limitConfi
     return { applied: false, reason: "missing_do_binding" };
   }
 
-  const stub = env.GLOBAL_RATE_LIMITER.getByName(settings.durableObjectName);
+  const shardName = getGlobalLimiterShardName(
+    settings.durableObjectName,
+    settings.durableObjectShards,
+    scope,
+    clientId
+  );
+  const stub = env.GLOBAL_RATE_LIMITER.getByName(shardName);
   if (!stub || typeof stub.consume !== "function") {
     return { applied: false, reason: "invalid_do_stub" };
   }
 
-  const result = await stub.consume({
+  const result = await withTimeout(stub.consume({
     scope,
     clientId,
     limit: limitConfig.requests,
     windowSeconds: limitConfig.window,
     now: Date.now()
-  });
+  }), settings.timeoutMs);
 
   return {
     applied: true,
@@ -854,36 +954,49 @@ async function checkGlobalRateLimitWithKv(env, scope, clientId, limitConfig) {
 async function checkGlobalRateLimit(request, env, scope) {
   const settings = getGlobalRateLimitSettings(env);
   if (!settings.enabled) {
-    return { applied: false, reason: "disabled" };
+    return { applied: false, reason: "disabled", mode: settings.mode };
   }
 
   if (scope === GLOBAL_RATE_LIMIT_SCOPE_TELEMETRY && !settings.telemetryEnabled) {
-    return { applied: false, reason: "telemetry_not_enabled" };
+    return { applied: false, reason: "telemetry_not_enabled", mode: settings.mode };
   }
 
   const limitConfig = settings.limits[scope];
   if (!limitConfig) {
-    return { applied: false, reason: "invalid_scope" };
+    return { applied: false, reason: "invalid_scope", mode: settings.mode };
   }
 
-  const clientId = sanitizeLimiterClientId(getClientIdentifier(request));
+  const clientId = sanitizeLimiterClientId(getGlobalClientIdentifier(request));
 
   try {
     if (settings.provider === GLOBAL_RATE_LIMIT_PROVIDER.kv) {
       if (!settings.allowKvFallback) {
-        return { applied: false, reason: "kv_fallback_not_allowed" };
+        return { applied: false, reason: "kv_fallback_not_allowed", mode: settings.mode };
       }
-      return await checkGlobalRateLimitWithKv(env, scope, clientId, limitConfig);
+      return { ...(await checkGlobalRateLimitWithKv(env, scope, clientId, limitConfig)), mode: settings.mode };
     }
 
-    return await checkGlobalRateLimitDO(env, settings, scope, clientId, limitConfig);
+    return { ...(await checkGlobalRateLimitDO(env, settings, scope, clientId, limitConfig)), mode: settings.mode };
   } catch (error) {
     logError(env, error, {
       type: "global_rate_limit_check",
       provider: settings.provider,
       scope
     });
-    return { applied: false, reason: "check_error" };
+    if (settings.failOpen) {
+      return { applied: false, reason: "check_error_fail_open", mode: settings.mode };
+    }
+
+    return {
+      applied: true,
+      allowed: false,
+      remaining: 0,
+      limit: limitConfig.requests,
+      windowSeconds: limitConfig.window,
+      resetAt: Date.now() + limitConfig.window * 1000,
+      source: "global:unavailable",
+      mode: settings.mode
+    };
   }
 }
 
@@ -1135,7 +1248,7 @@ async function handleClientLogRoute(request, env, pathname, rateLimiter) {
   }
 
   const globalRateLimitResult = await checkGlobalRateLimit(request, env, GLOBAL_RATE_LIMIT_SCOPE_TELEMETRY);
-  if (globalRateLimitResult.applied && !globalRateLimitResult.allowed) {
+  if (globalRateLimitResult.applied && !globalRateLimitResult.allowed && globalRateLimitResult.mode !== GLOBAL_RATE_LIMIT_MODE.shadow) {
     recordMetric(env, "rate_limit_exceeded", 1, { endpoint: pathname, source: globalRateLimitResult.source });
     recordOpsRejection(pathname, "rate_limited");
     return createRateLimitExceededResponse({
@@ -1146,6 +1259,9 @@ async function handleClientLogRoute(request, env, pathname, rateLimiter) {
       resetAt: globalRateLimitResult.resetAt,
       source: globalRateLimitResult.source
     });
+  }
+  if (globalRateLimitResult.applied && !globalRateLimitResult.allowed && globalRateLimitResult.mode === GLOBAL_RATE_LIMIT_MODE.shadow) {
+    recordOpsShadowRateLimit(pathname, GLOBAL_RATE_LIMIT_SCOPE_TELEMETRY);
   }
 
   try {
@@ -1280,7 +1396,7 @@ async function handleOpsRoute(request, env, pathname, rateLimiter) {
   }
 
   const globalRateLimitResult = await checkGlobalRateLimit(request, env, GLOBAL_RATE_LIMIT_SCOPE_OPS);
-  if (globalRateLimitResult.applied && !globalRateLimitResult.allowed) {
+  if (globalRateLimitResult.applied && !globalRateLimitResult.allowed && globalRateLimitResult.mode !== GLOBAL_RATE_LIMIT_MODE.shadow) {
     recordMetric(env, "rate_limit_exceeded", 1, { endpoint: pathname, source: globalRateLimitResult.source });
     recordOpsRejection(pathname, "rate_limited");
     return createRateLimitExceededResponse({
@@ -1292,6 +1408,9 @@ async function handleOpsRoute(request, env, pathname, rateLimiter) {
       source: globalRateLimitResult.source
     });
   }
+  if (globalRateLimitResult.applied && !globalRateLimitResult.allowed && globalRateLimitResult.mode === GLOBAL_RATE_LIMIT_MODE.shadow) {
+    recordOpsShadowRateLimit(pathname, GLOBAL_RATE_LIMIT_SCOPE_OPS);
+  }
 
   const invalidMethodResponse = ensureOpsMethod(request, requestId, pathname);
   if (invalidMethodResponse) {
@@ -1300,7 +1419,8 @@ async function handleOpsRoute(request, env, pathname, rateLimiter) {
 
   if (pathname === "/_ops/health") {
     recordMetric(env, "health_check", 1, { status: "ok" });
-    const effectiveLimit = globalRateLimitResult.applied
+    const globalEnforced = globalRateLimitResult.applied && globalRateLimitResult.mode === GLOBAL_RATE_LIMIT_MODE.enforce;
+    const effectiveLimit = globalEnforced
       ? Math.min(RATE_LIMIT_CONFIG.requests, globalRateLimitResult.limit)
       : RATE_LIMIT_CONFIG.requests;
     return jsonResponse({
@@ -1309,11 +1429,27 @@ async function handleOpsRoute(request, env, pathname, rateLimiter) {
       requestId,
       rateLimit: {
         limit: effectiveLimit,
-        remaining: globalRateLimitResult.applied
+        remaining: globalEnforced
           ? Math.min(isolateRateLimitResult.remaining, globalRateLimitResult.remaining)
           : isolateRateLimitResult.remaining,
-        source: globalRateLimitResult.applied ? globalRateLimitResult.source : "isolate"
+        source: globalEnforced ? globalRateLimitResult.source : "isolate"
       },
+      globalRateLimit: globalRateLimitResult.applied
+        ? {
+          applied: true,
+          mode: globalRateLimitResult.mode,
+          allowed: globalRateLimitResult.allowed,
+          source: globalRateLimitResult.source,
+          limit: globalRateLimitResult.limit,
+          remaining: globalRateLimitResult.remaining,
+          windowSeconds: globalRateLimitResult.windowSeconds,
+          resetAt: new Date(globalRateLimitResult.resetAt).toISOString()
+        }
+        : {
+          applied: false,
+          mode: globalRateLimitResult.mode,
+          reason: globalRateLimitResult.reason
+        },
       ...readVersion(env)
     }, {}, request.method);
   }

@@ -319,7 +319,7 @@ export class TraversionGraph {
         const startTime = performance.now();
 
         for (const handler of handlers) {
-            this.handlerMap.set(handler.name, handler);
+            this.handlerMap.set(handler.name.toLowerCase(), handler);
         }
 
         let handlerIndex = 0;
