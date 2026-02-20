@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-19T11:49:37.389Z",
+  "generatedAt": "2026-02-20T06:03:31.762Z",
   "domain": "https://converttoit.com",
   "families": [
     {
@@ -106,6 +106,136 @@
       "cluster": "audio-conversion"
     },
     {
+      "family": "format",
+      "slug": "jpg-to-webp",
+      "url": "/format/jpg-to-webp/",
+      "primaryKeyword": "convert jpg to webp",
+      "secondaryKeywords": [
+        "jpg to webp converter",
+        "optimize images for web",
+        "reduce image file size webp"
+      ],
+      "intent": "transactional",
+      "cluster": "image-conversion"
+    },
+    {
+      "family": "format",
+      "slug": "png-to-webp",
+      "url": "/format/png-to-webp/",
+      "primaryKeyword": "convert png to webp",
+      "secondaryKeywords": [
+        "png to webp converter",
+        "compress png with transparency",
+        "webp with alpha channel"
+      ],
+      "intent": "transactional",
+      "cluster": "image-conversion"
+    },
+    {
+      "family": "format",
+      "slug": "mp4-to-gif",
+      "url": "/format/mp4-to-gif/",
+      "primaryKeyword": "convert mp4 to gif",
+      "secondaryKeywords": [
+        "mp4 to gif converter",
+        "video to gif maker",
+        "create gif from video"
+      ],
+      "intent": "transactional",
+      "cluster": "video-conversion"
+    },
+    {
+      "family": "format",
+      "slug": "avi-to-mp4",
+      "url": "/format/avi-to-mp4/",
+      "primaryKeyword": "convert avi to mp4",
+      "secondaryKeywords": [
+        "avi to mp4 converter",
+        "avi video compression",
+        "play avi on mac"
+      ],
+      "intent": "transactional",
+      "cluster": "video-conversion"
+    },
+    {
+      "family": "format",
+      "slug": "mp3-to-wav",
+      "url": "/format/mp3-to-wav/",
+      "primaryKeyword": "convert mp3 to wav",
+      "secondaryKeywords": [
+        "mp3 to wav converter",
+        "audio editing format",
+        "uncompressed audio export"
+      ],
+      "intent": "transactional",
+      "cluster": "audio-conversion"
+    },
+    {
+      "family": "format",
+      "slug": "flac-to-mp3",
+      "url": "/format/flac-to-mp3/",
+      "primaryKeyword": "convert flac to mp3",
+      "secondaryKeywords": [
+        "flac to mp3 converter",
+        "lossless to lossy audio",
+        "compress music library"
+      ],
+      "intent": "transactional",
+      "cluster": "audio-conversion"
+    },
+    {
+      "family": "format",
+      "slug": "docx-to-pdf",
+      "url": "/format/docx-to-pdf/",
+      "primaryKeyword": "convert docx to pdf",
+      "secondaryKeywords": [
+        "docx to pdf converter",
+        "word to pdf online",
+        "document sharing format"
+      ],
+      "intent": "transactional",
+      "cluster": "document-conversion"
+    },
+    {
+      "family": "format",
+      "slug": "txt-to-pdf",
+      "url": "/format/txt-to-pdf/",
+      "primaryKeyword": "convert txt to pdf",
+      "secondaryKeywords": [
+        "txt to pdf converter",
+        "text file to pdf",
+        "plain text export"
+      ],
+      "intent": "transactional",
+      "cluster": "document-conversion"
+    },
+    {
+      "family": "format",
+      "slug": "heic-to-jpg",
+      "url": "/format/heic-to-jpg/",
+      "primaryKeyword": "convert heic to jpg",
+      "secondaryKeywords": [
+        "heic to jpg converter",
+        "iphone photo converter",
+        "heic compatibility"
+      ],
+      "intent": "transactional",
+      "cluster": "image-conversion"
+    },
+    {
+      "family": "format",
+      "slug": "gif-to-mp4",
+      "url": "/format/gif-to-mp4/",
+      "primaryKeyword": "convert gif to mp4",
+      "secondaryKeywords": [
+        "gif to mp4 converter",
+        "optimize gif for web",
+        "animated gif to video"
+      ],
+      "intent": "transactional",
+      "cluster": "video-conversion"
+    },
+    {
       "family": "compare",
       "slug": "png-vs-jpg",
       "url": "/compare/png-vs-jpg/",
@@ -193,7 +323,10 @@
       "urls": [
         "/format/png-to-jpg/",
         "/format/jpg-to-png/",
-        "/format/webp-to-png/"
+        "/format/webp-to-png/",
+        "/format/jpg-to-webp/",
+        "/format/png-to-webp/",
+        "/format/heic-to-jpg/"
       ]
     },
     {
@@ -211,7 +344,9 @@
       "intent": "transactional",
       "urlPattern": "/format/{from}-to-{to}/",
       "urls": [
-        "/format/pdf-to-jpg/"
+        "/format/pdf-to-jpg/",
+        "/format/docx-to-pdf/",
+        "/format/txt-to-pdf/"
       ]
     },
     {
@@ -220,7 +355,10 @@
       "intent": "transactional",
       "urlPattern": "/format/{from}-to-{to}/",
       "urls": [
-        "/format/mov-to-mp4/"
+        "/format/mov-to-mp4/",
+        "/format/mp4-to-gif/",
+        "/format/avi-to-mp4/",
+        "/format/gif-to-mp4/"
       ]
     },
     {
@@ -229,7 +367,9 @@
       "intent": "transactional",
       "urlPattern": "/format/{from}-to-{to}/",
       "urls": [
-        "/format/wav-to-mp3/"
+        "/format/wav-to-mp3/",
+        "/format/mp3-to-wav/",
+        "/format/flac-to-mp3/"
       ]
     },
     {

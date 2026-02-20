@@ -80,7 +80,7 @@ export interface ConversionMetric {
 // Constants
 // ============================================================================
 
-const LOG_ENDPOINT = "/_ops/logs";
+export const LOG_ENDPOINT = "/_ops/logs";
 const MAX_LOG_ENTRIES = 100;
 const MAX_ERROR_STACK_LENGTH = 1000;
 const BATCH_SEND_INTERVAL = 30000; // 30 seconds
@@ -398,6 +398,10 @@ class Logger {
   public getMetrics(): Readonly<ErrorMetrics> {
     return { ...this.metrics };
   }
+
+  public getSessionId(): string {
+    return this.sessionId;
+  }
   
   public getConversionMetrics(): Readonly<ConversionMetric[]> {
     return [...this.conversionMetrics];
@@ -576,14 +580,14 @@ export function initLogging(): Logger {
 
     // Log initialization
     loggerInstance.info("system", "Logging initialized", {
-      sessionId: loggerInstance["sessionId"]
+      sessionId: loggerInstance.getSessionId()
     });
 
     // Expose limited debug interface to window
     if (import.meta.env?.DEV) {
       (window as unknown as { __logger: unknown }).__logger = {
         getMetrics: () => loggerInstance?.getMetrics(),
-        getSessionId: () => loggerInstance ? loggerInstance["sessionId"] : "none",
+        getSessionId: () => loggerInstance?.getSessionId() ?? "none",
         flush: () => loggerInstance?.flush()
       };
     }
@@ -633,6 +637,8 @@ export const log = {
     loggerInstance?.trackUserInteraction(action, success, error),
   
   getMetrics: () => loggerInstance?.getMetrics(),
+
+  getSessionId: () => loggerInstance?.getSessionId(),
   
   flush: () => loggerInstance?.flush()
 };

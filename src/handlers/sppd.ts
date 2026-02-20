@@ -126,7 +126,7 @@ function createLaserEmitter (centered = false) {
   return group;
 }
 
-function getModelBuilder (modelName: string) {
+function getModelBuilder(modelName: string): (() => THREE.Object3D) | undefined {
   switch (modelName) {
     case "models/props/portal_button_damaged01.mdl": return createFloorButton;
     case "models/props/portal_button_damaged02.mdl": return createFloorButton;
@@ -138,6 +138,7 @@ function getModelBuilder (modelName: string) {
     case "models/portals/portal2.mdl": return () => createPortal(false);
     case "models/props/laser_emitter.mdl": return createLaserEmitter;
     case "models/props/laser_emitter_center.mdl": return () => createLaserEmitter(true);
+    default: return undefined;
   }
 }
 

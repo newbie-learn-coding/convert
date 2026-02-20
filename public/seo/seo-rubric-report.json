@@ -3,23 +3,61 @@
   "maxScore": 30,
   "targetMinimumScore": 24,
   "summary": {
-    "pagesEvaluated": 13,
-    "averageScore": 29.92,
-    "minScore": 29,
-    "maxScore": 30,
-    "passingPages": 13,
+    "pagesEvaluated": 25,
+    "averageScore": 28.84,
+    "minScore": 26,
+    "maxScore": 29,
+    "passingPages": 25,
     "contentDepthTargetWords": 1000,
-    "minWordCount": 1428,
-    "averageWordCount": 1565.9
+    "minWordCount": 1017,
+    "averageWordCount": 1509.4
   },
   "pageScores": [
     {
-      "url": "/format/png-to-jpg/",
-      "score": 30,
+      "url": "/format/",
+      "score": 26,
+      "breakdown": {
+        "title": 3,
+        "meta": 4,
+        "keywordPlacement": 3,
+        "snippets": 4,
+        "internalLinks": 3,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 59,
+      "descriptionLength": 157,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 2,
+      "wordCount": 1118
+    },
+    {
+      "url": "/compare/",
+      "score": 28,
       "breakdown": {
         "title": 4,
         "meta": 4,
-        "keywordPlacement": 5,
+        "keywordPlacement": 4,
+        "snippets": 4,
+        "internalLinks": 3,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 58,
+      "descriptionLength": 158,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 2,
+      "wordCount": 1017
+    },
+    {
+      "url": "/format/png-to-jpg/",
+      "score": 29,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 4,
         "snippets": 4,
         "internalLinks": 4,
         "technical": 3,
@@ -34,11 +72,11 @@
     },
     {
       "url": "/format/jpg-to-png/",
-      "score": 30,
+      "score": 29,
       "breakdown": {
         "title": 4,
         "meta": 4,
-        "keywordPlacement": 5,
+        "keywordPlacement": 4,
         "snippets": 4,
         "internalLinks": 4,
         "technical": 3,
@@ -49,7 +87,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1902
+      "wordCount": 1907
     },
     {
       "url": "/format/webp-to-png/",
@@ -72,11 +110,11 @@
     },
     {
       "url": "/format/svg-to-png/",
-      "score": 30,
+      "score": 29,
       "breakdown": {
         "title": 4,
         "meta": 4,
-        "keywordPlacement": 5,
+        "keywordPlacement": 4,
         "snippets": 4,
         "internalLinks": 4,
         "technical": 3,
@@ -91,11 +129,11 @@
     },
     {
       "url": "/format/pdf-to-jpg/",
-      "score": 30,
+      "score": 29,
       "breakdown": {
         "title": 4,
         "meta": 4,
-        "keywordPlacement": 5,
+        "keywordPlacement": 4,
         "snippets": 4,
         "internalLinks": 4,
         "technical": 3,
@@ -106,15 +144,15 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1560
+      "wordCount": 1568
     },
     {
       "url": "/format/mov-to-mp4/",
-      "score": 30,
+      "score": 29,
       "breakdown": {
         "title": 4,
         "meta": 4,
-        "keywordPlacement": 5,
+        "keywordPlacement": 4,
         "snippets": 4,
         "internalLinks": 4,
         "technical": 3,
@@ -125,15 +163,15 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1569
+      "wordCount": 1581
     },
     {
       "url": "/format/wav-to-mp3/",
-      "score": 30,
+      "score": 29,
       "breakdown": {
         "title": 4,
         "meta": 4,
-        "keywordPlacement": 5,
+        "keywordPlacement": 4,
         "snippets": 4,
         "internalLinks": 4,
         "technical": 3,
@@ -144,15 +182,205 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1541
+      "wordCount": 1549
     },
     {
-      "url": "/compare/png-vs-jpg/",
-      "score": 30,
+      "url": "/format/jpg-to-webp/",
+      "score": 29,
       "breakdown": {
         "title": 4,
         "meta": 4,
-        "keywordPlacement": 5,
+        "keywordPlacement": 4,
+        "snippets": 4,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 60,
+      "descriptionLength": 159,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0,
+      "wordCount": 1550
+    },
+    {
+      "url": "/format/png-to-webp/",
+      "score": 29,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 4,
+        "snippets": 4,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 60,
+      "descriptionLength": 159,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0,
+      "wordCount": 1519
+    },
+    {
+      "url": "/format/mp4-to-gif/",
+      "score": 29,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 4,
+        "snippets": 4,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 59,
+      "descriptionLength": 158,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0,
+      "wordCount": 1554
+    },
+    {
+      "url": "/format/avi-to-mp4/",
+      "score": 29,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 4,
+        "snippets": 4,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 59,
+      "descriptionLength": 158,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0,
+      "wordCount": 1519
+    },
+    {
+      "url": "/format/mp3-to-wav/",
+      "score": 29,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 4,
+        "snippets": 4,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 59,
+      "descriptionLength": 158,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0,
+      "wordCount": 1515
+    },
+    {
+      "url": "/format/flac-to-mp3/",
+      "score": 29,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 4,
+        "snippets": 4,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 60,
+      "descriptionLength": 159,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0,
+      "wordCount": 1514
+    },
+    {
+      "url": "/format/docx-to-pdf/",
+      "score": 29,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 4,
+        "snippets": 4,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 60,
+      "descriptionLength": 159,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0,
+      "wordCount": 1503
+    },
+    {
+      "url": "/format/txt-to-pdf/",
+      "score": 29,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 4,
+        "snippets": 4,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 59,
+      "descriptionLength": 158,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0,
+      "wordCount": 1483
+    },
+    {
+      "url": "/format/heic-to-jpg/",
+      "score": 29,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 4,
+        "snippets": 4,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 60,
+      "descriptionLength": 159,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0,
+      "wordCount": 1520
+    },
+    {
+      "url": "/format/gif-to-mp4/",
+      "score": 29,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 4,
+        "snippets": 4,
+        "internalLinks": 4,
+        "technical": 3,
+        "social": 3,
+        "contentDepth": 3
+      },
+      "titleLength": 59,
+      "descriptionLength": 158,
+      "keywordInFirst100Words": true,
+      "internalSelfLinkCount": 0,
+      "wordCount": 1522
+    },
+    {
+      "url": "/compare/png-vs-jpg/",
+      "score": 29,
+      "breakdown": {
+        "title": 4,
+        "meta": 4,
+        "keywordPlacement": 4,
         "snippets": 4,
         "internalLinks": 4,
         "technical": 3,
@@ -167,11 +395,11 @@
     },
     {
       "url": "/compare/jpg-vs-webp/",
-      "score": 30,
+      "score": 29,
       "breakdown": {
         "title": 4,
         "meta": 4,
-        "keywordPlacement": 5,
+        "keywordPlacement": 4,
         "snippets": 4,
         "internalLinks": 4,
         "technical": 3,
@@ -182,15 +410,15 @@
       "descriptionLength": 155,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1475
+      "wordCount": 1479
     },
     {
       "url": "/compare/svg-vs-png/",
-      "score": 30,
+      "score": 29,
       "breakdown": {
         "title": 4,
         "meta": 4,
-        "keywordPlacement": 5,
+        "keywordPlacement": 4,
         "snippets": 4,
         "internalLinks": 4,
         "technical": 3,
@@ -205,11 +433,11 @@
     },
     {
       "url": "/compare/mov-vs-mp4/",
-      "score": 30,
+      "score": 29,
       "breakdown": {
         "title": 4,
         "meta": 4,
-        "keywordPlacement": 5,
+        "keywordPlacement": 4,
         "snippets": 4,
         "internalLinks": 4,
         "technical": 3,
@@ -224,11 +452,11 @@
     },
     {
       "url": "/compare/wav-vs-mp3/",
-      "score": 30,
+      "score": 29,
       "breakdown": {
         "title": 4,
         "meta": 4,
-        "keywordPlacement": 5,
+        "keywordPlacement": 4,
         "snippets": 4,
         "internalLinks": 4,
         "technical": 3,
@@ -239,15 +467,15 @@
       "descriptionLength": 154,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1438
+      "wordCount": 1442
     },
     {
       "url": "/compare/pdf-vs-docx/",
-      "score": 30,
+      "score": 29,
       "breakdown": {
         "title": 4,
         "meta": 4,
-        "keywordPlacement": 5,
+        "keywordPlacement": 4,
         "snippets": 4,
         "internalLinks": 4,
         "technical": 3,
@@ -258,7 +486,7 @@
       "descriptionLength": 155,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 0,
-      "wordCount": 1451
+      "wordCount": 1455
     }
   ]
 }

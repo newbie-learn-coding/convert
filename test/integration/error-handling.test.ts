@@ -47,18 +47,41 @@ describe("Integration: Error Handling", () => {
             bytes: new Uint8Array(fileData.bytes),
             name: file.name
           }];
-
           const dummyHandler = {
             name: "dummy",
             ready: true,
             async init() {},
             async doConvert() { return []; }
           };
+          const from = {
+            handler: dummyHandler,
+            format: {
+              name: "JPEG",
+              format: "jpeg",
+              extension: "jpg",
+              mime: "image/jpeg",
+              from: true,
+              to: true,
+              internal: "jpeg"
+            }
+          };
+          const to = {
+            handler: dummyHandler,
+            format: {
+              name: "PNG",
+              format: "png",
+              extension: "png",
+              mime: "image/png",
+              from: true,
+              to: true,
+              internal: "png"
+            }
+          };
 
           return await window.tryConvertByTraversing(
             payload,
-            { format: { mime: "image/jpeg" }, handler: dummyHandler },
-            { format: { mime: "image/png" }, handler: dummyHandler }
+            from,
+            to
           );
         },
         pngFile
@@ -101,8 +124,8 @@ describe("Integration: Error Handling", () => {
         // Try to find a path from a non-existent format
         return await window.tryConvertByTraversing(
           [{ bytes: fileBytes, name: "test.xyz" }],
-          { format: { mime: "application/x-unknown" }, handler: dummyHandler },
-          { format: { mime: "image/png" }, handler: dummyHandler }
+          { format: { mime: "application/x-unknown", extension: "xyz", name: "XYZ" }, handler: dummyHandler },
+          { format: { mime: "image/png", extension: "png", name: "PNG" }, handler: dummyHandler }
         );
       }, Array.from(dummyFile));
 
@@ -138,11 +161,35 @@ describe("Integration: Error Handling", () => {
           async init() {},
           async doConvert() { return []; }
         };
+        const from = {
+          handler: dummyHandler,
+          format: {
+            name: "PNG",
+            format: "png",
+            extension: "png",
+            mime: "image/png",
+            from: true,
+            to: true,
+            internal: "png"
+          }
+        };
+        const to = {
+          handler: dummyHandler,
+          format: {
+            name: "JPEG",
+            format: "jpeg",
+            extension: "jpg",
+            mime: "image/jpeg",
+            from: true,
+            to: true,
+            internal: "jpeg"
+          }
+        };
 
         return await window.tryConvertByTraversing(
           [{ bytes: fileBytes, name: "corrupted.png" }],
-          { format: CommonFormats.PNG, handler: dummyHandler },
-          { format: CommonFormats.JPEG, handler: dummyHandler }
+          from,
+          to
         );
       }, Array.from(corruptedPng));
 
@@ -163,11 +210,35 @@ describe("Integration: Error Handling", () => {
           async init() {},
           async doConvert() { return []; }
         };
+        const from = {
+          handler: dummyHandler,
+          format: {
+            name: "PNG",
+            format: "png",
+            extension: "png",
+            mime: "image/png",
+            from: true,
+            to: true,
+            internal: "png"
+          }
+        };
+        const to = {
+          handler: dummyHandler,
+          format: {
+            name: "JPEG",
+            format: "jpeg",
+            extension: "jpg",
+            mime: "image/jpeg",
+            from: true,
+            to: true,
+            internal: "jpeg"
+          }
+        };
 
         return await window.tryConvertByTraversing(
           [{ bytes: fileBytes, name: "large.png" }],
-          { format: { mime: "image/png" }, handler: dummyHandler },
-          { format: { mime: "image/jpeg" }, handler: dummyHandler }
+          from,
+          to
         );
       }, Array.from(largeFile));
 
@@ -203,22 +274,45 @@ describe("Integration: Error Handling", () => {
       const specialName = "file with spaces & symbols!@#.png";
 
       const result = await context.page.evaluate(async (fileName) => {
+        const testFile = {
+          bytes: new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]),
+          name: fileName
+        };
         const dummyHandler = {
           name: "dummy",
           ready: true,
           async init() {},
           async doConvert() { return []; }
         };
-
-        const testFile = {
-          bytes: new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]),
-          name: fileName
+        const from = {
+          handler: dummyHandler,
+          format: {
+            name: "PNG",
+            format: "png",
+            extension: "png",
+            mime: "image/png",
+            from: true,
+            to: true,
+            internal: "png"
+          }
+        };
+        const to = {
+          handler: dummyHandler,
+          format: {
+            name: "JPEG",
+            format: "jpeg",
+            extension: "jpg",
+            mime: "image/jpeg",
+            from: true,
+            to: true,
+            internal: "jpeg"
+          }
         };
 
         return await window.tryConvertByTraversing(
           [testFile],
-          { format: { mime: "image/png" }, handler: dummyHandler },
-          { format: { mime: "image/jpeg" }, handler: dummyHandler }
+          from,
+          to
         );
       }, specialName);
 
@@ -229,22 +323,45 @@ describe("Integration: Error Handling", () => {
       const unicodeName = "测试文件.png";
 
       const result = await context.page.evaluate(async (fileName) => {
+        const testFile = {
+          bytes: new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]),
+          name: fileName
+        };
         const dummyHandler = {
           name: "dummy",
           ready: true,
           async init() {},
           async doConvert() { return []; }
         };
-
-        const testFile = {
-          bytes: new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]),
-          name: fileName
+        const from = {
+          handler: dummyHandler,
+          format: {
+            name: "PNG",
+            format: "png",
+            extension: "png",
+            mime: "image/png",
+            from: true,
+            to: true,
+            internal: "png"
+          }
+        };
+        const to = {
+          handler: dummyHandler,
+          format: {
+            name: "JPEG",
+            format: "jpeg",
+            extension: "jpg",
+            mime: "image/jpeg",
+            from: true,
+            to: true,
+            internal: "jpeg"
+          }
         };
 
         return await window.tryConvertByTraversing(
           [testFile],
-          { format: { mime: "image/png" }, handler: dummyHandler },
-          { format: { mime: "image/jpeg" }, handler: dummyHandler }
+          from,
+          to
         );
       }, unicodeName);
 

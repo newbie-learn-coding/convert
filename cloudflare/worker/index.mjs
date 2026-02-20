@@ -54,21 +54,41 @@ const RATE_LIMIT_CONFIG = {
   window: 60
 };
 
+const TELEMETRY_RATE_LIMIT_CONFIG = {
+  requests: 50,
+  window: 60
+};
+
+const ERROR_TRACKING = {
+  maxErrorsPerWindow: 50,
+  windowMs: 60000,
+  sampledErrors: []
+};
+
+const PERFORMANCE_THRESHOLDS = {
+  slowRequestMs: 1000,
+  criticalSlowMs: 3000
+};
+
 const DEFAULT_SECURITY_HEADERS = {
   "x-content-type-options": "nosniff",
   "x-frame-options": "DENY",
+  "x-xss-protection": "1; mode=block",
   "referrer-policy": "strict-origin-when-cross-origin",
   "permissions-policy":
     "accelerometer=(), autoplay=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()",
   "x-permitted-cross-domain-policies": "none",
   "cross-origin-opener-policy": "same-origin",
-  "cross-origin-resource-policy": "same-origin"
+  "cross-origin-resource-policy": "same-origin",
+  "strict-transport-security": "max-age=31536000; includeSubDomains; preload"
 };
 
 const OPS_ALLOWED_METHODS = new Set(["GET", "HEAD"]);
 const LOGGING_ALLOWED_METHODS = new Set(["POST", "OPTIONS"]);
+const TELEMETRY_ROUTE_PATHS = new Set(["/_ops/logs", "/_ops/logging"]);
 const MAX_CORRELATION_ID_LENGTH = 64;
 const CORRELATION_ID_SAFE_CHARS = /[^A-Za-z0-9._:-]/g;
+const RATE_LIMITER_CLEANUP_SAMPLE_RATE = 0.01;
 
 const METRICS_PREFIX = "cf_worker_";
 
@@ -117,6 +137,54 @@ function recordMetric(env, name, value, tags = {}) {
       .join(",");
     env.METRICS.write(`# TYPE ${metricName} counter\n${metricName}{${tagString}} ${value}\n`);
   } catch (e) {
+    // Silently fail metrics to avoid impacting requests
+  }
+}
+
+function logError(env, error, context = {}) {
+  try {
+    const errorPayload = {
+      event: "worker_error",
+      timestamp: new Date().toISOString(),
+      error: {
+        message: error.message?.slice(0, 200) || "unknown",
+        name: error.name || "Error",
+        stack: error.stack?.split("\n")[0]?.slice(0, 100) || null
+      },
+      context: {
+        ...context,
+        environment: env.ENVIRONMENT || "unknown"
+      }
+    };
+    console.error(JSON.stringify(errorPayload));
+  } catch (e) {
+    // Fallback logging
+    console.error("[worker] Error logging failed:", error.message);
+  }
+}
+
+function logPerformance(env, duration, pathname, status, context = {}) {
+  try {
+    const isSlow = duration > PERFORMANCE_THRESHOLDS.slowRequestMs;
+    const isCritical = duration > PERFORMANCE_THRESHOLDS.criticalSlowMs;
+
+    if (isSlow || isCritical) {
+      const perfPayload = {
+        event: isCritical ? "performance_critical" : "performance_slow",
+        timestamp: new Date().toISOString(),
+        duration,
+        pathname: pathname?.slice(0, 100) || "unknown",
+        status,
+        threshold: isCritical ? PERFORMANCE_THRESHOLDS.criticalSlowMs : PERFORMANCE_THRESHOLDS.slowRequestMs,
+        context: {
+          ...context,
+          environment: env.ENVIRONMENT || "unknown"
+        }
+      };
+      console.warn(JSON.stringify(perfPayload));
+    }
+  } catch (e) {
+    // Silently fail performance logging
   }
 }
 
@@ -202,6 +270,20 @@ class RateLimiter {
   }
 }
 
+const SHARED_RATE_LIMITERS = {
+  ops: new RateLimiter(RATE_LIMIT_CONFIG.requests, RATE_LIMIT_CONFIG.window),
+  telemetry: new RateLimiter(TELEMETRY_RATE_LIMIT_CONFIG.requests, TELEMETRY_RATE_LIMIT_CONFIG.window)
+};
+
+function maybeCleanupRateLimiters(now = Date.now()) {
+  if (Math.random() >= RATE_LIMITER_CLEANUP_SAMPLE_RATE) {
+    return;
+  }
+
+  SHARED_RATE_LIMITERS.ops.cleanup(now);
+  SHARED_RATE_LIMITERS.telemetry.cleanup(now);
+}
+
 function getClientIdentifier(request) {
   const cf = request.cf;
   if (cf?.colo) {
@@ -285,6 +367,28 @@ function sanitizeCorrelationId(rawValue) {
   return trimmed.replace(CORRELATION_ID_SAFE_CHARS, "-").slice(0, MAX_CORRELATION_ID_LENGTH);
 }
 
+/**
+ * Sanitizes metrics object to ensure it only contains safe numeric values
+ * @param metrics The raw metrics object
+ * @returns Sanitized metrics object
+ */
+function sanitizeMetrics(metrics) {
+  if (!metrics || typeof metrics !== "object") {
+    return {};
+  }
+
+  const sanitized = {};
+  const allowedKeys = ["conversionsSucceeded", "conversionsFailed", "handlersFailed", "wasmLoadsFailed"];
+
+  for (const key of allowedKeys) {
+    if (typeof metrics[key] === "number" && Number.isFinite(metrics[key])) {
+      sanitized[key] = Math.max(0, Math.floor(metrics[key]));
+    }
+  }
+
+  return sanitized;
+}
+
 function ensureOpsMethod(request, requestId) {
   if (OPS_ALLOWED_METHODS.has(request.method)) {
     return null;
@@ -301,114 +405,191 @@ function ensureOpsMethod(request, requestId) {
   }, request.method);
 }
 
-async function handleClientLogRoute(request, env, pathname, rateLimiter) {
-  if (pathname === "/_ops/logs") {
-    const requestId = makeRequestId(request);
-    const clientId = getClientIdentifier(request);
-
-    // Rate limit logs separately
-    const logRateLimit = new RateLimiter(50, 60);
-    const rateLimitResult = logRateLimit.check(clientId);
-
-    if (!rateLimitResult.allowed) {
-      recordMetric(env, "rate_limit_exceeded", 1, { endpoint: "logs" });
-      return jsonResponse({
-        error: "rate_limited",
-        requestId
-      }, { status: 429 });
-    }
-
-    // Handle CORS preflight
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        status: 204,
-        headers: {
-          "access-control-allow-origin": CANONICAL_ORIGIN,
-          "access-control-allow-methods": "POST",
-          "access-control-allow-headers": "content-type",
-          "access-control-max-age": "86400"
-        }
-      });
-    }
-
-    if (request.method !== "POST") {
-      return jsonResponse({
-        error: "method_not_allowed",
-        requestId
-      }, { status: 405 });
-    }
-
+function isAllowedTelemetryRequest(request) {
+  const origin = request.headers.get("origin");
+  if (origin) {
     try {
-      const payload = await request.json();
-
-      // Validate required fields
-      if (!payload.sessionId || !payload.entries || !Array.isArray(payload.entries)) {
-        return jsonResponse({
-          error: "invalid_payload",
-          requestId
-        }, { status: 400 });
+      const normalizedOrigin = new URL(origin).origin;
+      if (normalizedOrigin !== CANONICAL_ORIGIN) {
+        return false;
       }
-
-      // Log the structured error report
-      const logLine = {
-        event: "client_error_report",
-        timestamp: new Date().toISOString(),
-        requestId,
-        sessionId: payload.sessionId.substring(0, 16), // Truncate for privacy
-        appVersion: payload.appVersion || "unknown",
-        environment: env.ENVIRONMENT || "unknown",
-        entryCount: payload.entries.length,
-        metrics: payload.metrics || {},
-        colo: request.cf?.colo || "unknown",
-        country: request.cf?.country || "unknown"
-      };
-
-      console.log(JSON.stringify(logLine));
-
-      // Record metrics from the report
-      if (payload.metrics) {
-        if (payload.metrics.conversionsSucceeded > 0) {
-          recordMetric(env, "conversion_success", payload.metrics.conversionsSucceeded);
-        }
-        if (payload.metrics.conversionsFailed > 0) {
-          recordMetric(env, "conversion_failure", payload.metrics.conversionsFailed);
-        }
-        if (payload.metrics.handlersFailed > 0) {
-          recordMetric(env, "handler_init_failure", payload.metrics.handlersFailed);
-        }
-        if (payload.metrics.wasmLoadsFailed > 0) {
-          recordMetric(env, "wasm_load_failure", payload.metrics.wasmLoadsFailed);
-        }
-      }
-
-      // Log individual critical/warn entries
-      for (const entry of payload.entries.slice(0, 20)) {
-        if (entry.level === "critical" || entry.level === "error") {
-          console.error(JSON.stringify({
-            event: "client_error",
-            level: entry.level,
-            category: entry.context?.category || "unknown",
-            message: entry.message?.substring(0, 200),
-            timestamp: entry.timestamp
-          }));
-        }
-      }
-
-      return jsonResponse({
-        ok: true,
-        requestId,
-        processed: payload.entries.length
-      });
-    } catch (parseError) {
-      return jsonResponse({
-        error: "invalid_json",
-        requestId,
-        message: parseError.message?.substring(0, 100)
-      }, { status: 400 });
+    } catch (error) {
+      return false;
     }
   }
 
-  return null;
+  const fetchSite = request.headers.get("sec-fetch-site");
+  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "same-site" && fetchSite !== "none") {
+    return false;
+  }
+
+  return true;
+}
+
+async function handleClientLogRoute(request, env, pathname, rateLimiter) {
+  if (!TELEMETRY_ROUTE_PATHS.has(pathname)) {
+    return null;
+  }
+
+  const requestId = makeRequestId(request);
+
+  if (!LOGGING_ALLOWED_METHODS.has(request.method)) {
+    return jsonResponse({
+      error: "method_not_allowed",
+      requestId
+    }, {
+      status: 405,
+      headers: {
+        allow: "POST, OPTIONS"
+      }
+    }, request.method);
+  }
+
+  if (!isAllowedTelemetryRequest(request)) {
+    return jsonResponse({
+      error: "forbidden_origin",
+      requestId
+    }, { status: 403 }, request.method);
+  }
+
+  if (request.method === "OPTIONS") {
+    const preflightHeaders = new Headers({
+      "access-control-allow-origin": CANONICAL_ORIGIN,
+      "access-control-allow-methods": "POST, OPTIONS",
+      "access-control-allow-headers": "content-type",
+      "access-control-max-age": "86400"
+    });
+    mergeDefaultHeaders(preflightHeaders, JSON_HEADERS);
+    mergeDefaultHeaders(preflightHeaders, DEFAULT_SECURITY_HEADERS);
+
+    return new Response(null, {
+      status: 204,
+      headers: preflightHeaders
+    });
+  }
+
+  const clientId = getClientIdentifier(request);
+  const rateLimitResult = rateLimiter.check(clientId);
+  if (!rateLimitResult.allowed) {
+    const retryAfter = Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000);
+    recordMetric(env, "rate_limit_exceeded", 1, { endpoint: pathname });
+    return jsonResponse({
+      error: "rate_limited",
+      requestId,
+      retryAfter
+    }, {
+      status: 429,
+      headers: {
+        "retry-after": retryAfter.toString(),
+        "x-ratelimit-limit": TELEMETRY_RATE_LIMIT_CONFIG.requests.toString(),
+        "x-ratelimit-remaining": "0"
+      }
+    }, request.method);
+  }
+
+  try {
+    const payload = await request.json();
+
+    // Validate required fields
+    if (!payload.sessionId || !payload.entries || !Array.isArray(payload.entries)) {
+      return jsonResponse({
+        error: "invalid_payload",
+        requestId
+      }, { status: 400 });
+    }
+
+    // Validate payload size limits
+    if (payload.entries.length > 100) {
+      return jsonResponse({
+        error: "too_many_entries",
+        requestId,
+        message: "Maximum 100 entries allowed per request"
+      }, { status: 413 });
+    }
+
+    // Sanitize and validate sessionId
+    const sanitizedSessionId = String(payload.sessionId).replace(/[^a-zA-Z0-9_-]/g, "").substring(0, 32);
+    if (!sanitizedSessionId || sanitizedSessionId.length < 8) {
+      return jsonResponse({
+        error: "invalid_session_id",
+        requestId
+      }, { status: 400 });
+    }
+
+    // Validate appVersion if provided
+    const sanitizedAppVersion = payload.appVersion
+      ? String(payload.appVersion).replace(/[^a-zA-Z0-9._-]/g, "").substring(0, 32)
+      : "unknown";
+
+    // Log the structured error report
+    const logLine = {
+      event: "client_error_report",
+      timestamp: new Date().toISOString(),
+      requestId,
+      sessionId: sanitizedSessionId.substring(0, 16), // Truncate for privacy
+      appVersion: sanitizedAppVersion,
+      environment: env.ENVIRONMENT || "unknown",
+      entryCount: payload.entries.length,
+      metrics: sanitizeMetrics(payload.metrics),
+      colo: request.cf?.colo || "unknown",
+      country: request.cf?.country || "unknown",
+      telemetryPath: pathname
+    };
+
+    console.log(JSON.stringify(logLine));
+
+    // Record metrics from the report
+    if (payload.metrics && typeof payload.metrics === "object") {
+      const metrics = payload.metrics;
+      if (typeof metrics.conversionsSucceeded === "number" && metrics.conversionsSucceeded > 0) {
+        recordMetric(env, "conversion_success", Math.min(metrics.conversionsSucceeded, 1000));
+      }
+      if (typeof metrics.conversionsFailed === "number" && metrics.conversionsFailed > 0) {
+        recordMetric(env, "conversion_failure", Math.min(metrics.conversionsFailed, 1000));
+      }
+      if (typeof metrics.handlersFailed === "number" && metrics.handlersFailed > 0) {
+        recordMetric(env, "handler_init_failure", Math.min(metrics.handlersFailed, 100));
+      }
+      if (typeof metrics.wasmLoadsFailed === "number" && metrics.wasmLoadsFailed > 0) {
+        recordMetric(env, "wasm_load_failure", Math.min(metrics.wasmLoadsFailed, 100));
+      }
+    }
+
+    // Log individual critical/warn entries
+    for (const entry of payload.entries.slice(0, 20)) {
+      if (!entry || typeof entry !== "object") continue;
+
+      const level = String(entry.level || "").toLowerCase();
+      if (level === "critical" || level === "error") {
+        const sanitizedMessage = entry.message
+          ? String(entry.message).substring(0, 200).replace(/[\x00-\x1F\x7F]/g, "")
+          : "";
+        const sanitizedCategory = entry.context?.category
+          ? String(entry.context.category).replace(/[^a-zA-Z0-9_-]/g, "").substring(0, 50)
+          : "unknown";
+
+        console.error(JSON.stringify({
+          event: "client_error",
+          level: level,
+          category: sanitizedCategory,
+          message: sanitizedMessage,
+          timestamp: entry.timestamp
+        }));
+      }
+    }
+
+    return jsonResponse({
+      ok: true,
+      requestId,
+      processed: Math.min(payload.entries.length, 100)
+    });
+  } catch (parseError) {
+    return jsonResponse({
+      error: "invalid_json",
+      requestId,
+      message: "Invalid JSON payload"
+    }, { status: 400 });
+  }
 }
 
 async function handleOpsRoute(request, env, pathname, rateLimiter) {
@@ -523,45 +704,52 @@ async function handleOpsRoute(request, env, pathname, rateLimiter) {
 export default {
   async fetch(request, env, ctx) {
     const startTime = Date.now();
-    const rateLimiter = new RateLimiter(RATE_LIMIT_CONFIG.requests, RATE_LIMIT_CONFIG.window);
-
-    const redirectResponse = getCanonicalRedirectResponse(request, env);
-    if (redirectResponse) {
-      return redirectResponse;
-    }
+    maybeCleanupRateLimiters(startTime);
 
     const url = new URL(request.url);
     const pathname = url.pathname;
     const cf = request.cf;
-
-    // Handle client logging endpoint separately
-    const logResponse = await handleClientLogRoute(request, env, pathname, rateLimiter);
-    if (logResponse) {
-      recordMetric(env, "response_time_ms", Date.now() - startTime, {
-        endpoint: pathname,
-        type: "log"
-      });
-      return logResponse;
-    }
-
-    const opsResponse = await handleOpsRoute(request, env, pathname, rateLimiter);
-    if (opsResponse) {
-      recordMetric(env, "response_time_ms", Date.now() - startTime, {
-        endpoint: pathname,
-        type: "ops"
-      });
-      return opsResponse;
-    }
-
-    if (!env.ASSETS || typeof env.ASSETS.fetch !== "function") {
-      recordMetric(env, "error", 1, { type: "no_assets_binding" });
-      return withHeaders(
-        new Response("ASSETS binding is not configured", { status: 500 }),
-        DEFAULT_SECURITY_HEADERS
-      );
-    }
+    const requestId = makeRequestId(request);
 
     try {
+      const redirectResponse = getCanonicalRedirectResponse(request, env);
+      if (redirectResponse) {
+        return redirectResponse;
+      }
+
+      // Handle client logging endpoint separately
+      const logResponse = await handleClientLogRoute(request, env, pathname, SHARED_RATE_LIMITERS.telemetry);
+      if (logResponse) {
+        const duration = Date.now() - startTime;
+        recordMetric(env, "response_time_ms", duration, {
+          endpoint: pathname,
+          type: "log"
+        });
+        logPerformance(env, duration, pathname, logResponse.status, { type: "log" });
+        return logResponse;
+      }
+
+      const opsResponse = await handleOpsRoute(request, env, pathname, SHARED_RATE_LIMITERS.ops);
+      if (opsResponse) {
+        const duration = Date.now() - startTime;
+        recordMetric(env, "response_time_ms", duration, {
+          endpoint: pathname,
+          type: "ops"
+        });
+        logPerformance(env, duration, pathname, opsResponse.status, { type: "ops" });
+        return opsResponse;
+      }
+
+      if (!env.ASSETS || typeof env.ASSETS.fetch !== "function") {
+        recordMetric(env, "error", 1, { type: "no_assets_binding" });
+        const error = new Error("ASSETS binding is not configured");
+        logError(env, error, { requestId, pathname, type: "config" });
+        return withHeaders(
+          new Response("Service temporarily unavailable", { status: 503 }),
+          DEFAULT_SECURITY_HEADERS
+        );
+      }
+
       const cacheKey = new Request(request.url, {
         headers: request.headers,
         method: request.method
@@ -573,13 +761,17 @@ export default {
           path_type: getPathType(pathname),
           colo: cf?.colo || "unknown"
         });
-        recordMetric(env, "response_time_ms", Date.now() - startTime, {
+        const duration = Date.now() - startTime;
+        recordMetric(env, "response_time_ms", duration, {
           type: "asset",
           cached: "true"
         });
 
         const response = withCacheHeaders(cachedResponse, pathname, { skipCacheHeader: true });
-        return withHeaders(response, DEFAULT_SECURITY_HEADERS);
+        const finalResponse = withHeaders(response, DEFAULT_SECURITY_HEADERS);
+        finalResponse.headers.set("x-cf-cache-status", "HIT");
+        finalResponse.headers.set("x-response-time", `${duration}ms`);
+        return finalResponse;
       }
 
       recordMetric(env, "cache_miss", 1, {
@@ -589,18 +781,46 @@ export default {
 
       const assetResponse = await env.ASSETS.fetch(request);
 
+      // Handle 404s gracefully
+      if (assetResponse.status === 404) {
+        recordMetric(env, "not_found", 1, { path_type: getPathType(pathname) });
+        const notFoundResponse = new Response("Not Found", {
+          status: 404,
+          headers: { "content-type": "text/plain" }
+        });
+        return withHeaders(notFoundResponse, DEFAULT_SECURITY_HEADERS);
+      }
+
+      // Handle 5xx errors from origin
+      if (assetResponse.status >= 500) {
+        recordMetric(env, "origin_error", 1, {
+          status: assetResponse.status.toString(),
+          path_type: getPathType(pathname)
+        });
+        const error = new Error(`Origin returned ${assetResponse.status}`);
+        logError(env, error, { requestId, pathname, status: assetResponse.status });
+      }
+
       if (assetResponse.status === 200 && ctx?.waitUntil) {
         ctx.waitUntil(
           (async () => {
-            const responseToCache = assetResponse.clone();
-            await caches.default.put(cacheKey, responseToCache);
+            try {
+              const responseToCache = assetResponse.clone();
+              await caches.default.put(cacheKey, responseToCache);
+            } catch (cacheError) {
+              logError(env, cacheError, { requestId, pathname, type: "cache_write" });
+            }
           })()
         );
       } else if (assetResponse.status === 200) {
         // Cache in background when ctx.waitUntil is not available (e.g., in tests)
         (async () => {
-          const responseToCache = assetResponse.clone();
-          await caches.default.put(cacheKey, responseToCache);
+          try {
+            const responseToCache = assetResponse.clone();
+            await caches.default.put(cacheKey, responseToCache);
+          } catch (cacheError) {
+            // Silently fail cache writes in background
+          }
         })();
       }
 
@@ -609,24 +829,39 @@ export default {
 
       finalResponse.headers.set("x-cf-edge-colo", cf?.colo || "unknown");
       finalResponse.headers.set("x-cf-cache-status", "MISS");
-      finalResponse.headers.set("x-response-time", `${Date.now() - startTime}ms`);
+      finalResponse.headers.set("x-request-id", requestId);
+      const duration = Date.now() - startTime;
+      finalResponse.headers.set("x-response-time", `${duration}ms`);
 
-      recordMetric(env, "response_time_ms", Date.now() - startTime, {
+      recordMetric(env, "response_time_ms", duration, {
         type: "asset",
         cached: "false",
         status: assetResponse.status.toString()
       });
+      logPerformance(env, duration, pathname, assetResponse.status, { type: "asset" });
 
       return finalResponse;
     } catch (error) {
+      const duration = Date.now() - startTime;
       recordMetric(env, "error", 1, {
         type: "asset_fetch_error",
         message: error.message?.slice(0, 50) || "unknown"
       });
-      return withHeaders(
-        new Response("Error fetching asset", { status: 502 }),
-        DEFAULT_SECURITY_HEADERS
+      logError(env, error, { requestId, pathname, duration });
+
+      // Return user-friendly error
+      const errorResponse = new Response(
+        JSON.stringify({
+          error: "Service temporarily unavailable",
+          requestId,
+          timestamp: new Date().toISOString()
+        }),
+        {
+          status: 503,
+          headers: { "content-type": "application/json" }
+        }
       );
+      return withHeaders(errorResponse, DEFAULT_SECURITY_HEADERS);
     }
   }
 };

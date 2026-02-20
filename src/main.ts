@@ -1,4 +1,4 @@
-import type { FileFormat, FileData, FormatHandler, ConvertPathNode } from "./FormatHandler.js";
+import { ConvertPathNode, type FileFormat, type FileData, type FormatHandler } from "./FormatHandler.js";
 import normalizeMimeType from "./normalizeMimeType.js";
 import handlers from "./handlers";
 import { TraversionGraph } from "./TraversionGraph.js";
@@ -6,11 +6,14 @@ import { initPWA } from "./pwa.js";
 import "./pwa.css";
 import { validateFileSignature, getFileExtension, type FileFormatInfo } from "./fileValidator.js";
 import { initPerformanceTracking } from "./performance.js";
-import { initLogging, log } from "./logging.js";
+import { initLogging, log, LOG_ENDPOINT } from "./logging.js";
 
 /** Initialize logging and performance tracking early for accurate metrics */
 initLogging();
-initPerformanceTracking({ debug: true });
+initPerformanceTracking({
+  reportEndpoint: LOG_ENDPOINT,
+  debug: Boolean(import.meta.env?.DEV)
+});
 
 /** Files currently selected for conversion */
 let selectedFiles: File[] = [];
@@ -29,9 +32,26 @@ const MAX_TOTAL_FILE_SIZE = 512 * 1024 * 1024; // 512 MB
 const ui = {
   fileInput: document.querySelector("#file-input") as HTMLInputElement,
   fileSelectArea: document.querySelector("#file-area") as HTMLDivElement,
+  fileAreaIcon: document.querySelector("#file-area-icon") as HTMLSpanElement,
+  fileAreaTitle: document.querySelector("#file-area-title") as HTMLHeadingElement,
+  dropHintText: document.querySelector("#drop-hint-text") as HTMLParagraphElement,
+  fileSelectionStatus: document.querySelector("#file-selection-status") as HTMLParagraphElement,
+  inputCategoryTabs: document.querySelector("#from-category-tabs") as HTMLDivElement,
+  outputCategoryTabs: document.querySelector("#to-category-tabs") as HTMLDivElement,
   convertButton: document.querySelector("#convert-button") as HTMLButtonElement,
   convertHelperText: document.querySelector("#convert-helper") as HTMLParagraphElement,
+  quickConversionsPanel: document.querySelector("#quick-conversions") as HTMLDivElement,
+  quickConversionList: document.querySelector("#quick-conversion-list") as HTMLDivElement,
+  quickConversionEmpty: document.querySelector("#quick-conversion-empty") as HTMLParagraphElement,
+  pathPreview: document.querySelector("#conversion-path-preview") as HTMLDivElement,
+  pathPreviewSummary: document.querySelector("#conversion-path-summary") as HTMLParagraphElement,
+  pathPreviewPills: document.querySelector("#conversion-path-pills") as HTMLDivElement,
   modeToggleButton: document.querySelector("#mode-button") as HTMLButtonElement,
+  workflowSteps: {
+    file: document.querySelector('[data-workflow-step="file"]') as HTMLSpanElement,
+    formats: document.querySelector('[data-workflow-step="formats"]') as HTMLSpanElement,
+    convert: document.querySelector('[data-workflow-step="convert"]') as HTMLSpanElement
+  },
   inputList: document.querySelector("#from-list") as HTMLDivElement,
   outputList: document.querySelector("#to-list") as HTMLDivElement,
   inputSearch: document.querySelector("#search-from") as HTMLInputElement,
@@ -42,8 +62,67 @@ const ui = {
 
 const POPUP_TONE_CLASSES = ["popup-error", "popup-success", "popup-busy"];
 const persistentDownloadUrls: string[] = [];
+let popupReturnFocus: HTMLElement | null = null;
 
 const allOptions: Array<{ format: FileFormat, handler: FormatHandler }> = [];
+const CATEGORY_LABELS: Record<string, string> = {
+  all: "All",
+  image: "Image",
+  video: "Video",
+  audio: "Audio",
+  document: "Document",
+  text: "Text",
+  archive: "Archive",
+  code: "Code",
+  other: "Other"
+};
+const listFilterStates = new WeakMap<HTMLDivElement, {
+  query: string;
+  category: string;
+  allowedMimes: Set<string> | null;
+}>();
+let recommendedOutputMimes: Set<string> = new Set();
+let pathPreviewRequestToken = 0;
+
+type WorkflowStepKey = "file" | "formats" | "convert";
+type WorkflowState = "pending" | "active" | "complete";
+
+function setWorkflowStepState(step: WorkflowStepKey, state: WorkflowState): void {
+  const element = ui.workflowSteps[step];
+  if (!(element instanceof HTMLSpanElement)) return;
+
+  element.classList.toggle("is-active", state === "active");
+  element.classList.toggle("is-complete", state === "complete");
+  element.dataset.state = state;
+  if (state === "active") {
+    element.setAttribute("aria-current", "step");
+  } else {
+    element.removeAttribute("aria-current");
+  }
+}
+
+function updateWorkflowProgress(hasFiles: boolean, hasInput: boolean, hasOutput: boolean, canConvert: boolean): void {
+  setWorkflowStepState("file", hasFiles ? "complete" : "active");
+  if (!hasFiles) {
+    setWorkflowStepState("formats", "pending");
+    setWorkflowStepState("convert", "pending");
+    return;
+  }
+
+  const hasFormats = hasInput && hasOutput;
+  setWorkflowStepState("formats", hasFormats ? "complete" : "active");
+  if (!hasFormats) {
+    setWorkflowStepState("convert", "pending");
+    return;
+  }
+
+  setWorkflowStepState("convert", canConvert ? "complete" : "active");
+}
+
+function setFormatButtonSelection(button: HTMLButtonElement, isSelected: boolean): void {
+  button.classList.toggle("selected", isSelected);
+  button.setAttribute("aria-pressed", isSelected ? "true" : "false");
+}
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -80,6 +159,39 @@ function formatOptionExtension(format: FileFormat): string {
   return `.${extension}`;
 }
 
+function getFormatCategories(format: FileFormat): string[] {
+  const base = format.mime.split("/")[0] || "other";
+  if (!format.category) return [base];
+  const categories = Array.isArray(format.category) ? format.category : [format.category];
+  return categories
+    .map(category => category.trim().toLowerCase())
+    .filter(category => category.length > 0);
+}
+
+function getPrimaryCategory(format: FileFormat): string {
+  const categories = getFormatCategories(format);
+  return categories[0] ?? "other";
+}
+
+function getListFilterState(list: HTMLDivElement): { query: string; category: string; allowedMimes: Set<string> | null } {
+  let state = listFilterStates.get(list);
+  if (!state) {
+    state = { query: "", category: "all", allowedMimes: null };
+    listFilterStates.set(list, state);
+  }
+  return state;
+}
+
+function getAllListButtons(list: HTMLDivElement): HTMLButtonElement[] {
+  const virtualList = virtualLists.get(list);
+  if (virtualList) {
+    return virtualList.getAllOriginalButtons();
+  }
+  return Array.from(list.children).filter(
+    child => child instanceof HTMLButtonElement
+  ) as HTMLButtonElement[];
+}
+
 function releasePersistentDownloadUrls(): void {
   while (persistentDownloadUrls.length > 0) {
     const url = persistentDownloadUrls.pop();
@@ -109,66 +221,65 @@ function validateSelectedFiles(files: File[]): string | null {
   return null;
 }
 
+function setFileAreaState(hasFiles: boolean): void {
+  ui.fileSelectArea.classList.toggle("has-files", hasFiles);
+  ui.fileSelectArea.classList.toggle("is-ready", hasFiles);
+  ui.fileAreaIcon.textContent = hasFiles ? "✓" : "⇪";
+}
+
 function renderSelectedFiles(files: File[]) {
-  const title = document.createElement("h2");
-  title.appendChild(document.createTextNode(files[0].name));
+  const primaryName = files[0].name;
+  ui.fileAreaTitle.textContent = primaryName;
   if (files.length > 1) {
-    title.appendChild(document.createElement("br"));
-    title.appendChild(document.createTextNode(`... and ${files.length - 1} more`));
+    ui.dropHintText.textContent = `${files.length} files selected`;
+    ui.fileSelectionStatus.textContent = `${files.length} files ready. Next: choose input and output formats.`;
+  } else {
+    ui.dropHintText.textContent = "Ready. Next: choose input and output formats.";
+    ui.fileSelectionStatus.textContent = `1 file selected: ${primaryName}.`;
   }
-  ui.fileSelectArea.replaceChildren(title);
+  setFileAreaState(true);
+}
+
+function getSelectedFormatButton(list: HTMLDivElement): HTMLButtonElement | null {
+  const virtualList = virtualLists.get(list);
+  if (virtualList) {
+    for (const button of virtualList.getAllOriginalButtons()) {
+      if (button.classList.contains("selected")) return button;
+    }
+    return null;
+  }
+  const selected = list.querySelector("button.selected");
+  return selected instanceof HTMLButtonElement ? selected : null;
 }
 
 function updateConvertButtonState(): void {
-  // Check for selection in original buttons (source of truth for virtual lists)
-  let selectedInput: HTMLButtonElement | null = null;
-  let selectedOutput: HTMLButtonElement | null = null;
-
-  // Check input list
-  const inputVirtual = virtualLists.get(ui.inputList);
-  if (inputVirtual) {
-    // For virtual lists, check original buttons
-    for (const [, btn] of inputVirtual["originalButtonsMap"]) {
-      if (btn.classList.contains("selected")) {
-        selectedInput = btn;
-        break;
-      }
-    }
-  } else {
-    selectedInput = ui.inputList.querySelector("button.selected");
-  }
-
-  // Check output list
-  const outputVirtual = virtualLists.get(ui.outputList);
-  if (outputVirtual) {
-    for (const [, btn] of outputVirtual["originalButtonsMap"]) {
-      if (btn.classList.contains("selected")) {
-        selectedOutput = btn;
-        break;
-      }
-    }
-  } else {
-    selectedOutput = ui.outputList.querySelector("button.selected");
-  }
+  const selectedInput = getSelectedFormatButton(ui.inputList);
+  const selectedOutput = getSelectedFormatButton(ui.outputList);
 
   let disabledReason = "Ready to convert.";
   let enabled = true;
+  const hasFiles = selectedFiles.length > 0;
+  const hasInput = selectedInput instanceof HTMLButtonElement;
+  const hasOutput = selectedOutput instanceof HTMLButtonElement;
 
-  if (selectedFiles.length === 0) {
+  if (!hasFiles) {
     enabled = false;
-    disabledReason = "Choose at least one file to continue.";
-  } else if (!(selectedInput instanceof HTMLButtonElement)) {
+    disabledReason = "Step 1 of 3: choose at least one file.";
+  } else if (!hasInput) {
     enabled = false;
-    disabledReason = "Select the source format in \"Convert from\".";
-  } else if (!(selectedOutput instanceof HTMLButtonElement)) {
+    disabledReason = "Step 2 of 3: select the source format in \"Convert from\".";
+  } else if (!hasOutput) {
     enabled = false;
-    disabledReason = "Select the target format in \"Convert to\".";
+    disabledReason = "Step 2 of 3: select the target format in \"Convert to\".";
+  } else {
+    disabledReason = "Step 3 of 3: ready to convert.";
   }
 
   ui.convertButton.disabled = !enabled;
   ui.convertButton.classList.toggle("disabled", !enabled);
   ui.convertButton.setAttribute("aria-disabled", enabled ? "false" : "true");
   ui.convertHelperText.textContent = disabledReason;
+  updateWorkflowProgress(hasFiles, hasInput, hasOutput, enabled);
 }
 
 /**
@@ -216,9 +327,38 @@ function debounce<T extends (...args: unknown[]) => unknown>(
 }
 
 /**
+ * Throttle function for scroll events.
+ * Ensures function is called at most once per wait period.
+ */
+function throttle<T extends (...args: unknown[]) => unknown>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let lastTime = 0;
+  let rafId: number | null = null;
+
+  return (...args: Parameters<T>) => {
+    const now = performance.now();
+    const elapsed = now - lastTime;
+
+    if (elapsed >= wait) {
+      lastTime = now;
+      func(...args);
+    } else if (!rafId) {
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        lastTime = performance.now();
+        func(...args);
+      });
+    }
+  };
+}
+
+/**
  * Virtual list manager for format lists.
  * Handles efficient rendering of large lists by only showing visible items.
  * Supports 1000+ items with smooth 60fps scrolling.
+ * Optimized with Intersection Observer for lazy loading and throttled scroll handling.
  */
 class VirtualFormatList {
   private container: HTMLDivElement;
@@ -229,11 +369,16 @@ class VirtualFormatList {
   private scrollTop: number = 0;
   private pooledElements: HTMLButtonElement[] = [];
   private resizeObserver: ResizeObserver | null = null;
+  private intersectionObserver: IntersectionObserver | null = null;
   private filterQuery: string = "";
+  private categoryFilter = "all";
+  private allowedMimes: Set<string> | null = null;
   private rafId: number | null = null;
   private scrollContainer: HTMLDivElement | null = null;
   private contentContainer: HTMLDivElement | null = null;
   private spacer: HTMLDivElement | null = null;
+  private isVisible = true;
+  private throttledScrollHandler: (() => void) | null = null;
 
   // Store original buttons for selection sync by format-index
   private originalButtonsMap = new Map<number, HTMLButtonElement>();
@@ -273,6 +418,7 @@ class VirtualFormatList {
       position: relative;
       -webkit-overflow-scrolling: touch;
       will-change: scroll-position;
+      contain: layout style paint;
     `;
 
     // Create spacer element to set total scrollable height
@@ -295,14 +441,34 @@ class VirtualFormatList {
       position: relative;
       width: 100%;
       contain: layout style;
+      will-change: transform;
     `;
 
     this.scrollContainer.appendChild(this.spacer);
     this.scrollContainer.appendChild(this.contentContainer);
     this.container.appendChild(this.scrollContainer);
 
+    // Set up throttled scroll handler for better performance
+    this.throttledScrollHandler = throttle(() => {
+      this.handleScroll();
+    }, 16); // Throttle to ~60fps
+
     // Set up scroll listener with passive for better performance
-    this.scrollContainer.addEventListener("scroll", this.handleScroll.bind(this), { passive: true });
+    this.scrollContainer.addEventListener("scroll", this.throttledScrollHandler, { passive: true });
+
+    // Set up Intersection Observer for lazy loading
+    this.intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          this.isVisible = entry.isIntersecting;
+          if (this.isVisible) {
+            this.scheduleUpdate();
+          }
+        }
+      },
+      { root: null, rootMargin: "100px", threshold: 0 }
+    );
+    this.intersectionObserver.observe(this.scrollContainer);
 
     // Set up resize observer to handle viewport changes
     this.resizeObserver = new ResizeObserver(() => {
@@ -322,6 +488,9 @@ class VirtualFormatList {
   }
 
   private scheduleUpdate(): void {
+    // Skip updates if not visible (lazy loading optimization)
+    if (!this.isVisible) return;
+
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId);
     }
@@ -363,6 +532,10 @@ class VirtualFormatList {
       }
     }
 
+    // Use DocumentFragment for batch DOM insertion
+    const fragment = document.createDocumentFragment();
+    const elementsToAdd: HTMLButtonElement[] = [];
+
     // Add elements that should be visible but aren't
     for (let i = startIndex; i < endIndex; i++) {
       if (!renderedMap.has(i)) {
@@ -375,8 +548,33 @@ class VirtualFormatList {
         button.style.left = "0";
         button.style.right = "0";
         button.setAttribute("data-virtual-index", i.toString());
-        this.contentContainer.appendChild(button);
+        elementsToAdd.push(button);
+        fragment.appendChild(button);
+      } else {
+        const originalIndex = this.filteredIndices[i];
+        if (originalIndex === undefined) continue;
+
+        const button = renderedMap.get(i);
+        if (!button) continue;
+
+        const originalButton = this.originalButtons[originalIndex];
+        if (!originalButton) continue;
+
+        const expectedFormatIndex = originalButton.getAttribute("format-index");
+        if (button.getAttribute("format-index") !== expectedFormatIndex) {
+          this.populatePooledElement(button, originalButton);
+        }
+        button.style.transform = `translateY(${i * this.itemHeight}px)`;
+        button.style.position = "absolute";
+        button.style.left = "0";
+        button.style.right = "0";
+        button.setAttribute("data-virtual-index", i.toString());
       }
+    }
+
+    // Batch append all new elements
+    if (elementsToAdd.length > 0) {
+      this.contentContainer.appendChild(fragment);
     }
   }
 
@@ -398,6 +596,19 @@ class VirtualFormatList {
       element.type = "button";
     }
 
+    this.populatePooledElement(element, originalButton);
+
+    return element;
+  }
+
+  private populatePooledElement(element: HTMLButtonElement, originalButton: HTMLButtonElement): void {
+    // Clear stale attributes from previous pool usage
+    for (const attr of Array.from(element.attributes)) {
+      if (attr.name !== "style" && attr.name !== "data-virtual-index") {
+        element.removeAttribute(attr.name);
+      }
+    }
+
     // Copy all attributes from original button
     for (const attr of originalButton.attributes) {
       if (attr.name !== "style" && attr.name !== "data-virtual-index") {
@@ -411,8 +622,7 @@ class VirtualFormatList {
     // Sync selected state from original
     const isSelected = originalButton.classList.contains("selected");
     element.classList.toggle("selected", isSelected);
-
-    return element;
+    element.setAttribute("aria-pressed", isSelected ? "true" : "false");
   }
 
   private returnToPool(element: HTMLButtonElement): void {
@@ -426,26 +636,32 @@ class VirtualFormatList {
   }
 
   private updateFilteredIndices(): void {
-    if (!this.filterQuery) {
-      // No filter - show all items
-      this.filteredIndices = this.originalButtons.map((_, i) => i);
-    } else {
-      // Filter by query
-      const query = this.filterQuery.toLowerCase();
-      this.filteredIndices = this.originalButtons
-        .map((button, i) => ({ button, index: i }))
-        .filter(({ button }) => {
-          const formatIndex = button.getAttribute("format-index");
-          let hasExtension = false;
-          if (formatIndex) {
-            const format = allOptions[Number.parseInt(formatIndex, 10)];
-            hasExtension = format?.format.extension.toLowerCase().includes(query) ?? false;
-          }
-          const hasText = button.textContent?.toLowerCase().includes(query) ?? false;
-          return hasExtension || hasText;
-        })
-        .map(({ index }) => index);
-    }
+    const query = this.filterQuery.toLowerCase();
+    const hasQuery = query.length > 0;
+
+    this.filteredIndices = this.originalButtons
+      .map((button, index) => ({ button, index }))
+      .filter(({ button }) => {
+        if (this.categoryFilter !== "all" && button.getAttribute("data-category") !== this.categoryFilter) {
+          return false;
+        }
+
+        if (this.allowedMimes && !this.allowedMimes.has(button.getAttribute("mime-type") ?? "")) {
+          return false;
+        }
+
+        if (!hasQuery) return true;
+
+        const formatIndex = button.getAttribute("format-index");
+        let hasExtension = false;
+        if (formatIndex) {
+          const format = allOptions[Number.parseInt(formatIndex, 10)];
+          hasExtension = format?.format.extension.toLowerCase().includes(query) ?? false;
+        }
+        const hasText = button.textContent?.toLowerCase().includes(query) ?? false;
+        return hasExtension || hasText;
+      })
+      .map(({ index }) => index);
 
     // Reset scroll position when filter changes
     if (this.scrollContainer) {
@@ -456,6 +672,18 @@ class VirtualFormatList {
 
   filter(query: string): void {
     this.filterQuery = query;
+    this.updateFilteredIndices();
+    this.scheduleUpdate();
+  }
+
+  setCategoryFilter(category: string): void {
+    this.categoryFilter = category;
+    this.updateFilteredIndices();
+    this.scheduleUpdate();
+  }
+
+  setAllowedMimes(allowedMimes: Set<string> | null): void {
+    this.allowedMimes = allowedMimes;
     this.updateFilteredIndices();
     this.scheduleUpdate();
   }
@@ -530,12 +758,13 @@ class VirtualFormatList {
       const nextButton = this.originalButtons[nextOriginalIndex];
 
       if (nextButton) {
-        // Trigger click on the next button (this will handle selection)
-        nextButton.click();
+        const nextFormatIndex = Number.parseInt(nextButton.getAttribute("format-index") || "", 10);
+        if (!Number.isFinite(nextFormatIndex)) return false;
+        selectFormatInList(this.container, nextFormatIndex);
 
         // Ensure the newly selected item is visible
         this.scrollToFormat(
-          Number.parseInt(nextButton.getAttribute("format-index") || "0", 10),
+          nextFormatIndex,
           "nearest"
         );
 
@@ -572,8 +801,7 @@ class VirtualFormatList {
         const idx = Number.parseInt(formatIndex, 10);
         const original = this.originalButtonsMap.get(idx);
         if (original) {
-          const isSelected = original.classList.contains("selected");
-          child.classList.toggle("selected", isSelected);
+          this.populatePooledElement(child, original);
         }
       }
     }
@@ -629,6 +857,10 @@ class VirtualFormatList {
     return this.originalButtonsMap.get(formatIndex);
   }
 
+  getAllOriginalButtons(): HTMLButtonElement[] {
+    return [...this.originalButtons];
+  }
+
   getFilteredCount(): number {
     return this.filteredIndices.length;
   }
@@ -639,9 +871,19 @@ class VirtualFormatList {
       this.resizeObserver = null;
     }
 
+    if (this.intersectionObserver) {
+      this.intersectionObserver.disconnect();
+      this.intersectionObserver = null;
+    }
+
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
+    }
+
+    if (this.throttledScrollHandler && this.scrollContainer) {
+      this.scrollContainer.removeEventListener("scroll", this.throttledScrollHandler);
+      this.throttledScrollHandler = null;
     }
 
     // Restore original buttons (for mode switching, etc.)
@@ -659,32 +901,289 @@ class VirtualFormatList {
 // Map to store virtual list instances
 const virtualLists = new WeakMap<HTMLDivElement, VirtualFormatList>();
 
-/**
- * Filters a list of buttons to exclude those not matching a substring.
- * Works with both virtualized and non-virtualized lists.
- * @param list Button list (div) to filter.
- * @param query Substring for which to search.
- */
-const filterButtonList = (list: HTMLDivElement, query: string) => {
+function isButtonVisibleForState(
+  button: HTMLButtonElement,
+  state: { query: string; category: string; allowedMimes: Set<string> | null }
+): boolean {
+  if (state.category !== "all" && button.getAttribute("data-category") !== state.category) {
+    return false;
+  }
+
+  if (state.allowedMimes && !state.allowedMimes.has(button.getAttribute("mime-type") ?? "")) {
+    return false;
+  }
+
+  if (!state.query) return true;
+
+  const formatIndex = button.getAttribute("format-index");
+  let hasExtension = false;
+  if (formatIndex) {
+    const format = allOptions[Number.parseInt(formatIndex, 10)];
+    hasExtension = format?.format.extension.toLowerCase().includes(state.query) ?? false;
+  }
+  const hasText = button.textContent?.toLowerCase().includes(state.query) ?? false;
+  return hasExtension || hasText;
+}
+
+function applyListFilters(list: HTMLDivElement): void {
+  const state = getListFilterState(list);
   const virtualList = virtualLists.get(list);
   if (virtualList) {
-    virtualList.filter(query);
+    virtualList.filter(state.query);
+    virtualList.setCategoryFilter(state.category);
+    virtualList.setAllowedMimes(state.allowedMimes);
+    virtualList.syncSelection();
     return;
   }
 
-  // Fallback for non-virtualized lists
-  for (const button of Array.from(list.children)) {
-    if (!(button instanceof HTMLButtonElement)) continue;
-    const formatIndex = button.getAttribute("format-index");
-    let hasExtension = false;
-    if (formatIndex) {
-      const format = allOptions[Number.parseInt(formatIndex, 10)];
-      hasExtension = format?.format.extension.toLowerCase().includes(query) ?? false;
-    }
-    const hasText = button.textContent?.toLowerCase().includes(query) ?? false;
-    button.classList.toggle("hidden", !hasExtension && !hasText);
+  for (const button of getAllListButtons(list)) {
+    button.classList.toggle("hidden", !isButtonVisibleForState(button, state));
   }
-};
+}
+
+function setListQueryFilter(list: HTMLDivElement, query: string): void {
+  const state = getListFilterState(list);
+  state.query = query.toLowerCase().trim();
+  applyListFilters(list);
+}
+
+function setListCategoryFilter(list: HTMLDivElement, category: string): void {
+  const state = getListFilterState(list);
+  state.category = category;
+  applyListFilters(list);
+}
+
+function setListAllowedMimeFilter(list: HTMLDivElement, allowedMimes: Set<string> | null): void {
+  const state = getListFilterState(list);
+  state.allowedMimes = allowedMimes;
+  applyListFilters(list);
+}
+
+function getButtonByFormatIndex(list: HTMLDivElement, formatIndex: number): HTMLButtonElement | undefined {
+  const virtualList = virtualLists.get(list);
+  if (virtualList) {
+    return virtualList.getOriginalButton(formatIndex);
+  }
+  return getAllListButtons(list).find(button => button.getAttribute("format-index") === formatIndex.toString());
+}
+
+function getSelectedOption(list: HTMLDivElement): { button: HTMLButtonElement; option: { format: FileFormat; handler: FormatHandler }; index: number } | null {
+  const button = getSelectedFormatButton(list);
+  if (!button) return null;
+  const formatIndex = Number.parseInt(button.getAttribute("format-index") || "", 10);
+  if (!Number.isFinite(formatIndex)) return null;
+  const option = allOptions[formatIndex];
+  if (!option) return null;
+  return { button, option, index: formatIndex };
+}
+
+function renderCategoryTabs(container: HTMLDivElement, list: HTMLDivElement): void {
+  const state = getListFilterState(list);
+  const currentCategory = state.category;
+  const categories = new Set<string>();
+  for (const button of getAllListButtons(list)) {
+    categories.add(button.getAttribute("data-category") || "other");
+  }
+
+  const ordered = Object.keys(CATEGORY_LABELS)
+    .filter(category => category !== "all" && categories.has(category));
+  const additional = [...categories]
+    .filter(category => !ordered.includes(category))
+    .sort((a, b) => a.localeCompare(b));
+  const tabs = ["all", ...ordered, ...additional];
+  if (!tabs.includes(currentCategory)) {
+    state.category = "all";
+  }
+  container.hidden = tabs.length <= 1;
+
+  container.innerHTML = "";
+  for (const category of tabs) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "category-tab";
+    button.textContent = CATEGORY_LABELS[category] ?? category;
+    button.setAttribute("data-category", category);
+    const isActive = category === state.category;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    button.addEventListener("click", () => {
+      setListCategoryFilter(list, category);
+      renderCategoryTabs(container, list);
+      renderQuickConversionsPanel();
+      schedulePathPreview();
+    });
+    container.appendChild(button);
+  }
+}
+
+function markRecommendedOutputs(recommendedMimes: Set<string>): void {
+  recommendedOutputMimes = recommendedMimes;
+  for (const button of getAllListButtons(ui.outputList)) {
+    const mimeType = button.getAttribute("mime-type") ?? "";
+    const isRecommended = recommendedMimes.has(mimeType);
+    button.toggleAttribute("data-recommended", isRecommended);
+    if (isRecommended) {
+      button.setAttribute("data-recommended-label", "Recommended");
+    } else {
+      button.removeAttribute("data-recommended-label");
+    }
+  }
+
+  const outputVirtual = virtualLists.get(ui.outputList);
+  outputVirtual?.syncSelection();
+}
+
+function updateOutputAvailability(): void {
+  const selectedInput = getSelectedOption(ui.inputList);
+  if (!selectedInput) {
+    setListAllowedMimeFilter(ui.outputList, null);
+    markRecommendedOutputs(new Set());
+    return;
+  }
+
+  const inputMime = selectedInput.option.format.mime;
+  const reachable = window.traversionGraph.getReachableOutputMimes(inputMime);
+  const recommended = window.traversionGraph.getRecommendedOutputMimes(inputMime);
+
+  setListAllowedMimeFilter(ui.outputList, reachable);
+  markRecommendedOutputs(recommended);
+
+  const selectedOutputButton = getSelectedFormatButton(ui.outputList);
+  if (selectedOutputButton) {
+    const selectedMime = selectedOutputButton.getAttribute("mime-type") ?? "";
+    if (!reachable.has(selectedMime)) {
+      setFormatButtonSelection(selectedOutputButton, false);
+      virtualLists.get(ui.outputList)?.syncSelection();
+    }
+  }
+}
+
+function renderQuickConversionsPanel(): void {
+  const hasFiles = selectedFiles.length > 0;
+  ui.quickConversionsPanel.hidden = !hasFiles;
+  ui.quickConversionsPanel.classList.toggle("is-visible", hasFiles);
+  if (!hasFiles) {
+    ui.quickConversionList.innerHTML = "";
+    return;
+  }
+
+  const selectedInput = getSelectedOption(ui.inputList);
+  if (!selectedInput) {
+    ui.quickConversionList.innerHTML = "";
+    ui.quickConversionEmpty.hidden = false;
+    ui.quickConversionEmpty.textContent = "Select an input format to get one-tap conversion suggestions.";
+    return;
+  }
+
+  const inputExt = formatOptionExtension(selectedInput.option.format);
+  const seenMimes = new Set<string>();
+  const preferred: HTMLButtonElement[] = [];
+  const fallback: HTMLButtonElement[] = [];
+  const outputFilterState = getListFilterState(ui.outputList);
+
+  for (const button of getAllListButtons(ui.outputList)) {
+    const mime = button.getAttribute("mime-type") ?? "";
+    if (!mime || mime === selectedInput.option.format.mime || seenMimes.has(mime)) continue;
+    if (!isButtonVisibleForState(button, outputFilterState)) continue;
+    seenMimes.add(mime);
+
+    if (recommendedOutputMimes.has(mime)) {
+      preferred.push(button);
+    } else {
+      fallback.push(button);
+    }
+  }
+
+  const quickTargets = [...preferred, ...fallback].slice(0, 6);
+  ui.quickConversionList.innerHTML = "";
+  ui.quickConversionEmpty.hidden = quickTargets.length > 0;
+  ui.quickConversionEmpty.textContent = "No quick suggestions for this format yet.";
+
+  for (const target of quickTargets) {
+    const formatIndex = target.getAttribute("format-index");
+    if (!formatIndex) continue;
+    const option = allOptions[Number.parseInt(formatIndex, 10)];
+    if (!option) continue;
+
+    const quickButton = document.createElement("button");
+    quickButton.type = "button";
+    quickButton.className = "quick-conversion-button";
+    quickButton.setAttribute("data-format-index", formatIndex);
+    quickButton.innerHTML = [
+      `<span class="quick-conversion-route">${escapeHtml(inputExt)} → ${escapeHtml(formatOptionExtension(option.format))}</span>`,
+      `<span class="quick-conversion-meta">${escapeHtml(cleanFormatName(option.format.name))}</span>`,
+      `<span class="quick-conversion-badge ${option.format.lossless ? "is-lossless" : "is-lossy"}">${option.format.lossless ? "Lossless" : "Lossy"}</span>`
+    ].join("");
+    ui.quickConversionList.appendChild(quickButton);
+  }
+}
+
+function renderPathPreview(path: ConvertPathNode[] | null, details: string): void {
+  if (!path || path.length === 0) {
+    ui.pathPreview.hidden = true;
+    ui.pathPreviewPills.innerHTML = "";
+    ui.pathPreviewSummary.textContent = "";
+    return;
+  }
+
+  const isLossyPath = path.slice(1).some(step => !step.format.lossless);
+  ui.pathPreview.hidden = false;
+  ui.pathPreview.classList.toggle("is-lossy", isLossyPath);
+  ui.pathPreviewSummary.textContent = details;
+  ui.pathPreviewPills.innerHTML = "";
+
+  path.forEach((step, index) => {
+    const pill = document.createElement("span");
+    pill.className = "path-pill";
+    if (index > 0 && !step.format.lossless) {
+      pill.classList.add("is-lossy");
+    }
+    pill.textContent = formatOptionExtension(step.format);
+    ui.pathPreviewPills.appendChild(pill);
+  });
+}
+
+async function updatePathPreviewNow(): Promise<void> {
+  const selectedInput = getSelectedOption(ui.inputList);
+  const selectedOutput = getSelectedOption(ui.outputList);
+  if (!selectedInput || !selectedOutput) {
+    renderPathPreview(null, "");
+    return;
+  }
+
+  const requestToken = ++pathPreviewRequestToken;
+
+  if (selectedInput.option.format.mime === selectedOutput.option.format.mime) {
+    renderPathPreview(
+      [new ConvertPathNode(selectedInput.option.handler, selectedInput.option.format)],
+      "Same-format route: no conversion step needed."
+    );
+    return;
+  }
+
+  let previewPath: ConvertPathNode[] | null = null;
+  for await (const path of window.traversionGraph.searchPath(selectedInput.option, selectedOutput.option, simpleMode)) {
+    previewPath = path;
+    break;
+  }
+
+  if (requestToken !== pathPreviewRequestToken) return;
+  if (!previewPath) {
+    renderPathPreview(null, "");
+    return;
+  }
+
+  const steps = Math.max(0, previewPath.length - 1);
+  const isLossyPath = previewPath.slice(1).some(step => !step.format.lossless);
+  renderPathPreview(
+    previewPath,
+    `${steps} step${steps === 1 ? "" : "s"} • ${isLossyPath ? "lossy route" : "lossless-preferred route"}`
+  );
+}
+
+const schedulePathPreview = debounce(() => {
+  void updatePathPreviewNow();
+}, 220);
 
 interface DebouncedSearchState {
   debouncedSearch: ReturnType<typeof debounce>;
@@ -713,12 +1212,14 @@ function setSearchLoading(inputElement: HTMLInputElement, isLoading: boolean): v
  */
 function executeSearch(inputElement: HTMLInputElement, targetList: HTMLDivElement): void {
   const query = inputElement.value.toLowerCase();
-  filterButtonList(targetList, query);
+  setListQueryFilter(targetList, query);
+  renderQuickConversionsPanel();
   setSearchLoading(inputElement, false);
 }
 
 /**
  * Handles search box input with debouncing.
+ * Uses 300ms delay for optimal UX and performance.
  * @param event Input event from an {@link HTMLInputElement}
  */
 const searchHandler = (event: Event) => {
@@ -733,7 +1234,7 @@ const searchHandler = (event: Event) => {
   if (!state) {
     const debouncedSearch = debounce(
       () => executeSearch(target, targetParentList),
-      250
+      300 // 300ms debounce for optimal performance
     );
 
     state = {
@@ -771,6 +1272,48 @@ ui.inputSearch.addEventListener("keydown", searchKeydownHandler);
 ui.outputSearch.addEventListener("input", searchHandler);
 ui.outputSearch.addEventListener("keydown", searchKeydownHandler);
 
+ui.quickConversionList.addEventListener("click", event => {
+  const target = event.target;
+  const quickButton = target instanceof HTMLButtonElement
+    ? target
+    : (target instanceof HTMLElement ? target.closest("button.quick-conversion-button") : null);
+  if (!(quickButton instanceof HTMLButtonElement)) return;
+
+  const formatIndex = Number.parseInt(quickButton.getAttribute("data-format-index") || "", 10);
+  if (!Number.isFinite(formatIndex)) return;
+
+  selectFormatInList(ui.outputList, formatIndex);
+});
+
+function selectFormatInList(list: HTMLDivElement, formatIndex: number): boolean {
+  const virtualList = virtualLists.get(list);
+  const originalButton = getButtonByFormatIndex(list, formatIndex);
+  if (!originalButton) return false;
+
+  if (virtualList) {
+    for (const button of virtualList.getAllOriginalButtons()) {
+      setFormatButtonSelection(button, false);
+    }
+  } else {
+    const previous = list.querySelector("button.selected");
+    if (previous instanceof HTMLButtonElement) {
+      setFormatButtonSelection(previous, false);
+    }
+  }
+
+  setFormatButtonSelection(originalButton, true);
+  virtualList?.syncSelection();
+
+  if (list === ui.inputList) {
+    updateOutputAvailability();
+  }
+
+  renderQuickConversionsPanel();
+  schedulePathPreview();
+  updateConvertButtonState();
+  return true;
+}
+
 // Event delegation for format list button clicks
 function formatListClickHandler(event: Event) {
   const target = event.target;
@@ -784,48 +1327,9 @@ function formatListClickHandler(event: Event) {
   const formatIndex = button.getAttribute("format-index");
   if (!formatIndex) return;
 
-  // Find and update the original button (source of truth)
   const list = parent?.closest(".format-list") as HTMLDivElement | null;
   if (!list) return;
-
-  const virtualList = virtualLists.get(list);
-  let originalButton: HTMLButtonElement | undefined;
-
-  if (virtualList) {
-    originalButton = virtualList.getOriginalButton(Number.parseInt(formatIndex, 10));
-  } else {
-    // Non-virtualized: find original button in list
-    originalButton = Array.from(list.children).find(
-      btn => btn instanceof HTMLButtonElement && btn.getAttribute("format-index") === formatIndex
-    ) as HTMLButtonElement | undefined;
-  }
-
-  // Update all original buttons in both lists to remove previous selection
-  for (const currentList of [ui.inputList, ui.outputList]) {
-    const vList = virtualLists.get(currentList);
-    if (vList) {
-      // For virtual lists, update the original buttons
-      for (const [, btn] of vList["originalButtonsMap"]) {
-        btn.classList.remove("selected");
-      }
-    } else {
-      // For non-virtual lists, update directly
-      const previous = currentList.querySelector("button.selected");
-      if (previous instanceof HTMLButtonElement) previous.classList.remove("selected");
-    }
-  }
-
-  // Set selected on the original button
-  if (originalButton) {
-    originalButton.classList.add("selected");
-  }
-
-  // Sync virtual display
-  if (virtualList) {
-    virtualList.syncSelection();
-  }
-
-  updateConvertButtonState();
+  selectFormatInList(list, Number.parseInt(formatIndex, 10));
 }
 
 // Event delegation for format list keyboard navigation
@@ -853,7 +1357,18 @@ ui.fileSelectArea.onclick = () => {
   ui.fileInput.click();
 };
 
+ui.fileSelectArea.addEventListener("keydown", event => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  event.preventDefault();
+  ui.fileInput.click();
+});
+
 function renderPopupHtml(html: string, tone: "info" | "error" | "success" = "info", busy = false): void {
+  if (ui.popupBox.hidden) {
+    const activeElement = document.activeElement;
+    popupReturnFocus = activeElement instanceof HTMLElement ? activeElement : null;
+  }
+
   ui.popupBox.classList.remove(...POPUP_TONE_CLASSES);
   if (tone === "error") ui.popupBox.classList.add("popup-error");
   if (tone === "success") ui.popupBox.classList.add("popup-success");
@@ -870,6 +1385,14 @@ function renderPopupHtml(html: string, tone: "info" | "error" | "success" = "inf
   const dismissButtons = ui.popupBox.querySelectorAll("[data-popup-dismiss]");
   for (const button of dismissButtons) {
     button.addEventListener("click", () => window.hidePopup());
+  }
+
+  const focusTarget = ui.popupBox.querySelector("[data-popup-dismiss]") as HTMLElement | null;
+  if (focusTarget) {
+    focusTarget.focus();
+  } else {
+    ui.popupBox.setAttribute("tabindex", "-1");
+    ui.popupBox.focus();
   }
 }
 
@@ -969,12 +1492,25 @@ window.hidePopup = function () {
   ui.popupBackground.hidden = true;
   ui.popupBox.classList.remove(...POPUP_TONE_CLASSES);
   ui.popupBox.removeAttribute("aria-busy");
+  ui.popupBox.removeAttribute("tabindex");
+
+  if (popupReturnFocus instanceof HTMLElement && document.contains(popupReturnFocus)) {
+    popupReturnFocus.focus();
+  }
+  popupReturnFocus = null;
 };
 
 ui.popupBackground.addEventListener("click", () => {
   if (!ui.popupBox.classList.contains("popup-busy")) {
     window.hidePopup();
   }
+});
+
+window.addEventListener("keydown", event => {
+  if (event.key !== "Escape") return;
+  if (ui.popupBox.hidden || ui.popupBox.classList.contains("popup-busy")) return;
+  event.preventDefault();
+  window.hidePopup();
 });
 
 const clearDragFeedback = () => {
@@ -1114,7 +1650,7 @@ const fileSelectHandler = async (event: Event) => {
 
   if (inputVirtual) {
     // For virtual lists, search original buttons
-    for (const [, btn] of inputVirtual["originalButtonsMap"]) {
+    for (const btn of inputVirtual.getAllOriginalButtons()) {
       if (btn.getAttribute("mime-type") === mimeType) {
         buttonMimeType = btn;
         break;
@@ -1130,11 +1666,14 @@ const fileSelectHandler = async (event: Event) => {
 
   // Click button with matching MIME type.
   if (mimeType && buttonMimeType) {
-    buttonMimeType.click();
+    const formatIndex = Number.parseInt(buttonMimeType.getAttribute("format-index") || "", 10);
+    if (Number.isFinite(formatIndex)) {
+      selectFormatInList(ui.inputList, formatIndex);
+    }
     ui.inputSearch.value = mimeType;
-    filterButtonList(ui.inputList, ui.inputSearch.value);
+    setListQueryFilter(ui.inputList, ui.inputSearch.value);
     if (inputVirtual) inputVirtual.syncSelection();
-    updateConvertButtonState();
+    window.hidePopup();
     return;
   }
 
@@ -1144,7 +1683,7 @@ const fileSelectHandler = async (event: Event) => {
   let buttonExtension: HTMLButtonElement | undefined;
 
   if (inputVirtual) {
-    for (const [, btn] of inputVirtual["originalButtonsMap"]) {
+    for (const btn of inputVirtual.getAllOriginalButtons()) {
       const formatIndex = btn.getAttribute("format-index");
       if (!formatIndex) continue;
       const format = allOptions[Number.parseInt(formatIndex, 10)];
@@ -1164,14 +1703,17 @@ const fileSelectHandler = async (event: Event) => {
   }
 
   if (buttonExtension) {
-    buttonExtension.click();
+    const formatIndex = Number.parseInt(buttonExtension.getAttribute("format-index") || "", 10);
+    if (Number.isFinite(formatIndex)) {
+      selectFormatInList(ui.inputList, formatIndex);
+    }
     ui.inputSearch.value = buttonExtension.getAttribute("mime-type") || "";
   } else {
     ui.inputSearch.value = fileExtension || "";
   }
 
-  filterButtonList(ui.inputList, ui.inputSearch.value);
-  updateConvertButtonState();
+  setListQueryFilter(ui.inputList, ui.inputSearch.value);
+  window.hidePopup();
 
 };
 
@@ -1204,6 +1746,101 @@ function createFormatLabelSpan(className: string, text: string): HTMLSpanElement
   return label;
 }
 
+function createFormatBadge(className: string, text: string): HTMLSpanElement {
+  const badge = document.createElement("span");
+  badge.className = className;
+  badge.appendChild(document.createTextNode(text));
+  return badge;
+}
+
+function createFormatOptionButton(format: FileFormat, handler: FormatHandler, formatIndex: number): HTMLButtonElement {
+  const newOption = document.createElement("button");
+  newOption.type = "button";
+  newOption.setAttribute("format-index", formatIndex.toString());
+  newOption.setAttribute("mime-type", format.mime);
+  newOption.setAttribute("aria-pressed", "false");
+
+  const categories = getFormatCategories(format);
+  const primaryCategory = getPrimaryCategory(format);
+  newOption.setAttribute("data-category", primaryCategory);
+  newOption.setAttribute("data-categories", categories.join(","));
+  newOption.setAttribute("data-lossless", format.lossless ? "true" : "false");
+
+  const extensionLabel = formatOptionExtension(format);
+  const readableName = simpleMode ? cleanFormatName(format.name) : format.name;
+  const supportingDetails = simpleMode ? format.mime : `${format.mime} • ${handler.name}`;
+
+  newOption.setAttribute(
+    "aria-label",
+    `Format ${extensionLabel}, ${readableName}, MIME ${format.mime}${simpleMode ? "" : `, handler ${handler.name}`}`
+  );
+
+  const meta = document.createElement("span");
+  meta.className = "format-meta";
+  const iconSlot = document.createElement("span");
+  iconSlot.className = "format-icon-slot";
+  iconSlot.setAttribute("aria-hidden", "true");
+  meta.appendChild(iconSlot);
+
+  const badges = document.createElement("span");
+  badges.className = "format-badges";
+  badges.appendChild(
+    createFormatBadge(
+      `format-badge ${format.lossless ? "format-badge-lossless" : "format-badge-lossy"}`,
+      format.lossless ? "Lossless" : "Lossy"
+    )
+  );
+  badges.appendChild(createFormatBadge("format-badge format-badge-category", CATEGORY_LABELS[primaryCategory] ?? primaryCategory));
+  meta.appendChild(badges);
+
+  newOption.appendChild(createFormatLabelSpan("format-label-primary", extensionLabel));
+  newOption.appendChild(createFormatLabelSpan("format-label-secondary", readableName));
+  newOption.appendChild(createFormatLabelSpan("format-label-mime", supportingDetails));
+  newOption.appendChild(meta);
+
+  return newOption;
+}
+
+function getListedSupportedFormats(handler: FormatHandler): FileFormat[] | undefined {
+  if (!Array.isArray(handler.supportedFormats) || handler.supportedFormats.length === 0) {
+    return undefined;
+  }
+  return handler.supportedFormats;
+}
+
+async function resolveSupportedFormatsForListing(handler: FormatHandler): Promise<FileFormat[] | undefined> {
+  const cachedFormats = window.supportedFormatCache.get(handler.name);
+  if (cachedFormats && cachedFormats.length > 0) {
+    return cachedFormats;
+  }
+
+  const listedFormats = getListedSupportedFormats(handler);
+  if (listedFormats) {
+    if (!cachedFormats) {
+      log.debug("handler", `Using advertised formats for handler "${handler.name}"`);
+    }
+    window.supportedFormatCache.set(handler.name, listedFormats);
+    return listedFormats;
+  }
+
+  log.debug("handler", `Cache miss for formats of handler "${handler.name}"`);
+  try {
+    await handler.init();
+    log.trackHandler(handler.name, true);
+  } catch (initError) {
+    log.trackHandler(handler.name, false);
+    log.error("handler", `Initialization failed for "${handler.name}"`, initError instanceof Error ? initError : undefined);
+    return undefined;
+  }
+
+  const initializedFormats = getListedSupportedFormats(handler);
+  if (initializedFormats) {
+    window.supportedFormatCache.set(handler.name, initializedFormats);
+    log.debug("handler", `Updated supported format cache for "${handler.name}"`);
+  }
+  return initializedFormats;
+}
+
 async function buildOptionList() {
 
   showBusyPopup("Loading formats", "Preparing available conversion options…");
@@ -1226,23 +1863,8 @@ async function buildOptionList() {
   const seenOutputs = new Set<string>();
 
   for (const handler of handlers) {
-    if (!window.supportedFormatCache.has(handler.name)) {
-      log.debug("handler", `Cache miss for formats of handler "${handler.name}"`);
-      try {
-        await handler.init();
-        log.trackHandler(handler.name, true);
-      } catch (initError) {
-        log.trackHandler(handler.name, false);
-        log.error("handler", `Initialization failed for "${handler.name}"`, initError instanceof Error ? initError : undefined);
-        continue;
-      }
-      if (handler.supportedFormats) {
-        window.supportedFormatCache.set(handler.name, handler.supportedFormats);
-        log.debug("handler", `Updated supported format cache for "${handler.name}"`);
-      }
-    }
-    const supportedFormats = window.supportedFormatCache.get(handler.name);
-    if (!supportedFormats) {
+    const supportedFormats = await resolveSupportedFormatsForListing(handler);
+    if (!supportedFormats || supportedFormats.length === 0) {
       log.warn("handler", `Handler "${handler.name}" doesn't support any formats`);
       continue;
     }
@@ -1262,23 +1884,7 @@ async function buildOptionList() {
         if ((!format.from || !addToInputs) && (!format.to || !addToOutputs)) continue;
       }
 
-      const newOption = document.createElement("button");
-      newOption.type = "button";
-      newOption.setAttribute("format-index", (allOptions.length - 1).toString());
-      newOption.setAttribute("mime-type", format.mime);
-
-      const extensionLabel = formatOptionExtension(format);
-      const readableName = simpleMode ? cleanFormatName(format.name) : format.name;
-      const supportingDetails = simpleMode ? format.mime : `${format.mime} • ${handler.name}`;
-
-      newOption.setAttribute(
-        "aria-label",
-        `Format ${extensionLabel}, ${readableName}, MIME ${format.mime}${simpleMode ? "" : `, handler ${handler.name}`}`
-      );
-
-      newOption.appendChild(createFormatLabelSpan("format-label-primary", extensionLabel));
-      newOption.appendChild(createFormatLabelSpan("format-label-secondary", readableName));
-      newOption.appendChild(createFormatLabelSpan("format-label-mime", supportingDetails));
+      const newOption = createFormatOptionButton(format, handler, allOptions.length - 1);
 
       if (format.from && addToInputs) {
         const clone = newOption.cloneNode(true) as HTMLButtonElement;
@@ -1311,8 +1917,15 @@ async function buildOptionList() {
     virtualLists.set(ui.outputList, outputVirtual);
   }
 
-  filterButtonList(ui.inputList, ui.inputSearch.value);
-  filterButtonList(ui.outputList, ui.outputSearch.value);
+  renderCategoryTabs(ui.inputCategoryTabs, ui.inputList);
+  renderCategoryTabs(ui.outputCategoryTabs, ui.outputList);
+
+  setListQueryFilter(ui.inputList, ui.inputSearch.value);
+  setListQueryFilter(ui.outputList, ui.outputSearch.value);
+  setListAllowedMimeFilter(ui.outputList, null);
+  updateOutputAvailability();
+  renderQuickConversionsPanel();
+  schedulePathPreview();
   updateConvertButtonState();
 
   window.hidePopup();
@@ -1341,9 +1954,13 @@ ui.modeToggleButton.addEventListener("click", () => {
   simpleMode = !simpleMode;
   if (simpleMode) {
     ui.modeToggleButton.textContent = "Advanced mode";
+    ui.modeToggleButton.setAttribute("aria-label", "Switch to advanced mode");
+    ui.modeToggleButton.setAttribute("aria-pressed", "false");
     document.body.style.setProperty("--highlight-color", "#1C77FF");
   } else {
     ui.modeToggleButton.textContent = "Simple mode";
+    ui.modeToggleButton.setAttribute("aria-label", "Switch to simple mode");
+    ui.modeToggleButton.setAttribute("aria-pressed", "true");
     document.body.style.setProperty("--highlight-color", "#FF6F1C");
   }
   void buildOptionList();
@@ -1496,14 +2113,14 @@ ui.convertButton.onclick = async function () {
     return;
   }
 
-  const inputButton = ui.inputList.querySelector("button.selected");
+  const inputButton = getSelectedFormatButton(ui.inputList);
   if (!(inputButton instanceof HTMLButtonElement)) {
     log.trackInteraction("convert_no_input_format", false);
     showErrorPopup("Specify input file format.");
     return;
   }
 
-  const outputButton = ui.outputList.querySelector("button.selected");
+  const outputButton = getSelectedFormatButton(ui.outputList);
   if (!(outputButton instanceof HTMLButtonElement)) {
     log.trackInteraction("convert_no_output_format", false);
     showErrorPopup("Specify output file format.");
@@ -1528,6 +2145,11 @@ ui.convertButton.onclick = async function () {
   const totalFileSize = inputFiles.reduce((sum, f) => sum + f.size, 0);
 
   log.trackConversion.attempt(inputFormat.format, outputFormat.format, inputFiles.length, totalFileSize);
+  ui.convertButton.setAttribute("aria-busy", "true");
+  ui.convertButton.classList.add("is-working");
+  ui.convertButton.disabled = true;
+  ui.convertButton.setAttribute("aria-disabled", "true");
+  ui.convertHelperText.textContent = "Converting… keep this tab open.";
 
   try {
     releasePersistentDownloadUrls();
@@ -1583,8 +2205,14 @@ ui.convertButton.onclick = async function () {
     log.trackInteraction("convert_error", false, error instanceof Error ? error : undefined);
     const errorText = error instanceof Error ? error.message : String(error);
     showErrorPopup(`Unexpected error while converting: ${errorText}`, "Conversion failed");
+  } finally {
+    ui.convertButton.removeAttribute("aria-busy");
+    ui.convertButton.classList.remove("is-working");
+    updateConvertButtonState();
   }
 
 };
 
+setFileAreaState(false);
+renderQuickConversionsPanel();
 updateConvertButtonState();

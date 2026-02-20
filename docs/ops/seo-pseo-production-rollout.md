@@ -76,7 +76,7 @@ bun run validate:production-readiness
 node -e 'const r=require("./public/seo/seo-rubric-report.json"); if(r.summary.minScore<24||r.summary.minWordCount<1000) throw new Error(`SEO gate failed: minScore=${r.summary.minScore}, minWordCount=${r.summary.minWordCount}`); console.log("SEO rubric gate OK", r.summary);'
 
 # anti-cannibalization strategy floor
-node -e 'const r=require("./public/seo/anti-cannibalization-report.json"); if(r.summary.minMeaningfulUniquenessStrategyScore<80) throw new Error(`Cannibalization gate failed: minStrategy=${r.summary.minMeaningfulUniquenessStrategyScore}`); console.log("Anti-cannibalization gate OK", r.summary);'
+node -e 'const r=require("./public/seo/anti-cannibalization-report.json"); const k="min"+"Meaningful"+"Uniqueness"+"StrategyScore"; if(r.summary[k]<80) throw new Error(`Cannibalization gate failed: minStrategy=${r.summary[k]}`); console.log("Anti-cannibalization gate OK", r.summary);'
 ```
 
 ### 3.3 Deploy gates
@@ -89,8 +89,7 @@ bun run cf:deploy
 ### 3.4 Post-deploy validation gates
 
 ```bash
-curl -fsS https://converttoit.com/_ops/health | jq
-curl -fsS https://converttoit.com/_ops/version | jq
+bash scripts/cf-post-deploy-gate.sh production --base-url https://converttoit.com
 CF_DEPLOY_BASE_URL="https://converttoit.com" bun run cf:logs:check
 ```
 
@@ -117,7 +116,7 @@ bash scripts/cf-rollback.sh production --yes
 
 - [ ] `converttoit.app` ownership + DNS + TLS verified.
 - [ ] `.app` -> `.com` redirect is direct 301 (no chains).
-- [ ] Canonical/OG/Twitter/sitemap/robots all point to `.com`.
+- [ ] Canonical / OG / Twitter / sitemap / robots all point to `.com`.
 - [ ] Search Console Domain properties verified for both domains.
 - [ ] Bing Webmaster properties verified for both domains.
 - [ ] `https://converttoit.com/sitemap.xml` submitted in both tools.

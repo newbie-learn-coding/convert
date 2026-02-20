@@ -1,10 +1,14 @@
 # Copy to wrangler.toml for local deploy/rollback/log checks:
 #   cp wrangler.toml.example wrangler.toml
+#   source .env.local
 #
 # Security note:
 # - Do not commit wrangler.toml (it is gitignored).
 # - Keep account_id out of config.
 # - Set CLOUDFLARE_ACCOUNT_ID in environment instead.
+#
+# Authoritative ops runbook:
+# - docs/ops/cloudflare-deploy-runbook.md
 
 name = "converttoit-site"
 main = "cloudflare/worker/index.mjs"
@@ -14,6 +18,10 @@ workers_dev = true
 [observability]
 enabled = true
 head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+invocation_logs = true
 
 [assets]
 directory = "./dist"

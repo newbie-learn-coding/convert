@@ -29,6 +29,10 @@ export default defineConfig({
     cssMinify: true,
     minify: "esbuild",
     sourcemap: false,
+    // Build optimization
+    cssCodeSplit: true,
+    assetsInlineLimit: 4096, // 4KB - inline small assets
+    chunkSizeWarningLimit: 500,
     // Performance budgets for bundle sizes
     rollupOptions: {
       ...performanceBudgetConfig,
@@ -82,7 +86,10 @@ export default defineConfig({
       },
     },
     reportCompressedSize: true,
-    chunkSizeWarningLimit: 500,
+    // Preload critical chunks for faster LCP
+    modulePreload: {
+      polyfill: false, // Modern browsers support modulepreload
+    },
   },
   optimizeDeps: {
     exclude: [
@@ -92,6 +99,13 @@ export default defineConfig({
       "@imagemagick/magick-wasm",
     ],
     include: ["mime", "jszip", "pako"],
+  },
+  esbuild: {
+    drop: ["console", "debugger"],
+    legalComments: "none",
+    minifyIdentifiers: true,
+    minifySyntax: true,
+    minifyWhitespace: true,
   },
   server: {
     headers: {
@@ -104,6 +118,11 @@ export default defineConfig({
       "Cache-Control": "public, max-age=31536000, immutable",
       "Service-Worker-Allowed": "/",
     },
+  },
+  // Experimental features for better performance
+  experimental: {
+    // Enable faster HMR updates
+    hmrPartialAccept: true,
   },
   plugins: [
     viteStaticCopy({

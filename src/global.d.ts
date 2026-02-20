@@ -89,6 +89,59 @@ declare global {
 }
 
 /**
+ * Vite-specific module declarations for binary and CSS imports.
+ */
+declare module "*?url" {
+  const src: string;
+  export default src;
+}
+
+declare module "./batToExe/exe65824head.bin?url" {
+  const src: string;
+  export default src;
+}
+
+declare module "./batToExe/exe65824foot.bin?url" {
+  const src: string;
+  export default src;
+}
+
+declare module "./handlers/batToExe/exe65824head.bin?url" {
+  const src: string;
+  export default src;
+}
+
+declare module "./handlers/batToExe/exe65824foot.bin?url" {
+  const src: string;
+  export default src;
+}
+
+declare module "*/exe65824head.bin?url" {
+  const src: string;
+  export default src;
+}
+
+declare module "*/exe65824foot.bin?url" {
+  const src: string;
+  export default src;
+}
+
+declare module "*.bin" {
+  const content: ArrayBuffer;
+  export default content;
+}
+
+declare module "*.css" {
+  const content: string;
+  export default content;
+}
+
+declare module "*.css?inline" {
+  const content: string;
+  export default content;
+}
+
+/**
  * Ensure this file is treated as a module.
  */
 export { };

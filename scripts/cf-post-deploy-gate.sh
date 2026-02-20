@@ -17,6 +17,11 @@ Examples:
 Environment variables:
   CF_DEPLOY_BASE_URL   Production base URL (fallback for --base-url)
   CF_OPS_HTTP_TIMEOUT  Curl timeout in seconds for /_ops checks (default: 20)
+
+Notes:
+  - This gate validates /_ops/health and /_ops/version, then runs cf-log-check.sh.
+  - You can still run standalone evidence check:
+      CF_DEPLOY_BASE_URL=https://converttoit.com bun run cf:logs:check
 USAGE
 }
 
@@ -162,3 +167,5 @@ echo "[post-deploy] Running Cloudflare log tail verification"
 bash "$SCRIPT_DIR/cf-log-check.sh" production --base-url "$NORMALIZED_BASE_URL"
 
 echo "[post-deploy] Production deploy-after gate passed."
+echo "[post-deploy] Optional standalone evidence command:"
+echo "              CF_DEPLOY_BASE_URL=${NORMALIZED_BASE_URL} bun run cf:logs:check"

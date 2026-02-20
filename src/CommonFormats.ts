@@ -1,5 +1,8 @@
 import { FormatDefinition } from "src/FormatHandler"
 
+/**
+ * File format categories for organizing and grouping formats.
+ */
 export const Category = {
     DATA: "data",
     IMAGE: "image",
@@ -14,7 +17,20 @@ export const Category = {
 }
 
 /**
- * Common format definitions which can be used to reduce boilerplate definitions
+ * Type representing valid category values.
+ */
+export type CategoryType = typeof Category[keyof typeof Category];
+
+/**
+ * Common format definitions for reducing boilerplate in handler definitions.
+ * These format definitions provide standard metadata for widely-used formats.
+ *
+ * Usage:
+ * ```typescript
+ * CommonFormats.PNG.builder("png").allowFrom().allowTo()
+ * // or
+ * CommonFormats.PNG.supported("png", true, true, true)
+ * ```
  */
 const CommonFormats = {
     // images
@@ -186,5 +202,10 @@ const CommonFormats = {
         Category.PRESENTATION
     )
 }
+
+/**
+ * Type representing the CommonFormats object structure.
+ */
+export type CommonFormatsType = typeof CommonFormats;
 
 export default CommonFormats

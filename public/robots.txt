@@ -1,4 +1,14 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /private/
+Disallow: /*?*
+Disallow: /csp-violation-report-endpoint/
+Disallow: /csp-test.html
 
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
+
+# Sitemap location
 Sitemap: https://converttoit.com/sitemap.xml

@@ -1,8 +1,11 @@
 /**
  * PWA UI Styles
+ * Enhanced with accessibility features, offline page styles, and improved animations
  */
 
-/* Offline indicator */
+/* ============================================
+   OFFLINE INDICATOR
+   ============================================ */
 .pwa-offline-indicator {
   position: fixed;
   top: 0;
@@ -17,13 +20,19 @@
   z-index: 10000;
   transform: translateY(-100%);
   transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .pwa-offline-indicator.visible {
   transform: translateY(0);
 }
 
-/* Notification banners */
+/* ============================================
+   NOTIFICATION BANNERS
+   ============================================ */
 .pwa-notification {
   position: fixed;
   bottom: 1rem;
@@ -40,17 +49,6 @@
   width: auto;
 }
 
-.pwa-notification.show {
-  transform: translateX(-50%) translateY(0);
-}
-
-/* Force show for update notifications */
-.pwa-notification[data-visible="true"],
-.pwa-notification:has(.pwa-notification-content) {
-  transform: translateX(-50%) translateY(0);
-}
-
-/* Since the selector above may not work in all browsers, use JS to add class */
 .pwa-notification.visible {
   transform: translateX(-50%) translateY(0);
 }
@@ -91,8 +89,9 @@
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.1s;
   white-space: nowrap;
+  min-height: 36px;
 }
 
 .pwa-notification-button:hover {
@@ -101,6 +100,11 @@
 
 .pwa-notification-button:active {
   transform: scale(0.98);
+}
+
+.pwa-notification-button:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
 }
 
 .pwa-notification-dismiss {
@@ -114,6 +118,11 @@
   line-height: 1;
   border-radius: 4px;
   transition: opacity 0.2s;
+  min-height: 32px;
+  min-width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .pwa-notification-dismiss:hover {
@@ -121,12 +130,20 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
+.pwa-notification-dismiss:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
+  opacity: 1;
+}
+
 /* Info variant */
 .pwa-notification-info {
   background: #1C77FF;
 }
 
-/* Toast messages */
+/* ============================================
+   TOAST MESSAGES
+   ============================================ */
 .pwa-toast {
   position: fixed;
   bottom: 1rem;
@@ -146,7 +163,110 @@
   transform: translateX(-50%) translateY(0);
 }
 
-/* Responsive adjustments */
+/* ============================================
+   OFFLINE PAGE
+   ============================================ */
+.offline-page {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fade-in 0.3s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.offline-content {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 16px;
+  text-align: center;
+  max-width: 400px;
+  margin: 1rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slide-up 0.4s ease;
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.offline-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.offline-content h2 {
+  margin: 0 0 1rem 0;
+  color: #1a1a1a;
+  font-size: 1.5rem;
+}
+
+.offline-content p {
+  margin: 0 0 1rem 0;
+  color: #666;
+  line-height: 1.5;
+}
+
+.offline-note {
+  font-size: 0.875rem;
+  color: #888;
+}
+
+.offline-retry-button {
+  background: #1C77FF;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  margin-top: 1rem;
+  min-height: 44px;
+}
+
+.offline-retry-button:hover {
+  background: #155ddb;
+}
+
+.offline-retry-button:active {
+  transform: scale(0.98);
+}
+
+.offline-retry-button:focus-visible {
+  outline: 3px solid #1C77FF;
+  outline-offset: 2px;
+}
+
+/* Shake animation for retry feedback */
+.shake {
+  animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
 @media (max-width: 600px) {
   .pwa-notification {
     left: 0.5rem;
@@ -154,7 +274,6 @@
     transform: translateY(200%);
   }
 
-  .pwa-notification.show,
   .pwa-notification.visible {
     transform: translateY(0);
   }
@@ -162,6 +281,7 @@
   .pwa-notification-content {
     flex-direction: column;
     align-items: flex-start;
+    gap: 0.5rem;
   }
 
   .pwa-notification-text {
@@ -179,18 +299,42 @@
   .pwa-notification-button {
     width: 100%;
   }
-}
 
-/* Reduce motion support */
-@media (prefers-reduced-motion: reduce) {
-  .pwa-offline-indicator,
-  .pwa-notification,
-  .pwa-toast {
-    transition: none;
+  .offline-content {
+    padding: 2rem 1.5rem;
+    margin: 1rem;
+  }
+
+  .offline-icon {
+    font-size: 3rem;
+  }
+
+  .offline-content h2 {
+    font-size: 1.25rem;
   }
 }
 
-/* Dark mode support */
+/* ============================================
+   REDUCE MOTION SUPPORT
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .pwa-offline-indicator,
+  .pwa-notification,
+  .pwa-toast,
+  .offline-page,
+  .offline-content {
+    transition: none;
+    animation: none;
+  }
+
+  .shake {
+    animation: none;
+  }
+}
+
+/* ============================================
+   DARK MODE SUPPORT
+   ============================================ */
 @media (prefers-color-scheme: dark) {
   .pwa-notification {
     background: #2a2a2a;
@@ -199,9 +343,27 @@
   .pwa-toast {
     background: #444;
   }
+
+  .offline-content {
+    background: #1a1a1a;
+  }
+
+  .offline-content h2 {
+    color: #f0f0f0;
+  }
+
+  .offline-content p {
+    color: #aaa;
+  }
+
+  .offline-note {
+    color: #888;
+  }
 }
 
-/* High contrast mode support */
+/* ============================================
+   HIGH CONTRAST MODE SUPPORT
+   ============================================ */
 @media (prefers-contrast: high) {
   .pwa-notification {
     border: 2px solid white;
@@ -215,4 +377,21 @@
   .pwa-toast {
     border: 2px solid white;
   }
+
+  .offline-content {
+    border: 3px solid white;
+  }
+
+  .offline-retry-button {
+    border: 2px solid white;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY - FOCUS VISIBLE
+   ============================================ */
+.pwa-notification-button:focus-visible,
+.pwa-notification-dismiss:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
 }

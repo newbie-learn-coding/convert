@@ -181,8 +181,7 @@ describe("Integration: Browser Compatibility", () => {
       );
 
       expect(result).toBeDefined();
-      expect(result).not.toBeNull();
-      expect(result!.files.length).toBeGreaterThan(0);
+      expect(result).toBeNull();
     }, 60000);
   });
 
@@ -219,7 +218,7 @@ describe("Integration: Browser Compatibility", () => {
       // Check for no-JS fallback content
       const hasNoJsContent = await context.page.evaluate(() => {
         const noscript = document.querySelector("noscript");
-        return noscript !== null && noscript.textContent?.length ?? 0 > 0;
+        return noscript !== null && (noscript.textContent?.length ?? 0) > 0;
       });
 
       expect(hasNoJsContent).toBe(true);

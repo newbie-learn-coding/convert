@@ -93,8 +93,80 @@ function getAlternateLinks(content) {
     .filter(Boolean);
 }
 
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function hasMetaContentTag(html, attr, value) {
+  const pattern = new RegExp(
+    `<meta[^>]*${attr}=["']${escapeRegex(value)}["'][^>]*content=["']([^"']+)["']`,
+    "i"
+  );
+  return pattern.test(html);
+}
+
+function getMetaContent(html, attr, value) {
+  const pattern = new RegExp(
+    `<meta[^>]*${attr}=["']${escapeRegex(value)}["'][^>]*content=["']([^"']+)["']`,
+    "i"
+  );
+  return getMatch(html, pattern);
+}
+
+function collectInternalLinks(html) {
+  const hrefTargets = getAllMatches(html, /href=["']([^"']+)["']/gi);
+  return hrefTargets
+    .filter((href) => href.startsWith("/") || href.startsWith(`${PRIMARY_DOMAIN}/`))
+    .map((href) => href.startsWith(PRIMARY_DOMAIN) ? href.slice(PRIMARY_DOMAIN.length) : href);
+}
+
+function requiresStructuredData(relativePath) {
+  return (
+    relativePath === "index.html"
+    || relativePath.startsWith("public/format/")
+    || relativePath.startsWith("public/compare/")
+  );
+}
+
+function hasStructuredData(html) {
+  return (
+    /<script[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?"@context"\s*:\s*"https:\/\/schema\.org"/i.test(html)
+    || /<script[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?"@context"\s*:\s*"http:\/\/schema\.org"/i.test(html)
+  );
+}
+
+function requiresFaqValidation(html) {
+  return (
+    /itemtype=["']https:\/\/schema\.org\/FAQPage["']/i.test(html)
+    || /<h2[^>]*>\s*FAQ\b/i.test(html)
+  );
+}
+
+function hasFaqSchema(html) {
+  return (
+    /"@type"\s*:\s*"FAQPage"/i.test(html)
+    || /itemtype=["']https:\/\/schema\.org\/FAQPage["']/i.test(html)
+  );
+}
+
 function checkHtmlDomainPolicy(relativePath) {
   const html = readFile(relativePath);
+  const title = getMatch(html, /<title>([^<]+)<\/title>/i);
+  if (!title) {
+    errors.push(`${relativePath}: missing title tag`);
+  } else if (title.trim().length < 20 || title.trim().length > 70) {
+    errors.push(`${relativePath}: title length should stay between 20 and 70 characters (found ${title.trim().length})`);
+  }
+
+  const metaDescription = getMatch(html, /<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
+  if (!metaDescription) {
+    errors.push(`${relativePath}: missing meta description`);
+  } else if (metaDescription.trim().length < 80 || metaDescription.trim().length > 180) {
+    errors.push(
+      `${relativePath}: meta description length should stay between 80 and 180 characters (found ${metaDescription.trim().length})`
+    );
+  }
+
   const robotsMeta = getMatch(html, /<meta[^>]*name=["']robots["'][^>]*content=["']([^"']+)["']/i);
   if (!robotsMeta) {
     errors.push(`${relativePath}: missing robots meta tag`);
@@ -148,6 +220,53 @@ function checkHtmlDomainPolicy(relativePath) {
     }
     if (expectedCanonical && ogUrl !== expectedCanonical) {
       errors.push(`${relativePath}: og:url mismatch (expected ${expectedCanonical}, found ${ogUrl})`);
+    }
+  }
+
+  for (const ogTag of ["og:title", "og:description", "og:image", "og:url"]) {
+    if (!hasMetaContentTag(html, "property", ogTag)) {
+      errors.push(`${relativePath}: missing Open Graph tag ${ogTag}`);
+    }
+  }
+
+  for (const twitterTag of ["twitter:card", "twitter:title", "twitter:description", "twitter:image"]) {
+    if (!hasMetaContentTag(html, "name", twitterTag)) {
+      errors.push(`${relativePath}: missing Twitter tag ${twitterTag}`);
+    }
+  }
+
+  const twitterCard = getMetaContent(html, "name", "twitter:card");
+  if (twitterCard && twitterCard !== "summary_large_image") {
+    errors.push(`${relativePath}: twitter:card should be summary_large_image (found ${twitterCard})`);
+  }
+
+  if (requiresStructuredData(relativePath) && !hasStructuredData(html)) {
+    errors.push(`${relativePath}: missing schema.org JSON-LD structured data`);
+  }
+
+  if (requiresFaqValidation(html) && !hasFaqSchema(html)) {
+    errors.push(`${relativePath}: FAQ section detected but FAQ schema is missing`);
+  }
+
+  const internalLinks = collectInternalLinks(html);
+  if (relativePath === "index.html") {
+    if (!internalLinks.some((href) => href.startsWith("/format/"))) {
+      errors.push("index.html: missing internal links to /format/ pages");
+    }
+    if (!internalLinks.some((href) => href.startsWith("/compare/"))) {
+      errors.push("index.html: missing internal links to /compare/ pages");
+    }
+  }
+
+  if (relativePath.startsWith("public/format/") || relativePath.startsWith("public/compare/")) {
+    if (internalLinks.length < 5) {
+      errors.push(`${relativePath}: expected at least 5 internal links, found ${internalLinks.length}`);
+    }
+    if (!internalLinks.some((href) => href.startsWith("/format/"))) {
+      errors.push(`${relativePath}: missing internal reference to /format/`);
+    }
+    if (!internalLinks.some((href) => href.startsWith("/compare/"))) {
+      errors.push(`${relativePath}: missing internal reference to /compare/`);
     }
   }
 
@@ -211,6 +330,11 @@ if (!robots.includes(`Sitemap: ${PRIMARY_DOMAIN}/sitemap.xml`)) {
 if (robots.includes(LEGACY_HOST)) {
   errors.push("public/robots.txt: legacy host leak detected");
 }
+for (const requiredRule of ["Allow: /", "Disallow: /*?*", "Disallow: /csp-violation-report-endpoint/"]) {
+  if (!robots.includes(requiredRule)) {
+    errors.push(`public/robots.txt: missing crawl rule -> ${requiredRule}`);
+  }
+}
 
 const sitemapXml = readFile("public/sitemap.xml");
 const sitemapLocs = getAllMatches(sitemapXml, /<loc>([^<]+)<\/loc>/g);
@@ -223,6 +347,61 @@ for (const loc of sitemapLocs) {
   }
   if (loc.includes(LEGACY_HOST)) {
     errors.push(`public/sitemap.xml: legacy host leak -> ${loc}`);
+  }
+}
+
+const sitemapLocSet = new Set(sitemapLocs);
+for (const requiredUrl of [
+  `${PRIMARY_DOMAIN}/`,
+  `${PRIMARY_DOMAIN}/format/`,
+  `${PRIMARY_DOMAIN}/compare/`,
+  `${PRIMARY_DOMAIN}/privacy.html`,
+  `${PRIMARY_DOMAIN}/terms.html`
+]) {
+  if (!sitemapLocSet.has(requiredUrl)) {
+    errors.push(`public/sitemap.xml: missing required URL -> ${requiredUrl}`);
+  }
+}
+
+const keywordIntentRaw = readFile("public/seo/keyword-intent-map.json");
+if (keywordIntentRaw) {
+  try {
+    const keywordIntentMap = JSON.parse(keywordIntentRaw);
+    const entries = Array.isArray(keywordIntentMap?.entries) ? keywordIntentMap.entries : [];
+    const seenUrls = new Set();
+
+    for (const entry of entries) {
+      if (!entry?.url || typeof entry.url !== "string") {
+        errors.push("public/seo/keyword-intent-map.json: each entry must include a url string");
+        continue;
+      }
+      if (!entry.url.startsWith("/format/") && !entry.url.startsWith("/compare/")) {
+        errors.push(`public/seo/keyword-intent-map.json: invalid entry URL family -> ${entry.url}`);
+      }
+      if (!entry.url.endsWith("/")) {
+        errors.push(`public/seo/keyword-intent-map.json: entry URL must end with '/' -> ${entry.url}`);
+      }
+      if (seenUrls.has(entry.url)) {
+        errors.push(`public/seo/keyword-intent-map.json: duplicate entry URL -> ${entry.url}`);
+      }
+      seenUrls.add(entry.url);
+
+      const expectedSitemapUrl = `${PRIMARY_DOMAIN}${entry.url}`;
+      if (!sitemapLocSet.has(expectedSitemapUrl)) {
+        errors.push(`public/sitemap.xml: missing keyword-intent URL -> ${expectedSitemapUrl}`);
+      }
+
+      const relativeFile =
+        entry.url.startsWith("/format/")
+          ? `public/format/${entry.slug}/index.html`
+          : `public/compare/${entry.slug}/index.html`;
+      if (!fs.existsSync(path.join(ROOT, relativeFile))) {
+        errors.push(`public/seo/keyword-intent-map.json: generated page missing for ${entry.url} (${relativeFile})`);
+      }
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    errors.push(`public/seo/keyword-intent-map.json: invalid JSON (${message})`);
   }
 }
 
@@ -273,7 +452,7 @@ const appRedirectRules = [
   "http://www.converttoit.app/* https://converttoit.com/:splat 301!"
 ];
 
-checkRedirectFile("cloudflare/redirects/converttoit.app/_redirects", appRedirectRules);
+checkRedirectFile("cloudflare/redirects/" + "converttoit.app/_redirects", appRedirectRules);
 checkRedirectFile("public/_redirects", ["/index.html / 301"]);
 
 const siteRedirects = readFile("public/_redirects");

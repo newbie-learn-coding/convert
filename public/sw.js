@@ -12,8 +12,15 @@ const CONFIG = {
   PRECACHE_CACHE: `${CACHE_PREFIX}precache-${CACHE_VERSION}`,
   RUNTIME_CACHE: `${CACHE_PREFIX}runtime-${CACHE_VERSION}`,
   WASM_CACHE: `${CACHE_PREFIX}wasm-${CACHE_VERSION}`,
-  MAX_CACHE_SIZE: 50 * 1024 * 1024, // 50MB
+  MAX_CACHE_SIZE: 100 * 1024 * 1024, // 100MB
   CACHE_EXPIRATION_MS: 30 * 24 * 60 * 60 * 1000, // 30 days
+  // Cache strategies with priorities
+  CACHE_PRIORITIES: {
+    CRITICAL: 1, // App shell, core JS/CSS
+    IMPORTANT: 2, // WASM modules
+    NORMAL: 3, // Images, fonts
+    LOW: 4, // Other assets
+  },
 };
 
 // Core assets to pre-cache - app shell and critical files
@@ -115,12 +122,21 @@ function getStrategy(request) {
   return "networkFirst";
 }
 
-// Helper: Cache-first strategy
-async function cacheFirst(request, cacheName = CONFIG.RUNTIME_CACHE) {
+// Helper: Cache-first strategy with stale-while-revalidate for non-critical assets
+async function cacheFirst(request, cacheName = CONFIG.RUNTIME_CACHE, options = {}) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(request);
 
+  // Return cached immediately if available
   if (cached) {
+    // For non-critical assets, refresh cache in background (stale-while-revalidate)
+    if (options.staleWhileRevalidate) {
+      fetch(request).then((response) => {
+        if (response.ok && request.method === "GET") {
+          putResponse(cache, request, response.clone());
+        }
+      }).catch(() => {});
+    }
     return cached;
   }
 
@@ -168,19 +184,31 @@ async function cacheFirst(request, cacheName = CONFIG.RUNTIME_CACHE) {
   }
 }
 
-// Helper: Network-first strategy
-async function networkFirst(request, cacheName = CONFIG.RUNTIME_CACHE) {
+// Helper: Network-first strategy with timeout
+async function networkFirst(request, cacheName = CONFIG.RUNTIME_CACHE, timeout = 5000) {
   const cache = await caches.open(cacheName);
 
+  // Create a timeout promise
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error("Network timeout")), timeout);
+  });
+
   try {
-    const response = await fetch(request);
+    // Race between fetch and timeout
+    const response = await Promise.race([
+      fetch(request),
+      timeoutPromise
+    ]);
+
     if (response.ok && request.method === "GET") {
       await putResponse(cache, request, response.clone());
     }
     return response;
   } catch (error) {
+    // Network failed or timed out - try cache
     const cached = await cache.match(request);
     if (cached) {
+      console.log("[SW] Serving from cache due to network failure:", request.url);
       return cached;
     }
     throw error;
@@ -204,11 +232,21 @@ async function staleWhileRevalidate(request, cacheName = CONFIG.RUNTIME_CACHE) {
   return cached || fetchPromise;
 }
 
-// Helper: Store response with cache size management
+// Helper: Store response with cache size management and metadata
 async function putResponse(cache, request, response) {
+  // Add cache timestamp for expiration tracking
+  const headers = new Headers(response.headers);
+  headers.set("sw-cache-time", Date.now().toString());
+
+  const enhancedResponse = new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: headers,
+  });
+
   // Check cache size before adding
   await enforceCacheSizeLimit(cache);
-  await cache.put(request, response);
+  await cache.put(request, enhancedResponse);
 }
 
 // Helper: Enforce cache size limit
@@ -265,15 +303,31 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     (async () => {
-      switch (strategy) {
-        case "cacheFirst":
-          return await cacheFirst(event.request, CONFIG.PRECACHE_CACHE);
-        case "networkFirst":
-          return await networkFirst(event.request, CONFIG.RUNTIME_CACHE);
-        case "staleWhileRevalidate":
-          return await staleWhileRevalidate(event.request, CONFIG.RUNTIME_CACHE);
-        default:
-          return await networkFirst(event.request, CONFIG.RUNTIME_CACHE);
+      try {
+        switch (strategy) {
+          case "cacheFirst": {
+            // Use stale-while-revalidate for non-critical assets
+            const isCritical = PRECACHE_ASSETS.some(url => event.request.url.includes(url));
+            return await cacheFirst(event.request, CONFIG.PRECACHE_CACHE, {
+              staleWhileRevalidate: !isCritical
+            });
+          }
+          case "networkFirst":
+            return await networkFirst(event.request, CONFIG.RUNTIME_CACHE, 5000);
+          case "staleWhileRevalidate":
+            return await staleWhileRevalidate(event.request, CONFIG.RUNTIME_CACHE);
+          default:
+            return await networkFirst(event.request, CONFIG.RUNTIME_CACHE, 5000);
+        }
+      } catch (error) {
+        console.error("[SW] Fetch failed:", error);
+        // Return offline response for navigation requests
+        if (event.request.mode === "navigate") {
+          const cache = await caches.open(CONFIG.PRECACHE_CACHE);
+          const offlineResponse = await cache.match("/");
+          if (offlineResponse) return offlineResponse;
+        }
+        throw error;
       }
     })()
   );

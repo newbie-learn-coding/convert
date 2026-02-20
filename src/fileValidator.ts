@@ -35,6 +35,9 @@ interface MagicSignature {
 // MAGIC NUMBER SIGNATURES
 // ============================================================================
 
+// Performance optimization: Pre-computed signature lengths for faster validation
+const SIGNATURE_LENGTHS = new Map<string, number>();
+
 const PNG_SIGNATURE: MagicSignature = {
   name: "PNG",
   extension: "png",
@@ -43,6 +46,7 @@ const PNG_SIGNATURE: MagicSignature = {
   offset: 0,
   signature: [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
 };
+SIGNATURE_LENGTHS.set("PNG", PNG_SIGNATURE.signature.length + PNG_SIGNATURE.offset);
 
 const JPEG_SIGNATURE: MagicSignature = {
   name: "JPEG",
@@ -1528,6 +1532,99 @@ function checkForDangerousContent(bytes: Uint8Array, detectedFormat: FileFormatI
         }
       }
     }
+  }
+
+  // Check for polyglot files (files that are valid in multiple formats, often used for bypassing filters)
+  const suspiciousPolyglotPatterns = checkForPolyglotPatterns(bytes, detectedFormat);
+  if (!suspiciousPolyglotPatterns.safe) {
+    return suspiciousPolyglotPatterns;
+  }
+
+  // Check for embedded PHP/JSP/ASP code in non-text files
+  if (detectedFormat.category !== "text" && detectedFormat.category !== "document") {
+    const codeCheck = checkForEmbeddedCode(bytes);
+    if (!codeCheck.safe) {
+      return codeCheck;
+    }
+  }
+
+  return { safe: true, error: null };
+}
+
+/**
+ * Checks for polyglot file patterns that could be used to bypass security
+ * @param bytes The file bytes to check
+ * @param detectedFormat The detected format
+ * @returns Security check result
+ */
+function checkForPolyglotPatterns(bytes: Uint8Array, detectedFormat: FileFormatInfo): { safe: boolean; error: string | null } {
+  // Check for GIFAR (GIF + JAR) or similar polyglots
+  if (detectedFormat.extension === "gif" || detectedFormat.extension === "png" || detectedFormat.extension === "jpg") {
+    // Check for ZIP signature within image (indicates possible GIFAR)
+    const zipSignature = [0x50, 0x4B, 0x03, 0x04];
+    for (let i = 100; i < Math.min(bytes.length - 4, 10000); i++) {
+      if (bytes[i] === zipSignature[0] &&
+          bytes[i + 1] === zipSignature[1] &&
+          bytes[i + 2] === zipSignature[2] &&
+          bytes[i + 3] === zipSignature[3]) {
+        return {
+          safe: false,
+          error: "This file appears to be a polyglot (multiple format) file which is not allowed for security reasons."
+        };
+      }
+    }
+  }
+
+  // Check for HTML/SVG polyglots in image files
+  if (detectedFormat.category === "image" && detectedFormat.extension !== "svg") {
+    const headerStr = Array.from(bytes.slice(0, Math.min(bytes.length, 200)))
+      .map(b => String.fromCharCode(b))
+      .join("")
+      .toLowerCase();
+
+    // Check for HTML doctype or body tag inside non-SVG images
+    if (headerStr.includes("<!doctype") || headerStr.includes("<html") || headerStr.includes("<body")) {
+      return {
+        safe: false,
+        error: "This file contains HTML-like content within an image file, which is not allowed for security reasons."
+      };
+    }
+  }
+
+  return { safe: true, error: null };
+}
+
+/**
+ * Checks for embedded server-side code in files
+ * @param bytes The file bytes to check
+ * @returns Security check result
+ */
+function checkForEmbeddedCode(bytes: Uint8Array): { safe: boolean; error: string | null } {
+  const sample = bytes.slice(0, Math.min(bytes.length, 2000));
+  const content = Array.from(sample).map(b => String.fromCharCode(b)).join("");
+
+  // Check for PHP tags
+  if (content.includes("<?php") || content.includes("<?=") || content.includes("<? ")) {
+    return {
+      safe: false,
+      error: "This file contains embedded PHP code. For security reasons, it cannot be processed."
+    };
+  }
+
+  // Check for JSP tags
+  if (content.includes("<%") && content.includes("%>")) {
+    return {
+      safe: false,
+      error: "This file contains embedded server-side code. For security reasons, it cannot be processed."
+    };
+  }
+
+  // Check for ASP tags
+  if (content.includes("<%") || content.toLowerCase().includes("<script language=") && content.toLowerCase().includes("runat=")) {
+    return {
+      safe: false,
+      error: "This file contains embedded server-side code. For security reasons, it cannot be processed."
+    };
   }
 
   return { safe: true, error: null };

@@ -1,29 +1,75 @@
 import CommonFormats from "src/CommonFormats.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 
-// base class for handling renames
-function renameHandler(name: string, formats: FileFormat[]): FormatHandler {
+/**
+ * Configuration options for rename handler creation.
+ */
+interface RenameHandlerOptions {
+  /** Handler name for identification */
+  name: string;
+  /** Supported format definitions */
+  formats: FileFormat[];
+}
+
+/**
+ * Error thrown when rename operations fail.
+ */
+class RenameError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RenameError";
+  }
+}
+
+/**
+ * Creates a rename handler that changes file extensions without modifying content.
+ * Used for format aliases where the underlying format is the same.
+ *
+ * @param options - Configuration options for the handler
+ * @returns A FormatHandler instance for the rename operation
+ */
+function createRenameHandler(options: RenameHandlerOptions): FormatHandler {
+  const { name, formats } = options;
+
   return {
-    name: name,
+    name,
     ready: true,
     supportedFormats: formats,
-    async init() {
-      this.ready = true
+
+    async init(): Promise<void> {
+      this.ready = true;
     },
-    async doConvert (
+
+    async doConvert(
       inputFiles: FileData[],
       _inputFormat: FileFormat,
       outputFormat: FileFormat
     ): Promise<FileData[]> {
+      if (inputFiles.length === 0) {
+        throw new RenameError("No input files provided for rename operation");
+      }
+
       return inputFiles.map(file => {
-        file.name = file.name.split(".")[0] + "." + outputFormat.extension;
-        return file;
+        const baseName = file.name.split(".")[0];
+        if (!baseName) {
+          throw new RenameError(`Invalid filename: ${file.name}`);
+        }
+
+        return {
+          bytes: file.bytes,
+          name: `${baseName}.${outputFormat.extension}`
+        };
       });
     }
   };
 }
-/// handler for renaming various aliased zip files
-export const renameZipHandler = renameHandler("renamezip", [
+/**
+ * Handler for renaming ZIP-based formats.
+ * Supports various ZIP-based containers (Office docs, Android apps, etc.).
+ */
+export const renameZipHandler = createRenameHandler({
+  name: "renamezip",
+  formats: [
   CommonFormats.ZIP.builder("zip").allowTo(),
   CommonFormats.DOCX.builder("docx").allowFrom(),
   CommonFormats.XLSX.builder("xlsx").allowFrom(),
@@ -91,11 +137,19 @@ export const renameZipHandler = renameHandler("renamezip", [
     to: false,
     internal: "apk"
   }
-]);
-/// handler for renaming text-based formats
-export const renameTxtHandler = renameHandler("renametxt", [
-  CommonFormats.TEXT.builder("text").allowTo(),
-  CommonFormats.JSON.builder("json").allowFrom(),
-  CommonFormats.XML.builder("xml").allowFrom(),
-  CommonFormats.YML.builder("yaml").allowFrom()
-])
+]
+});
+
+/**
+ * Handler for renaming text-based formats.
+ * Supports JSON, XML, YAML as plain text aliases.
+ */
+export const renameTxtHandler = createRenameHandler({
+  name: "renametxt",
+  formats: [
+    CommonFormats.TEXT.builder("text").allowTo(),
+    CommonFormats.JSON.builder("json").allowFrom(),
+    CommonFormats.XML.builder("xml").allowFrom(),
+    CommonFormats.YML.builder("yaml").allowFrom()
+  ]
+});

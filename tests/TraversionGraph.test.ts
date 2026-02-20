@@ -223,3 +223,16 @@ test('enabling safe checks should affect pathfinding\n', async () => {
   expect(extractedNewPaths.length).toBeGreaterThan(0);
   expect(extractedNewPaths[0]).toEqual(extractedPaths[0]);
 });
+
+test("getReachableOutputMimes should return transitive reachable MIME types", () => {
+  const graph = new TraversionGraph(true);
+  graph.init(supportedFormatCache, handlers);
+
+  const reachable = graph.getReachableOutputMimes("image/png");
+  expect(reachable.has("image/png")).toBe(true);
+  expect(reachable.has("audio/mpeg")).toBe(true);
+  expect(reachable.has("video/mp4")).toBe(true);
+
+  const missing = graph.getReachableOutputMimes("application/not-real");
+  expect(missing.size).toBe(0);
+});

@@ -1,6 +1,6 @@
 /**
  * PWA Service Worker Registration and Management
- * Handles service worker registration, updates, and offline status
+ * Handles service worker registration, updates, offline status, and install prompts
  */
 
 export interface PWAStatus {
@@ -20,6 +20,10 @@ const SW_PATH = "/sw.js";
 let registration: ServiceWorkerRegistration | null = null;
 let deferredPrompt: (Event & { prompt?: () => Promise<void>; userChoice?: Promise<{ outcome: "accepted" | "dismissed" }> }) | null = null;
 
+function isAutomationEnvironment(): boolean {
+  return Boolean(navigator.webdriver) || /\bHeadlessChrome\b/i.test(navigator.userAgent);
+}
+
 /**
  * Check if service workers are supported
  */
@@ -33,6 +37,11 @@ export function isSWSupported(): boolean {
 export async function registerServiceWorker(): Promise<boolean> {
   if (!isSWSupported()) {
     console.warn("[PWA] Service workers not supported");
+    return false;
+  }
+
+  if (isAutomationEnvironment()) {
+    console.info("[PWA] Skipping service worker registration in automated browser");
     return false;
   }
 
@@ -162,27 +171,70 @@ function showUpdateNotification(): void {
   const notification = document.createElement("div");
   notification.id = "pwa-update-notification";
   notification.className = "pwa-notification";
-  notification.innerHTML = `
-    <div class="pwa-notification-content">
-      <span class="pwa-notification-icon">🔄</span>
-      <div class="pwa-notification-text">
-        <strong>New version available</strong>
-        <span>Refresh to get the latest features</span>
-      </div>
-      <button id="pwa-update-button" class="pwa-notification-button">Update</button>
-      <button id="pwa-update-dismiss" class="pwa-notification-dismiss" aria-label="Dismiss">✕</button>
-    </div>
-  `;
+  notification.setAttribute("role", "alert");
+  notification.setAttribute("aria-live", "polite");
+
+  const content = document.createElement("div");
+  content.className = "pwa-notification-content";
+
+  const icon = document.createElement("span");
+  icon.className = "pwa-notification-icon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "🔄";
+
+  const textDiv = document.createElement("div");
+  textDiv.className = "pwa-notification-text";
+
+  const strong = document.createElement("strong");
+  strong.textContent = "New version available";
+
+  const span = document.createElement("span");
+  span.textContent = "Refresh to get the latest features";
+
+  textDiv.appendChild(strong);
+  textDiv.appendChild(span);
+
+  const updateButton = document.createElement("button");
+  updateButton.id = "pwa-update-button";
+  updateButton.className = "pwa-notification-button";
+  updateButton.setAttribute("aria-label", "Update to new version now");
+  updateButton.textContent = "Update";
+
+  const dismissButton = document.createElement("button");
+  dismissButton.id = "pwa-update-dismiss";
+  dismissButton.className = "pwa-notification-dismiss";
+  dismissButton.setAttribute("aria-label", "Dismiss update notification");
+  dismissButton.textContent = "✕";
+
+  content.appendChild(icon);
+  content.appendChild(textDiv);
+  content.appendChild(updateButton);
+  content.appendChild(dismissButton);
+  notification.appendChild(content);
 
   document.body.appendChild(notification);
 
-  document.getElementById("pwa-update-button")?.addEventListener("click", () => {
+  // Trigger animation
+  requestAnimationFrame(() => {
+    notification.classList.add("visible");
+  });
+
+  updateButton.addEventListener("click", () => {
     activateUpdate();
   });
 
-  document.getElementById("pwa-update-dismiss")?.addEventListener("click", () => {
-    notification.remove();
+  dismissButton.addEventListener("click", () => {
+    notification.classList.remove("visible");
+    setTimeout(() => notification.remove(), 300);
   });
+
+  // Auto-dismiss after 30 seconds
+  setTimeout(() => {
+    if (notification.parentElement) {
+      notification.classList.remove("visible");
+      setTimeout(() => notification.remove(), 300);
+    }
+  }, 30000);
 }
 
 /**
@@ -196,24 +248,58 @@ function showSyncNotification(): void {
   const notification = document.createElement("div");
   notification.id = "pwa-sync-notification";
   notification.className = "pwa-notification pwa-notification-info";
-  notification.innerHTML = `
-    <div class="pwa-notification-content">
-      <span class="pwa-notification-icon">📤</span>
-      <div class="pwa-notification-text">
-        <strong>Sync complete</strong>
-        <span>Your actions have been synced</span>
-      </div>
-      <button id="pwa-sync-dismiss" class="pwa-notification-dismiss" aria-label="Dismiss">✕</button>
-    </div>
-  `;
+  notification.setAttribute("role", "status");
+  notification.setAttribute("aria-live", "polite");
+
+  const content = document.createElement("div");
+  content.className = "pwa-notification-content";
+
+  const icon = document.createElement("span");
+  icon.className = "pwa-notification-icon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "📤";
+
+  const textDiv = document.createElement("div");
+  textDiv.className = "pwa-notification-text";
+
+  const strong = document.createElement("strong");
+  strong.textContent = "Sync complete";
+
+  const span = document.createElement("span");
+  span.textContent = "Your actions have been synced";
+
+  textDiv.appendChild(strong);
+  textDiv.appendChild(span);
+
+  const dismissButton = document.createElement("button");
+  dismissButton.id = "pwa-sync-dismiss";
+  dismissButton.className = "pwa-notification-dismiss";
+  dismissButton.setAttribute("aria-label", "Dismiss sync notification");
+  dismissButton.textContent = "✕";
+
+  content.appendChild(icon);
+  content.appendChild(textDiv);
+  content.appendChild(dismissButton);
+  notification.appendChild(content);
 
   document.body.appendChild(notification);
 
-  document.getElementById("pwa-sync-dismiss")?.addEventListener("click", () => {
-    notification.remove();
+  // Trigger animation
+  requestAnimationFrame(() => {
+    notification.classList.add("visible");
   });
 
-  setTimeout(() => notification.remove(), 5000);
+  dismissButton.addEventListener("click", () => {
+    notification.classList.remove("visible");
+    setTimeout(() => notification.remove(), 300);
+  });
+
+  setTimeout(() => {
+    if (notification.parentElement) {
+      notification.classList.remove("visible");
+      setTimeout(() => notification.remove(), 300);
+    }
+  }, 5000);
 }
 
 /**
@@ -225,7 +311,18 @@ export function showOfflineIndicator(): void {
     indicator = document.createElement("div");
     indicator.id = "pwa-offline-indicator";
     indicator.className = "pwa-offline-indicator";
-    indicator.textContent = "You're offline - some features may be limited";
+    indicator.setAttribute("role", "status");
+    indicator.setAttribute("aria-live", "polite");
+
+    const icon = document.createElement("span");
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = "📡";
+
+    const text = document.createElement("span");
+    text.textContent = "You're offline - some features may be limited";
+
+    indicator.appendChild(icon);
+    indicator.appendChild(text);
     document.body.appendChild(indicator);
   }
   indicator.classList.add("visible");
@@ -266,12 +363,14 @@ export function setupConnectivityListeners(): void {
 function showOnlineToast(): void {
   const toast = document.createElement("div");
   toast.className = "pwa-toast";
+  toast.setAttribute("role", "status");
+  toast.setAttribute("aria-live", "polite");
   toast.textContent = "You're back online";
   document.body.appendChild(toast);
 
-  setTimeout(() => {
+  requestAnimationFrame(() => {
     toast.classList.add("visible");
-  }, 10);
+  });
 
   setTimeout(() => {
     toast.classList.remove("visible");
@@ -304,17 +403,25 @@ export function setupInstallPrompt(): void {
     // Show installed notification
     const notification = document.createElement("div");
     notification.className = "pwa-toast";
+    notification.setAttribute("role", "alert");
+    notification.setAttribute("aria-live", "polite");
     notification.textContent = "App installed successfully";
     document.body.appendChild(notification);
 
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       notification.classList.add("visible");
-    }, 10);
+    });
 
     setTimeout(() => {
       notification.classList.remove("visible");
       setTimeout(() => notification.remove(), 300);
     }, 3000);
+
+    // Remove install prompt if still visible
+    const installPrompt = document.getElementById("pwa-install-prompt");
+    if (installPrompt) {
+      installPrompt.remove();
+    }
   });
 }
 
@@ -343,21 +450,56 @@ function showInstallPrompt(): void {
   const prompt = document.createElement("div");
   prompt.id = "pwa-install-prompt";
   prompt.className = "pwa-notification";
-  prompt.innerHTML = `
-    <div class="pwa-notification-content">
-      <span class="pwa-notification-icon">📲</span>
-      <div class="pwa-notification-text">
-        <strong>Install ConvertToIt</strong>
-        <span>Install for offline access and better experience</span>
-      </div>
-      <button id="pwa-install-button" class="pwa-notification-button">Install</button>
-      <button id="pwa-install-dismiss" class="pwa-notification-dismiss" aria-label="Dismiss">✕</button>
-    </div>
-  `;
+  prompt.setAttribute("role", "dialog");
+  prompt.setAttribute("aria-label", "Install ConvertToIt app");
+  prompt.setAttribute("aria-live", "polite");
+
+  const content = document.createElement("div");
+  content.className = "pwa-notification-content";
+
+  const icon = document.createElement("span");
+  icon.className = "pwa-notification-icon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "📲";
+
+  const textDiv = document.createElement("div");
+  textDiv.className = "pwa-notification-text";
+
+  const strong = document.createElement("strong");
+  strong.textContent = "Install ConvertToIt";
+
+  const span = document.createElement("span");
+  span.textContent = "Install for offline access and better experience";
+
+  textDiv.appendChild(strong);
+  textDiv.appendChild(span);
+
+  const installButton = document.createElement("button");
+  installButton.id = "pwa-install-button";
+  installButton.className = "pwa-notification-button";
+  installButton.setAttribute("aria-label", "Install app now");
+  installButton.textContent = "Install";
+
+  const dismissButton = document.createElement("button");
+  dismissButton.id = "pwa-install-dismiss";
+  dismissButton.className = "pwa-notification-dismiss";
+  dismissButton.setAttribute("aria-label", "Dismiss install prompt");
+  dismissButton.textContent = "✕";
+
+  content.appendChild(icon);
+  content.appendChild(textDiv);
+  content.appendChild(installButton);
+  content.appendChild(dismissButton);
+  prompt.appendChild(content);
 
   document.body.appendChild(prompt);
 
-  document.getElementById("pwa-install-button")?.addEventListener("click", async () => {
+  // Trigger animation
+  requestAnimationFrame(() => {
+    prompt.classList.add("visible");
+  });
+
+  installButton.addEventListener("click", async () => {
     if (!deferredPrompt?.prompt) return;
 
     try {
@@ -375,10 +517,77 @@ function showInstallPrompt(): void {
     if (installPromptEl) installPromptEl.remove();
   });
 
-  document.getElementById("pwa-install-dismiss")?.addEventListener("click", () => {
+  dismissButton.addEventListener("click", () => {
     setInstallPromptShown(true);
-    prompt.remove();
+    prompt.classList.remove("visible");
+    setTimeout(() => prompt.remove(), 300);
   });
+}
+
+/**
+ * Show offline page when app is offline and user tries to navigate
+ */
+function showOfflinePage(): void {
+  const existing = document.getElementById("offline-page");
+  if (existing) return;
+
+  const offlinePage = document.createElement("div");
+  offlinePage.id = "offline-page";
+  offlinePage.className = "offline-page";
+  offlinePage.setAttribute("role", "alert");
+  offlinePage.setAttribute("aria-live", "polite");
+
+  const content = document.createElement("div");
+  content.className = "offline-content";
+
+  const icon = document.createElement("div");
+  icon.className = "offline-icon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "📡";
+
+  const heading = document.createElement("h2");
+  heading.textContent = "You're Offline";
+
+  const para1 = document.createElement("p");
+  para1.textContent = "Check your internet connection. Some features may be unavailable until you reconnect.";
+
+  const para2 = document.createElement("p");
+  para2.className = "offline-note";
+  para2.textContent = "Previously cached conversions and basic tools may still work.";
+
+  const retryButton = document.createElement("button");
+  retryButton.id = "offline-retry";
+  retryButton.className = "offline-retry-button";
+  retryButton.setAttribute("aria-label", "Retry connection");
+  retryButton.textContent = "Try Again";
+
+  content.appendChild(icon);
+  content.appendChild(heading);
+  content.appendChild(para1);
+  content.appendChild(para2);
+  content.appendChild(retryButton);
+  offlinePage.appendChild(content);
+
+  document.body.appendChild(offlinePage);
+
+  retryButton.addEventListener("click", () => {
+    if (navigator.onLine) {
+      offlinePage.remove();
+    } else {
+      // Shake animation to indicate still offline
+      offlinePage.classList.add("shake");
+      setTimeout(() => offlinePage.classList.remove("shake"), 500);
+    }
+  });
+
+  // Auto-remove when back online
+  const removeOfflinePage = () => {
+    if (navigator.onLine) {
+      offlinePage.remove();
+      window.removeEventListener("online", removeOfflinePage);
+    }
+  };
+  window.addEventListener("online", removeOfflinePage);
 }
 
 /**
@@ -395,12 +604,13 @@ export async function initPWA(): Promise<void> {
   setupInstallPrompt();
 
   // Expose to window for debugging
-  (window as any).pwa = {
+  (window as unknown as Record<string, unknown>).pwa = {
     getStatus: getPWAStatus,
     checkUpdate: checkForUpdate,
     activateUpdate: activateUpdate,
     clearCache: clearCache,
     getVersion: getSWVersion,
     showInstall: showInstallPrompt,
+    showOffline: showOfflinePage,
   };
 }

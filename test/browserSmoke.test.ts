@@ -31,14 +31,12 @@ const browser = await puppeteer.launch({
 });
 const page = await browser.newPage();
 
-await Promise.all([
-  new Promise(resolve => {
-    page.on("console", msg => {
-      if (msg.text() === "Built initial format list.") resolve(null);
-    });
-  }),
-  page.goto("http://localhost:8080/convert/index.html")
-]);
+await page.goto("http://localhost:8080/convert/index.html");
+await page.waitForFunction(
+  () => typeof window.tryConvertByTraversing === "function"
+    && (window.traversionGraph as { getData?: () => { nodes?: unknown[] } })?.getData?.().nodes?.length > 0,
+  { timeout: 180000 }
+);
 
 const dummyHandler: FormatHandler = {
   name: "dummy",

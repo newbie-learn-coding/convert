@@ -25,6 +25,38 @@ function createEnv(overrides: Partial<Record<string, unknown>> = {}) {
   };
 }
 
+function createTelemetryPayload() {
+  return {
+    sessionId: "session-12345",
+    appVersion: "1.2.3",
+    entries: [
+      {
+        level: "info",
+        message: "frontend log",
+        timestamp: new Date().toISOString(),
+        context: { category: "test" }
+      }
+    ],
+    metrics: {
+      conversionsSucceeded: 1
+    }
+  };
+}
+
+async function withSuppressedConsole(callback: () => Promise<void>) {
+  const originalLog = console.log;
+  const originalError = console.error;
+  console.log = () => {};
+  console.error = () => {};
+
+  try {
+    await callback();
+  } finally {
+    console.log = originalLog;
+    console.error = originalError;
+  }
+}
+
 describe("Cloudflare worker hardening", () => {
   test("redirects .app host to canonical .com host", async () => {
     const response = await worker.fetch(
@@ -64,6 +96,27 @@ describe("Cloudflare worker hardening", () => {
     expect(body.error).toBe("method_not_allowed");
   });
 
+  test("uses shared isolate-level ops limiter across requests", async () => {
+    const env = createEnv();
+    let lastResponse: Response | null = null;
+
+    for (let index = 0; index < 101; index++) {
+      lastResponse = await worker.fetch(
+        new Request("https://converttoit.com/_ops/health", {
+          headers: {
+            "cf-connecting-ip": "203.0.113.101"
+          }
+        }),
+        env
+      );
+    }
+
+    expect(lastResponse).not.toBeNull();
+    expect(lastResponse?.status).toBe(429);
+    const body = await lastResponse!.json();
+    expect(body.error).toBe("rate_limited");
+  });
+
   test("enforces OPS_LOG_TOKEN on log-ping", async () => {
     const env = createEnv({ OPS_LOG_TOKEN: "super-secret-token" });
     const unauthorized = await worker.fetch(new Request("https://converttoit.com/_ops/log-ping"), env);
@@ -95,6 +148,74 @@ describe("Cloudflare worker hardening", () => {
     expect(typeof body.correlationId).toBe("string");
     expect(body.correlationId.length).toBeLessThanOrEqual(64);
     expect(/^[A-Za-z0-9._:-]+$/.test(body.correlationId)).toBe(true);
+  });
+
+  test("accepts telemetry route alias and keeps noindex headers", async () => {
+    const response = await worker.fetch(
+      new Request("https://converttoit.com/_ops/logging", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "https://converttoit.com",
+          "cf-connecting-ip": "198.51.100.23"
+        },
+        body: JSON.stringify(createTelemetryPayload())
+      }),
+      createEnv()
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(response.headers.get("x-robots-tag")).toContain("noindex");
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+  });
+
+  test("blocks cross-origin telemetry posts", async () => {
+    const response = await worker.fetch(
+      new Request("https://converttoit.com/_ops/logs", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "https://malicious.example",
+          "cf-connecting-ip": "198.51.100.24"
+        },
+        body: JSON.stringify(createTelemetryPayload())
+      }),
+      createEnv()
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.error).toBe("forbidden_origin");
+  });
+
+  test("uses shared isolate-level telemetry limiter across requests", async () => {
+    const env = createEnv();
+    let lastResponse: Response | null = null;
+
+    await withSuppressedConsole(async () => {
+      for (let index = 0; index < 51; index++) {
+        lastResponse = await worker.fetch(
+          new Request("https://converttoit.com/_ops/logs", {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              origin: "https://converttoit.com",
+              "cf-connecting-ip": "198.51.100.50"
+            },
+            body: JSON.stringify(createTelemetryPayload())
+          }),
+          env
+        );
+      }
+    });
+
+    expect(lastResponse).not.toBeNull();
+    expect(lastResponse?.status).toBe(429);
+    const body = await lastResponse!.json();
+    expect(body.error).toBe("rate_limited");
+    expect(lastResponse!.headers.get("x-ratelimit-limit")).toBe("50");
   });
 
   test("returns empty body for HEAD ops requests", async () => {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Convert files online for free in your browser. Supports image, audio, video, document, and archive formats. Privacy-focused: files never leave your device.">
+  <meta name="description" content="Discover a free online file converter that runs in your browser. Convert image, audio, video, document, and archive files securely with no uploads.">
   <meta name="keywords" content="file converter, online converter, image converter, video converter, audio converter, document converter, free converter, browser converter, privacy">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="theme-color" content="#1C77FF">
@@ -47,14 +47,45 @@
       "@context": "https://schema.org",
       "@graph": [
         {
+          "@type": "Organization",
+          "@id": "https://converttoit.com/#organization",
+          "name": "ConvertToIt",
+          "url": "https://converttoit.com/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://converttoit.com/apple-touch-icon.png",
+            "width": 180,
+            "height": 180
+          }
+        },
+        {
           "@type": "WebSite",
+          "@id": "https://converttoit.com/#website",
           "name": "ConvertToIt",
           "url": "https://converttoit.com/",
           "inLanguage": "en-US",
-          "description": "Convert files online directly in your browser across image, audio, video, document, and archive formats."
+          "description": "Convert files online directly in your browser across image, audio, video, document, and archive formats.",
+          "publisher": {
+            "@id": "https://converttoit.com/#organization"
+          }
+        },
+        {
+          "@type": "WebPage",
+          "@id": "https://converttoit.com/#webpage",
+          "url": "https://converttoit.com/",
+          "name": "Online File Converter (Free & Secure) | ConvertToIt",
+          "description": "Convert image, audio, video, document, and archive files directly in your browser without uploading data to a server.",
+          "inLanguage": "en-US",
+          "isPartOf": {
+            "@id": "https://converttoit.com/#website"
+          },
+          "about": {
+            "@id": "https://converttoit.com/#app"
+          }
         },
         {
           "@type": "SoftwareApplication",
+          "@id": "https://converttoit.com/#app",
           "name": "ConvertToIt",
           "applicationCategory": "UtilitiesApplication",
           "operatingSystem": "Any",
@@ -69,32 +100,80 @@
           "featureList": "Image conversion, Video conversion, Audio conversion, Document conversion, Archive conversion, Browser-based processing, Privacy-focused"
         },
         {
-          "@type": "Organization",
-          "name": "ConvertToIt",
-          "url": "https://converttoit.com/",
-          "logo": {
-            "@type": "ImageObject",
-            "url": "https://converttoit.com/apple-touch-icon.png",
-            "width": 180,
-            "height": 180
-          }
+          "@type": "FAQPage",
+          "@id": "https://converttoit.com/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Do I need to install any software to use ConvertToIt?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No installation required. ConvertToIt runs entirely in your web browser."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is ConvertToIt free to use?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, ConvertToIt is free to use with no registration required for core conversion features."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Are my files uploaded to a server?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. Files are processed locally in your browser, so your source data stays on your device."
+              }
+            }
+          ]
         }
       ]
     }
   </script>
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
 
-  <input id="file-input" type="file">
+  <main id="main-content">
+  <input id="file-input" type="file" aria-label="File input">
   <h1 class="sr-only">Convert files online for free with ConvertToIt</h1>
 
-  <div id="file-area">
-    <h2>Click to add your file</h2>
-    <p id="drop-hint-text">or drag and drop it here</p>
+  <div
+    id="file-area"
+    role="button"
+    tabindex="0"
+    aria-controls="file-input"
+    aria-describedby="drop-hint-text file-selection-status"
+    aria-label="Select files to convert"
+  >
+    <div class="file-area-topline" aria-hidden="true">
+      <span id="file-area-icon" class="file-area-icon">⇪</span>
+      <span class="file-area-chip">Local only</span>
+      <span class="file-area-chip">No upload</span>
+    </div>
+    <p class="file-area-kicker">Step 1</p>
+    <h2 id="file-area-title">Drop files here</h2>
+    <p id="drop-hint-text">or click to browse from your device</p>
+    <p id="file-selection-status" role="status" aria-live="polite">No files selected yet.</p>
   </div>
   <div id="side-panel">
-    <button id="mode-button">Advanced mode</button>
+    <button
+      id="mode-button"
+      type="button"
+      aria-label="Switch to advanced mode"
+      aria-pressed="false"
+    >Advanced mode</button>
   </div>
+
+  <section id="quick-conversions" class="quick-conversions" hidden aria-live="polite">
+    <div class="quick-conversions-header">
+      <h2>Quick conversions</h2>
+      <p id="quick-conversion-empty">Select an input format to get one-tap conversion suggestions.</p>
+    </div>
+    <div id="quick-conversion-list" class="quick-conversion-list"></div>
+  </section>
 
   <nav class="site-nav" aria-label="On-page navigation">
     <a href="#file-area">Converter</a>
@@ -108,16 +187,18 @@
 
     <div id="from-container" class="format-container">
       <h2>Convert from:</h2>
+      <div id="from-category-tabs" class="category-tabs" aria-label="Input format categories"></div>
       <input type="text" id="search-from" class="search" placeholder="Search" aria-label="Search input formats">
-      <div id="from-list" class="format-list">
+      <div id="from-list" class="format-list" role="listbox" aria-label="Input format list">
 
       </div>
     </div>
 
     <div id="to-container" class="format-container">
       <h2>Convert to:</h2>
+      <div id="to-category-tabs" class="category-tabs" aria-label="Output format categories"></div>
       <input type="text" id="search-to" class="search" placeholder="Search" aria-label="Search output formats">
-      <div id="to-list" class="format-list">
+      <div id="to-list" class="format-list" role="listbox" aria-label="Output format list">
 
       </div>
     </div>
@@ -125,10 +206,20 @@
   </div>
 
   <div id="convert-cta">
+    <div id="workflow-steps" aria-label="3-step conversion progress">
+      <span class="workflow-step is-active" data-workflow-step="file">1. Choose file</span>
+      <span class="workflow-step" data-workflow-step="formats">2. Pick formats</span>
+      <span class="workflow-step" data-workflow-step="convert">3. Convert</span>
+    </div>
+    <div id="conversion-path-preview" class="conversion-path-preview" hidden>
+      <p id="conversion-path-summary"></p>
+      <div id="conversion-path-pills" class="conversion-path-pills"></div>
+    </div>
     <button
       id="convert-button"
       class="disabled"
       aria-label="Convert selected files to the selected format"
+      aria-describedby="convert-helper"
       aria-disabled="true"
       disabled
     >Convert</button>
@@ -241,8 +332,9 @@
       <p>JavaScript is disabled. You can still access every conversion guide using the links above.</p>
     </noscript>
   </section>
+  </main>
 
-  <footer class="site-footer">
+  <footer class="site-footer" aria-label="Footer links">
     <a href="/">Home</a>
     <a href="/format/">Format Guides</a>
     <a href="/compare/">Compare</a>

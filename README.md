@@ -55,45 +55,30 @@ After this is done (indicated by a `Built initial format list` message in the co
 
 ### Cloudflare production deployment (Workers + static assets)
 
-Cloudflare deployment assets are defined in:
+Use the authoritative runbook:
 
-- `wrangler.toml.example` (template, committed)
-- `wrangler.toml` (local runtime config, gitignored)
-- `cloudflare/worker/index.mjs`
-- `scripts/deploy.sh`
-- `scripts/cf-log-check.sh`
-- `scripts/cf-rollback.sh`
-
-To satisfy Workers static asset limits, oversized wasm binaries (FFmpeg core and Pandoc) are loaded from remote URLs by default. You can override build-time sources via `VITE_FFMPEG_CORE_BASE_URL` / `VITE_PANDOC_WASM_URL`.
-
-Operational runbook:
-
-- [`docs/ops/cloudflare-deploy-runbook.md`](docs/ops/cloudflare-deploy-runbook.md)
+- [`docs/ops/cloudflare-deploy-runbook.md`](docs/ops/cloudflare-deploy-runbook.md) ← primary
 - [`docs/ops/seo-pseo-production-rollout.md`](docs/ops/seo-pseo-production-rollout.md)
 - [`docs/architecture/cloudflare-ops-endpoints.md`](docs/architecture/cloudflare-ops-endpoints.md)
 
-Recommended production gate (SEO + pSEO + deploy validation):
+Quick setup:
 
 ```bash
 cp .env.local.example .env.local
+cp wrangler.toml.example wrangler.toml
 source .env.local
-bun run pseo:build
-bun run check:seo-policy
-bun run check:integrity
-bun run validate:production-readiness
+```
+
+Required safe production sequence:
+
+```bash
 bun run cf:deploy:dry-run
 bun run cf:deploy
+bash scripts/cf-post-deploy-gate.sh production --base-url https://converttoit.com
 CF_DEPLOY_BASE_URL="https://converttoit.com" bun run cf:logs:check
 ```
 
-SEO artifact quality quick-check (after `bun run pseo:build`):
-
-```bash
-node -e 'const r=require("./public/seo/seo-rubric-report.json"); if(r.summary.minScore<24||r.summary.minWordCount<1000) throw new Error("SEO rubric gate failed"); console.log(r.summary);'
-node -e 'const r=require("./public/seo/anti-cannibalization-report.json"); if(r.summary.minMeaningfulUniquenessStrategyScore<80) throw new Error("Anti-cannibalization gate failed"); console.log(r.summary);'
-```
-
-Canonical policy for production:
+Canonical policy:
 
 - `https://converttoit.com` is the only canonical/indexable host.
 - `converttoit.app` (and `www` variants) stays redirect-only to `.com`.

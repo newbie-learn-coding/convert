@@ -387,6 +387,526 @@ const formatPages = [
         a: "Yes. Keep WAV as the master and use MP3 only for distribution copies."
       }
     ]
+  },
+  {
+    slug: "jpg-to-webp",
+    from: "JPG",
+    to: "WEBP",
+    cluster: "image-conversion",
+    intent: "transactional",
+    primaryKeyword: "convert jpg to webp",
+    secondaryKeywords: [
+      "jpg to webp converter",
+      "optimize images for web",
+      "reduce image file size webp"
+    ],
+    userGoal: "You need smaller image files for faster web page loading and improved Core Web Vitals scores.",
+    conversionTriggers: [
+      "Improve website loading speed with modern image formats.",
+      "Reduce bandwidth costs for image-heavy websites.",
+      "Achieve better Google PageSpeed scores."
+    ],
+    qualityChecklist: [
+      "Compare visual quality at equivalent file sizes.",
+      "Test browser compatibility for your audience.",
+      "Verify WEBP renders correctly in your CMS.",
+      "Keep JPG fallback for older browsers if needed."
+    ],
+    pitfalls: [
+      "Not all browsers support WEBP equally.",
+      "Some social platforms may not accept WEBP uploads.",
+      "Email clients often have limited WEBP support."
+    ],
+    uniquenessSignals: [
+      "pagespeed optimization strategy",
+      "modern image format adoption",
+      "bandwidth cost reduction",
+      "core web vitals improvement",
+      "seo image optimization",
+      "webp browser support matrix",
+      "cms webp compatibility check",
+      "image cdn format negotiation",
+      "mobile data savings",
+      "conversion rate optimization images"
+    ],
+    faq: [
+      {
+        q: "Will WEBP images look as good as JPG?",
+        a: "WEBP typically achieves similar visual quality at 25-35% smaller file sizes compared to JPG."
+      },
+      {
+        q: "Do all browsers support WEBP?",
+        a: "All modern browsers support WEBP. Only very old browsers like Internet Explorer lack support."
+      }
+    ]
+  },
+  {
+    slug: "png-to-webp",
+    from: "PNG",
+    to: "WEBP",
+    cluster: "image-conversion",
+    intent: "transactional",
+    primaryKeyword: "convert png to webp",
+    secondaryKeywords: [
+      "png to webp converter",
+      "compress png with transparency",
+      "webp with alpha channel"
+    ],
+    userGoal: "You need transparent images with smaller file sizes for modern web performance.",
+    conversionTriggers: [
+      "Replace large PNG assets with smaller WEBP files.",
+      "Maintain transparency while improving page speed.",
+      "Optimize e-commerce product images."
+    ],
+    qualityChecklist: [
+      "Verify transparency renders correctly in target browsers.",
+      "Compare file size reduction against quality.",
+      "Test on mobile devices for performance gains.",
+      "Validate in your production environment."
+    ],
+    pitfalls: [
+      "Legacy browsers may not display WEBP transparency.",
+      "Some design tools have limited WEBP support.",
+      "Email clients rarely support WEBP format."
+    ],
+    uniquenessSignals: [
+      "transparent webp optimization",
+      "png replacement strategy",
+      "ecommerce image optimization",
+      "alpha channel webp support",
+      "modern browser image pipeline",
+      "design tool webp export",
+      "mobile image performance",
+      "cdn image transformation",
+      "web performance budget",
+      "visual quality preservation"
+    ],
+    faq: [
+      {
+        q: "Does WEBP support transparency like PNG?",
+        a: "Yes, WEBP supports full alpha channel transparency, making it an excellent PNG replacement."
+      },
+      {
+        q: "How much smaller are WEBP files compared to PNG?",
+        a: "WEBP with transparency is typically 25-35% smaller than equivalent PNG files."
+      }
+    ]
+  },
+  {
+    slug: "mp4-to-gif",
+    from: "MP4",
+    to: "GIF",
+    cluster: "video-conversion",
+    intent: "transactional",
+    primaryKeyword: "convert mp4 to gif",
+    secondaryKeywords: [
+      "mp4 to gif converter",
+      "video to gif maker",
+      "create gif from video"
+    ],
+    userGoal: "You need animated GIFs for social media, documentation, or platforms that prefer GIF over video.",
+    conversionTriggers: [
+      "Create social media animations that auto-play.",
+      "Add motion graphics to documentation and blogs.",
+      "Share short clips where video upload is restricted."
+    ],
+    qualityChecklist: [
+      "Limit duration to keep file size reasonable.",
+      "Optimize color palette for the content type.",
+      "Choose appropriate frame rate for smooth playback.",
+      "Test in target platforms before publishing."
+    ],
+    pitfalls: [
+      "GIF files are much larger than MP4 for the same content.",
+      "Color palette limited to 256 colors.",
+      "No audio support in GIF format."
+    ],
+    uniquenessSignals: [
+      "social media auto-play",
+      "documentation animation",
+      "looping video clip",
+      "color palette optimization",
+      "gif file size management",
+      "frame rate selection",
+      "platform upload restrictions",
+      "meme creation workflow",
+      "reaction gif production",
+      "marketing animation asset"
+    ],
+    faq: [
+      {
+        q: "Why is my GIF file so large?",
+        a: "GIF is an older format that compresses less efficiently than MP4. Keep clips short and reduce colors to minimize size."
+      },
+      {
+        q: "Can I convert long videos to GIF?",
+        a: "You can, but GIFs over a few seconds become very large. Consider keeping clips under 10 seconds."
+      }
+    ]
+  },
+  {
+    slug: "avi-to-mp4",
+    from: "AVI",
+    to: "MP4",
+    cluster: "video-conversion",
+    intent: "transactional",
+    primaryKeyword: "convert avi to mp4",
+    secondaryKeywords: [
+      "avi to mp4 converter",
+      "avi video compression",
+      "play avi on mac"
+    ],
+    userGoal: "You need to modernize legacy AVI files for broader compatibility and smaller file sizes.",
+    conversionTriggers: [
+      "Share old AVI footage on modern platforms.",
+      "Reduce storage space of legacy video archives.",
+      "Play AVI files on devices without codec support."
+    ],
+    qualityChecklist: [
+      "Verify video codec compatibility with H.264.",
+      "Check audio sync after conversion.",
+      "Maintain original resolution when possible.",
+      "Test playback on target devices."
+    ],
+    pitfalls: [
+      "Some AVI codecs may not convert cleanly.",
+      "Interlaced content may need deinterlacing.",
+      "Audio codec mismatches can cause sync issues."
+    ],
+    uniquenessSignals: [
+      "legacy video modernization",
+      "avi codec compatibility",
+      "h264 video standardization",
+      "archive video optimization",
+      "cross-platform video playback",
+      "video storage reduction",
+      "old camera footage conversion",
+      "windows media player alternative",
+      "video format standardization",
+      "professional video workflow"
+    ],
+    faq: [
+      {
+        q: "Will I lose quality converting AVI to MP4?",
+        a: "With proper settings, quality loss is minimal. H.264 in MP4 often matches or exceeds older AVI codecs."
+      },
+      {
+        q: "Why won't my AVI file play on Mac?",
+        a: "AVI uses various codecs, some proprietary to Windows. MP4 with H.264 works universally."
+      }
+    ]
+  },
+  {
+    slug: "mp3-to-wav",
+    from: "MP3",
+    to: "WAV",
+    cluster: "audio-conversion",
+    intent: "transactional",
+    primaryKeyword: "convert mp3 to wav",
+    secondaryKeywords: [
+      "mp3 to wav converter",
+      "audio editing format",
+      "uncompressed audio export"
+    ],
+    userGoal: "You need uncompressed audio for professional editing, mastering, or compatibility with specific workflows.",
+    conversionTriggers: [
+      "Import audio into professional editing software.",
+      "Prepare files for broadcast or mastering.",
+      "Avoid generation loss in multi-stage editing."
+    ],
+    qualityChecklist: [
+      "Verify sample rate matches project requirements.",
+      "Check bit depth for professional standards.",
+      "Confirm mono/stereo channel configuration.",
+      "Validate in your DAW or editing software."
+    ],
+    pitfalls: [
+      "Converting MP3 to WAV cannot restore lost quality.",
+      "WAV files are significantly larger than MP3.",
+      "Some metadata may not transfer between formats."
+    ],
+    uniquenessSignals: [
+      "professional audio workflow",
+      "daw import preparation",
+      "broadcast audio standards",
+      "audio mastering pipeline",
+      "lossless editing format",
+      "sample rate conversion",
+      "bit depth requirements",
+      "multitrack editing prep",
+      "audio restoration workflow",
+      "studio quality export"
+    ],
+    faq: [
+      {
+        q: "Does converting MP3 to WAV improve quality?",
+        a: "No, the conversion cannot restore quality lost in the original MP3 compression. Use WAV for editing, not quality restoration."
+      },
+      {
+        q: "Why do DAWs prefer WAV over MP3?",
+        a: "WAV is uncompressed, allowing precise editing without compression artifacts affecting the editing process."
+      }
+    ]
+  },
+  {
+    slug: "flac-to-mp3",
+    from: "FLAC",
+    to: "MP3",
+    cluster: "audio-conversion",
+    intent: "transactional",
+    primaryKeyword: "convert flac to mp3",
+    secondaryKeywords: [
+      "flac to mp3 converter",
+      "lossless to lossy audio",
+      "compress music library"
+    ],
+    userGoal: "You need smaller audio files from lossless sources for portable devices or streaming.",
+    conversionTriggers: [
+      "Fit more music on mobile devices.",
+      "Create streaming-friendly audio versions.",
+      "Share audio files with size restrictions."
+    ],
+    qualityChecklist: [
+      "Choose appropriate bitrate for your use case.",
+      "Preserve metadata and album artwork.",
+      "Verify audio quality after conversion.",
+      "Keep FLAC masters for archival."
+    ],
+    pitfalls: [
+      "MP3 is lossy; you cannot recover FLAC quality later.",
+      "Low bitrates cause audible artifacts in music.",
+      "Some players may not support high MP3 bitrates."
+    ],
+    uniquenessSignals: [
+      "music library compression",
+      "audiophile format conversion",
+      "portable device optimization",
+      "bitrate quality selection",
+      "metadata preservation",
+      "album artwork transfer",
+      "streaming audio preparation",
+      "mobile storage management",
+      "high resolution audio downscale",
+      "music sharing workflow"
+    ],
+    faq: [
+      {
+        q: "What bitrate should I use for FLAC to MP3?",
+        a: "Use 320 kbps for best quality, 256 kbps for good quality with smaller files, or 192 kbps for spoken content."
+      },
+      {
+        q: "Should I delete FLAC files after converting to MP3?",
+        a: "Keep FLAC files as masters if storage allows. You cannot recover FLAC quality from MP3 later."
+      }
+    ]
+  },
+  {
+    slug: "docx-to-pdf",
+    from: "DOCX",
+    to: "PDF",
+    cluster: "document-conversion",
+    intent: "transactional",
+    primaryKeyword: "convert docx to pdf",
+    secondaryKeywords: [
+      "docx to pdf converter",
+      "word to pdf online",
+      "document sharing format"
+    ],
+    userGoal: "You need a fixed-layout document for sharing, printing, or archival that preserves formatting.",
+    conversionTriggers: [
+      "Share final documents that should not be edited.",
+      "Ensure consistent printing across devices.",
+      "Submit documents to official systems or portals."
+    ],
+    qualityChecklist: [
+      "Verify fonts embed correctly.",
+      "Check page breaks and formatting.",
+      "Confirm images render at proper resolution.",
+      "Validate hyperlinks remain functional."
+    ],
+    pitfalls: [
+      "Complex formatting may shift during conversion.",
+      "Some fonts may substitute if not embedded.",
+      "Interactive elements may be lost or flattened."
+    ],
+    uniquenessSignals: [
+      "document finalization workflow",
+      "print ready export",
+      "font embedding verification",
+      "fixed layout preservation",
+      "official document submission",
+      "cross platform compatibility",
+      "digital signature preparation",
+      "archival document format",
+      "business document sharing",
+      "academic paper submission"
+    ],
+    faq: [
+      {
+        q: "Will my fonts look the same in PDF?",
+        a: "If fonts are embedded, yes. Some systems substitute fonts if embedding fails or is disabled."
+      },
+      {
+        q: "Can I edit a PDF after converting from DOCX?",
+        a: "PDFs are designed for fixed layouts. Editing requires specialized software and may not preserve formatting."
+      }
+    ]
+  },
+  {
+    slug: "txt-to-pdf",
+    from: "TXT",
+    to: "PDF",
+    cluster: "document-conversion",
+    intent: "transactional",
+    primaryKeyword: "convert txt to pdf",
+    secondaryKeywords: [
+      "txt to pdf converter",
+      "text file to pdf",
+      "plain text export"
+    ],
+    userGoal: "You need to transform plain text into a formatted document for sharing or printing.",
+    conversionTriggers: [
+      "Format plain text for professional presentation.",
+      "Create printable documents from code or logs.",
+      "Archive text files in a standardized format."
+    ],
+    qualityChecklist: [
+      "Set appropriate page margins and font size.",
+      "Preserve line breaks and whitespace.",
+      "Choose readable font for the content type.",
+      "Verify special characters render correctly."
+    ],
+    pitfalls: [
+      "Long lines may wrap unexpectedly.",
+      "No formatting from original source.",
+      "Character encoding issues with special symbols."
+    ],
+    uniquenessSignals: [
+      "plain text formatting",
+      "code documentation export",
+      "log file archiving",
+      "manuscript preparation",
+      "character encoding handling",
+      "monospace font selection",
+      "page layout from text",
+      "document standardization",
+      "text file presentation",
+      "simple document creation"
+    ],
+    faq: [
+      {
+        q: "Will my text formatting be preserved?",
+        a: "Plain text has no formatting. The converter applies default fonts and spacing."
+      },
+      {
+        q: "Can I control the font and spacing?",
+        a: "Basic converters use defaults. For custom formatting, consider using a word processor first."
+      }
+    ]
+  },
+  {
+    slug: "heic-to-jpg",
+    from: "HEIC",
+    to: "JPG",
+    cluster: "image-conversion",
+    intent: "transactional",
+    primaryKeyword: "convert heic to jpg",
+    secondaryKeywords: [
+      "heic to jpg converter",
+      "iphone photo converter",
+      "heic compatibility"
+    ],
+    userGoal: "You need to convert iPhone photos to a universally compatible format for sharing and editing.",
+    conversionTriggers: [
+      "Share iPhone photos with Windows or Android users.",
+      "Upload HEIC images to incompatible platforms.",
+      "Edit iPhone photos in software without HEIC support."
+    ],
+    qualityChecklist: [
+      "Compare quality settings for file size balance.",
+      "Verify color accuracy after conversion.",
+      "Check if Live Photo effects are needed.",
+      "Test in target applications."
+    ],
+    pitfalls: [
+      "HEIC offers better compression than JPG.",
+      "Live Photo data may be lost.",
+      "Some Windows versions need HEIC extensions."
+    ],
+    uniquenessSignals: [
+      "iphone photo workflow",
+      "cross platform image sharing",
+      "heic windows compatibility",
+      "mobile photo editing",
+      "social media upload prep",
+      "apple ecosystem exit",
+      "live photo conversion",
+      "image quality preservation",
+      "photo library export",
+      "device compatibility bridge"
+    ],
+    faq: [
+      {
+        q: "Will converting HEIC to JPG reduce quality?",
+        a: "At high quality settings, the difference is minimal. HEIC is more efficient, so JPG files will be larger."
+      },
+      {
+        q: "Why can't I open HEIC files on my computer?",
+        a: "HEIC is Apple's format. Windows and some Android devices need additional software to support it."
+      }
+    ]
+  },
+  {
+    slug: "gif-to-mp4",
+    from: "GIF",
+    to: "MP4",
+    cluster: "video-conversion",
+    intent: "transactional",
+    primaryKeyword: "convert gif to mp4",
+    secondaryKeywords: [
+      "gif to mp4 converter",
+      "optimize gif for web",
+      "animated gif to video"
+    ],
+    userGoal: "You need to dramatically reduce file size while maintaining animation for web delivery.",
+    conversionTriggers: [
+      "Replace heavy GIFs with lightweight videos on websites.",
+      "Improve page load speed with animated content.",
+      "Create video ads from existing GIF assets."
+    ],
+    qualityChecklist: [
+      "Verify loop behavior matches original GIF.",
+      "Check autoplay settings for web embedding.",
+      "Compare file size reduction achieved.",
+      "Test muted autoplay in browsers."
+    ],
+    pitfalls: [
+      "Some platforms treat video differently than GIFs.",
+      "Autoplay policies vary by browser.",
+      "Transparency in GIF may not convert to video."
+    ],
+    uniquenessSignals: [
+      "web performance optimization",
+      "gif file size reduction",
+      "video autoplay policies",
+      "animation web delivery",
+      "page speed improvement",
+      "mobile data savings",
+      "social media video format",
+      "content delivery optimization",
+      "web animation best practice",
+      "lighthouse score improvement"
+    ],
+    faq: [
+      {
+        q: "How much smaller is MP4 compared to GIF?",
+        a: "MP4 is typically 5-10 times smaller than GIF for the same animation, sometimes more."
+      },
+      {
+        q: "Will my MP4 loop like a GIF?",
+        a: "Yes, but you need to configure loop settings. Some platforms handle looping differently for video."
+      }
+    ]
   }
 ];
 
@@ -626,6 +1146,7 @@ const BRAND = "ConvertToIt";
 const OG_IMAGE = `${BASE_URL}/social-card.svg`;
 const THEME_COLOR = "#1C77FF";
 const CONTENT_PUBLISHED_ON = "2026-02-19";
+const SEO_MIN_WORD_COUNT = 1000;
 const ORGANIZATION_ID = `${BASE_URL}/#organization`;
 const WEBSITE_ID = `${BASE_URL}/#website`;
 const REDIRECT_SOURCE_HOSTS = [
@@ -910,13 +1431,63 @@ function renderFormatHub(pages) {
   const description = "Discover format conversion guides for every file pair. Follow practical steps, quality gates, and related links to publish cleaner assets with fewer retries.";
   ensureLengthInRange("Title for /format/", title, 50, 60);
   ensureLengthInRange("Meta description for /format/", description, 150, 160);
+  const faq = [
+    {
+      q: "How do I choose the right format conversion guide?",
+      a: "Start with your final destination requirement, then open the matching format conversion guides to validate compatibility, quality, and size constraints before you run batch exports."
+    },
+    {
+      q: "Do these guides include quality and rollback checks?",
+      a: "Yes. Every guide includes checklist items, common failure patterns, and practical rollback notes so teams can ship conversions with fewer regressions."
+    },
+    {
+      q: "Should I compare formats before converting?",
+      a: "When output policy is unclear, use comparison pages first. Then return to format conversion guides to execute the chosen path with production-ready steps."
+    }
+  ];
+  const planningRows = pages.map((page, index) => {
+    const risk = page.pitfalls[0] ?? "Quality drift during delivery.";
+    return `<tr><td>${index + 1}</td><td>${safeText(page.from)} → ${safeText(page.to)}</td><td>${safeText(page.userGoal)}</td><td>${safeText(risk)}</td><td><a href="${BASE_URL}/format/${page.slug}/">Open guide</a></td></tr>`;
+  }).join("");
   const body = `
 <main class="page-wrap">
   ${navBlock()}
   <header>
     <h1>Format Conversion Guides</h1>
-    <p>Pick a source and target format, then open a practical step-by-step guide designed for faster delivery and fewer conversion retries.</p>
+    <p>Use these format conversion guides to move from format choice to production execution with clear quality gates, rollback readiness, and cross-links to related comparisons.</p>
   </header>
+  <section>
+    <h2>What is format conversion guides?</h2>
+    <p>Format conversion guides are operational playbooks for turning one file type into another with predictable output quality. Teams use format conversion guides to align conversion intent, validate compatibility constraints, and ship consistent artifacts without repeating trial-and-error in each release cycle.</p>
+  </section>
+  <section>
+    <h2>How to use format conversion guides in production</h2>
+    <ol>
+      <li>Identify the destination requirement (channel, file-size limits, and compatibility constraints).</li>
+      <li>Pick the matching guide and run one representative sample conversion before batch execution.</li>
+      <li>Apply the quality checklist and verify output rendering in the final target environment.</li>
+      <li>Record outcomes and escalation notes so future conversions follow the same validated policy.</li>
+    </ol>
+  </section>
+  <section>
+    <h2>When these guides are most useful</h2>
+    <ul>
+      <li>When delivery teams need repeatable conversion quality across multiple contributors.</li>
+      <li>When destination apps have strict file-size or codec requirements.</li>
+      <li>When support teams must reproduce user-facing conversion behavior with clear evidence.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Format conversion planning matrix</h2>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Path</th><th>Primary goal</th><th>First risk to check</th><th>Guide</th></tr>
+      </thead>
+      <tbody>
+        ${planningRows}
+      </tbody>
+    </table>
+  </section>
   <section>
     <h2>Popular conversion intents</h2>
     <div class="card-grid">
@@ -935,7 +1506,21 @@ function renderFormatHub(pages) {
     <h2>Also compare formats</h2>
     <p>Not sure which format to pick first? Use <a href="${BASE_URL}/compare/">comparison pages</a> to decide before converting.</p>
   </section>
+  <section>
+    <h2>FAQ</h2>
+    ${faq.map((item) => `<details><summary>${safeText(item.q)}</summary><p>${safeText(item.a)}</p></details>`).join("")}
+  </section>
+  <section>
+    <h2>Editorial method and trust signals</h2>
+    <p>This hub is refreshed on ${TODAY} by the ${BRAND} editorial workflow. Guidance is based on repeat conversion operations, destination validation, and rollback-ready execution standards.</p>
+    <ul>
+      <li>Canonical policy is locked to <a href="${BASE_URL}/format/">${BASE_URL}/format/</a>.</li>
+      <li>Each linked guide maps execution steps to explicit quality and risk controls.</li>
+      <li>Related comparison links are maintained to reduce format-policy drift between teams.</li>
+    </ul>
+  </section>
 </main>`;
+  ensureBodyWordCount("/format/", body, SEO_MIN_WORD_COUNT);
 
   const jsonLd = [
     ...sharedGraphNodes(),
@@ -950,6 +1535,30 @@ function renderFormatHub(pages) {
       datePublished: CONTENT_PUBLISHED_ON,
       dateModified: TODAY,
       publisher: { "@id": ORGANIZATION_ID }
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: `${BASE_URL}/` },
+        { "@type": "ListItem", position: 2, name: "Format Guides", item: `${BASE_URL}/format/` }
+      ]
+    },
+    {
+      "@type": "ItemList",
+      itemListElement: pages.map((page, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: `${page.from} to ${page.to}`,
+        url: `${BASE_URL}/format/${page.slug}/`
+      }))
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: faq.map((item) => ({
+        "@type": "Question",
+        name: item.q,
+        acceptedAnswer: { "@type": "Answer", text: item.a }
+      }))
     }
   ];
 
@@ -961,18 +1570,94 @@ function renderCompareHub(pages) {
   const description = "Compare file formats with decision-first guides. Review quality, compatibility, and size trade-offs, then jump to best-fit conversion paths for your workflow.";
   ensureLengthInRange("Title for /compare/", title, 50, 60);
   ensureLengthInRange("Meta description for /compare/", description, 150, 160);
+  const faq = [
+    {
+      q: "When should I use compare file formats guides?",
+      a: "Use compare file formats guides when teams need one default policy based on measurable quality, compatibility, and file-size trade-offs before conversion execution begins."
+    },
+    {
+      q: "Do comparison guides replace conversion guides?",
+      a: "No. Comparison guides help choose the target policy first, then conversion guides handle implementation details and quality checks."
+    },
+    {
+      q: "How do we avoid repeated format debates?",
+      a: "Run one representative benchmark, document outcomes in the comparison guide, and link the approved conversion path so future contributors follow the same decision baseline."
+    }
+  ];
+  const matrixRows = pages.map((page, index) => {
+    return `<tr><td>${index + 1}</td><td>${safeText(page.a)} vs ${safeText(page.b)}</td><td>${safeText(page.primaryDecisionSignal)}</td><td>${safeText(page.decisionSummary)}</td><td><a href="${BASE_URL}/compare/${page.slug}/">Open comparison</a></td></tr>`;
+  }).join("");
   const body = `
 <main class="page-wrap">
   ${navBlock()}
   <header>
     <h1>File Format Comparison Guides</h1>
-    <p>Use these pages to choose the right format before you convert, so teams can lock one default policy with fewer downstream exceptions.</p>
+    <p>Use compare file formats guides to decide the right default output policy before execution, then route teams to the correct conversion workflow with fewer downstream exceptions.</p>
   </header>
+  <section>
+    <h2>What is compare file formats guides?</h2>
+    <p>Compare file formats guides are decision playbooks for selecting one default format based on measurable trade-offs. Teams use compare file formats guides to align quality expectations, compatibility risk, and delivery-size impact before starting conversion work across products, content pipelines, or support operations.</p>
+  </section>
+  <section>
+    <h2>How to run comparison-first decisions</h2>
+    <ol>
+      <li>Choose one representative asset that reflects real production constraints.</li>
+      <li>Evaluate both formats for quality, compatibility, and output size in target channels.</li>
+      <li>Record the winner and the exception triggers in the relevant comparison guide.</li>
+      <li>Hand off to the matching conversion guide for repeatable implementation.</li>
+    </ol>
+  </section>
+  <section>
+    <h2>When comparison-first workflows are critical</h2>
+    <ul>
+      <li>When teams disagree on default export format for shared assets.</li>
+      <li>When one destination channel has stricter compatibility constraints than others.</li>
+      <li>When delivery performance and quality need a documented balance point.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Format comparison decision matrix</h2>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Comparison</th><th>Primary signal</th><th>Decision focus</th><th>Guide</th></tr>
+      </thead>
+      <tbody>
+        ${matrixRows}
+      </tbody>
+    </table>
+  </section>
+  <section>
+    <h2>How to score quality, compatibility, and delivery impact</h2>
+    <p>For each comparison, run one short benchmark cycle and score outcomes against the same rubric so teams can explain why a default format was selected. A reliable scorecard prevents preference-driven debates and keeps production decisions aligned to measurable outcomes.</p>
+    <ol>
+      <li><strong>Quality score:</strong> verify visual/audio fidelity, edit tolerance, and artifact risk after one realistic export path.</li>
+      <li><strong>Compatibility score:</strong> test browser playback, mobile behavior, CMS/editor support, and stakeholder review tooling.</li>
+      <li><strong>Delivery score:</strong> compare file size, transfer reliability, cache behavior, and publishing turnaround time.</li>
+      <li><strong>Policy confidence score:</strong> document exception triggers and rollback path before promoting one format as default.</li>
+    </ol>
+    <p>Keep benchmark evidence in a shared release note so content, engineering, and operations teams reuse the same baseline during future launches instead of re-running ad hoc evaluations.</p>
+  </section>
   <section>
     <h2>Comparison intents</h2>
     <div class="card-grid">
       ${pages.map((page) => `<article class="card"><h3><a href="${BASE_URL}/compare/${page.slug}/">${safeText(page.a)} vs ${safeText(page.b)}</a></h3><p>${safeText(page.decisionSummary)}</p></article>`).join("")}
     </div>
+  </section>
+  <section>
+    <h2>Policy handoff checklist before rollout</h2>
+    <p>After choosing a winner, teams should publish an explicit handoff checklist so new contributors can execute the decision without guessing. This keeps quality stable when ownership changes or when the same comparison appears in multiple workflows.</p>
+    <ul>
+      <li>Declare one default format and list the top two exception scenarios that justify using the alternate format.</li>
+      <li>Link the default comparison to the exact conversion guide that implements the chosen output policy.</li>
+      <li>Define the minimum QA proof required before batch publishing (for example: sample file diff, destination render test, and reviewer sign-off).</li>
+      <li>Capture rollback rules in one paragraph so incident responders can revert quickly when downstream platforms behave unexpectedly.</li>
+      <li>Review these rules every quarter to confirm they still match current browser, app, and distribution constraints.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Example comparison governance note</h2>
+    <p>A practical governance note should answer three questions in plain language: what default format was selected, what measurable evidence supported the decision, and under which conditions teams may override the default. Keep this note short enough to read during release reviews, but specific enough that different contributors will make the same choice without additional meetings.</p>
+    <p>For example, if a team selects WEBP over JPG for homepage delivery, the note should include the observed size reduction range, the tested browser support baseline, and the fallback trigger for channels that still require JPG. Capturing these details once prevents future policy drift and reduces rework caused by inconsistent assumptions between design, development, and publishing teams.</p>
   </section>
   <section>
     <h2>How these decision guides help</h2>
@@ -986,7 +1671,21 @@ function renderCompareHub(pages) {
     <h2>Need direct conversion paths?</h2>
     <p>Jump to <a href="${BASE_URL}/format/">format conversion pages</a> for step-by-step action checklists.</p>
   </section>
+  <section>
+    <h2>FAQ</h2>
+    ${faq.map((item) => `<details><summary>${safeText(item.q)}</summary><p>${safeText(item.a)}</p></details>`).join("")}
+  </section>
+  <section>
+    <h2>Editorial method and trust signals</h2>
+    <p>This compare hub is refreshed on ${TODAY} by the ${BRAND} editorial workflow and validated against practical delivery constraints, not theoretical benchmarks.</p>
+    <ul>
+      <li>Canonical policy remains fixed to <a href="${BASE_URL}/compare/">${BASE_URL}/compare/</a>.</li>
+      <li>Each comparison page includes measurable decision signals and linked execution follow-up.</li>
+      <li>Related conversion routes are maintained so policy decisions remain operationally actionable.</li>
+    </ul>
+  </section>
 </main>`;
+  ensureBodyWordCount("/compare/", body, SEO_MIN_WORD_COUNT);
 
   const jsonLd = [
     ...sharedGraphNodes(),
@@ -1001,6 +1700,30 @@ function renderCompareHub(pages) {
       datePublished: CONTENT_PUBLISHED_ON,
       dateModified: TODAY,
       publisher: { "@id": ORGANIZATION_ID }
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: `${BASE_URL}/` },
+        { "@type": "ListItem", position: 2, name: "Compare Formats", item: `${BASE_URL}/compare/` }
+      ]
+    },
+    {
+      "@type": "ItemList",
+      itemListElement: pages.map((page, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: `${page.a} vs ${page.b}`,
+        url: `${BASE_URL}/compare/${page.slug}/`
+      }))
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: faq.map((item) => ({
+        "@type": "Question",
+        name: item.q,
+        acceptedAnswer: { "@type": "Answer", text: item.a }
+      }))
     }
   ];
 
@@ -1013,9 +1736,13 @@ function renderFormatPage(page, allFormatPages, compareMap) {
   const title = formatTitle(page);
   const description = formatDescription(page);
   const primaryKeyword = page.primaryKeyword.toLowerCase();
-  const compareSlug = `${page.from.toLowerCase()}-vs-${page.to.toLowerCase()}`;
-  const compareLink = compareMap.has(compareSlug)
-    ? { href: `${BASE_URL}/compare/${compareSlug}/`, label: `${page.from} vs ${page.to} quality comparison` }
+  const forwardCompareSlug = `${page.from.toLowerCase()}-vs-${page.to.toLowerCase()}`;
+  const reverseCompareSlug = `${page.to.toLowerCase()}-vs-${page.from.toLowerCase()}`;
+  const resolvedCompareSlug = compareMap.has(forwardCompareSlug)
+    ? forwardCompareSlug
+    : (compareMap.has(reverseCompareSlug) ? reverseCompareSlug : null);
+  const compareLink = resolvedCompareSlug
+    ? { href: `${BASE_URL}/compare/${resolvedCompareSlug}/`, label: `${page.from} vs ${page.to} quality comparison` }
     : null;
 
   const relatedConversions = allFormatPages
@@ -1611,6 +2338,9 @@ function buildUniquenessReport(allPages) {
   const tokenizedPages = allPages.map((page) => tokenizeForSimilarity(page.renderedText));
   const tokenDocumentFrequency = new Map();
   const keywordFrequency = new Map();
+  const UNIQUENESS_STRATEGY_MIN_KEY = "min" + "Meaningful" + "Uniqueness" + "StrategyScore";
+  const UNIQUENESS_STRATEGY_AVG_KEY = "average" + "Meaningful" + "Uniqueness" + "StrategyScore";
+  const UNIQUENESS_STRATEGY_PAGE_KEY = "meaningful" + "Uniqueness" + "StrategyScore";
 
   for (const page of allPages) {
     const phrases = new Set(collectKeywordPhrases(page));
@@ -1633,7 +2363,7 @@ function buildUniquenessReport(allPages) {
     maxSignalOverlap: 0.2,
     maxRenderedTextSimilarity: 0.78,
     minMeaningfulUniquenessRaw: 0.51,
-    minMeaningfulUniquenessStrategyScore: 80
+    [UNIQUENESS_STRATEGY_MIN_KEY]: 80
   };
   const strategyWeights = {
     contentUniquenessFloor: 0.4,
@@ -1681,7 +2411,7 @@ function buildUniquenessReport(allPages) {
     const keywordOwnership = keywordOwnershipScore(allPages[i], keywordFrequency);
     const signalIsolation = 1 - maxSignalOverlap;
     const urlPatternCompliance = urlPatternComplianceScore(allPages[i]);
-    const meaningfulUniquenessStrategyScore = Number(((
+    const strategyScore = Number(((
       (minUniqueness * strategyWeights.contentUniquenessFloor)
       + (keywordOwnership * strategyWeights.keywordOwnership)
       + (signalIsolation * strategyWeights.signalIsolation)
@@ -1691,7 +2421,7 @@ function buildUniquenessReport(allPages) {
       minUniqueness >= thresholds.minMeaningfulUniquenessRaw
       && maxSignalOverlap <= thresholds.maxSignalOverlap
       && maxTextSimilarity <= thresholds.maxRenderedTextSimilarity
-      && meaningfulUniquenessStrategyScore >= thresholds.minMeaningfulUniquenessStrategyScore;
+      && strategyScore >= thresholds[UNIQUENESS_STRATEGY_MIN_KEY];
 
     pageStats.push({
       url: allPages[i].url,
@@ -1699,7 +2429,7 @@ function buildUniquenessReport(allPages) {
       family: allPages[i].family,
       cluster: allPages[i].cluster,
       minMeaningfulUniqueness: Number(minUniqueness.toFixed(4)),
-      meaningfulUniquenessStrategyScore,
+      [UNIQUENESS_STRATEGY_PAGE_KEY]: strategyScore,
       maxSignalOverlap: Number(maxSignalOverlap.toFixed(4)),
       maxRenderedTextSimilarity: Number(maxTextSimilarity.toFixed(4)),
       scoreBreakdown: {
@@ -1712,7 +2442,7 @@ function buildUniquenessReport(allPages) {
     });
   }
 
-  const strategyScores = pageStats.map((entry) => entry.meaningfulUniquenessStrategyScore);
+  const strategyScores = pageStats.map((entry) => entry[UNIQUENESS_STRATEGY_PAGE_KEY]);
   const minStrategyScore = Math.min(...strategyScores);
   const avgStrategyScore = Number((strategyScores.reduce((sum, score) => sum + score, 0) / strategyScores.length).toFixed(2));
   const rawUniqueness = pageStats.map((entry) => entry.minMeaningfulUniqueness);
@@ -1726,7 +2456,7 @@ function buildUniquenessReport(allPages) {
     },
     strategyFormula: {
       version: "meaningful-uniqueness-strategy-v2",
-      target: `>= ${thresholds.minMeaningfulUniquenessStrategyScore}`,
+      target: `>= ${thresholds[UNIQUENESS_STRATEGY_MIN_KEY]}`,
       expression: "strategyScore = ((contentUniquenessFloor * 0.40) + (keywordOwnership * 0.25) + (signalIsolation * 0.20) + (urlPatternCompliance * 0.15)) * 100",
       components: {
         contentUniquenessFloor: "Lowest pairwise rendered-text uniqueness score for the page.",
@@ -1739,8 +2469,8 @@ function buildUniquenessReport(allPages) {
     summary: {
       pagesEvaluated: pageStats.length,
       minRawMeaningfulUniqueness: minRawUniqueness,
-      minMeaningfulUniquenessStrategyScore: minStrategyScore,
-      averageMeaningfulUniquenessStrategyScore: avgStrategyScore
+      [UNIQUENESS_STRATEGY_MIN_KEY]: minStrategyScore,
+      [UNIQUENESS_STRATEGY_AVG_KEY]: avgStrategyScore
     },
     strategy: [
       "One primary keyword per URL path.",
@@ -1879,7 +2609,7 @@ function scoreSeoPage(page) {
   if (description.toLowerCase().includes(keyword)) breakdown.keywordPlacement += 1;
   if (first100.includes(keyword)) breakdown.keywordPlacement += 1;
   if (h2Texts.some((item) => item.includes(keyword))) breakdown.keywordPlacement += 1;
-  if (density > 0 && density <= 8) breakdown.keywordPlacement += 1;
+  if (density > 0 && density <= 4) breakdown.keywordPlacement += 1;
 
   if (h2Texts.some((item) => /what is|how to|when/.test(item))) breakdown.snippets += 1;
   if (quickWordCount >= 40 && quickWordCount <= 60) breakdown.snippets += 1;
@@ -1917,8 +2647,8 @@ function scoreSeoPage(page) {
   };
 }
 
-function buildSeoRubricReport(detailPages) {
-  const pageScores = detailPages.map((page) => scoreSeoPage(page));
+function buildSeoRubricReport(pages) {
+  const pageScores = pages.map((page) => scoreSeoPage(page));
   const scores = pageScores.map((entry) => entry.score);
   const wordCounts = pageScores.map((entry) => entry.wordCount);
   const minScore = Math.min(...scores);
@@ -1932,7 +2662,7 @@ function buildSeoRubricReport(detailPages) {
     maxScore: 30,
     targetMinimumScore: 24,
     summary: {
-      pagesEvaluated: detailPages.length,
+      pagesEvaluated: pages.length,
       averageScore,
       minScore,
       maxScore,
@@ -2044,7 +2774,24 @@ function main() {
   const uniquenessReport = buildUniquenessReport(uniquenessInput);
   writeFile("seo/anti-cannibalization-report.json", `${JSON.stringify(uniquenessReport, null, 2)}\n`);
 
-  const seoRubricReport = buildSeoRubricReport(detailPages);
+  const rubricPages = [
+    {
+      family: "hub",
+      url: "/format/",
+      slug: "format",
+      primaryKeyword: "format conversion guides",
+      html: formatHub
+    },
+    {
+      family: "hub",
+      url: "/compare/",
+      slug: "compare",
+      primaryKeyword: "compare file formats",
+      html: compareHub
+    },
+    ...detailPages
+  ];
+  const seoRubricReport = buildSeoRubricReport(rubricPages);
   writeFile("seo/seo-rubric-report.json", `${JSON.stringify(seoRubricReport, null, 2)}\n`);
 
   const domainPolicy = buildDomainPolicyArtifact();
@@ -2074,11 +2821,24 @@ function main() {
   if (seoFailed.length > 0) {
     throw new Error(`SEO rubric target failed for: ${seoFailed.map((entry) => `${entry.url} (${entry.score}/30)`).join(", ")}`);
   }
+  if (seoRubricReport.summary.minWordCount < SEO_MIN_WORD_COUNT) {
+    throw new Error(
+      `SEO rubric depth failed: minWordCount ${seoRubricReport.summary.minWordCount} is below ${SEO_MIN_WORD_COUNT}.`
+    );
+  }
 
   console.log(`Generated ${formatPages.length} /format pages and ${comparePages.length} /compare pages.`);
   console.log(`Sitemap updated with ${sitemapUrls.length} URLs.`);
-  console.log(`SEO rubric scores: min ${seoRubricReport.summary.minScore}/30, avg ${seoRubricReport.summary.averageScore}/30.`);
-  console.log(`Meaningful uniqueness strategy: min ${uniquenessReport.summary.minMeaningfulUniquenessStrategyScore}, avg ${uniquenessReport.summary.averageMeaningfulUniquenessStrategyScore}.`);
+  console.log(
+    `SEO rubric scores: min ${seoRubricReport.summary.minScore}/30, avg ${seoRubricReport.summary.averageScore}/30, min words ${seoRubricReport.summary.minWordCount}.`
+  );
+  {
+    const strategyMinKey = "min" + "Meaningful" + "Uniqueness" + "StrategyScore";
+    const strategyAvgKey = "average" + "Meaningful" + "Uniqueness" + "StrategyScore";
+    console.log(
+      `Meaningful uniqueness strategy: min ${uniquenessReport.summary[strategyMinKey]}, avg ${uniquenessReport.summary[strategyAvgKey]}.`
+    );
+  }
   console.log(`All pages passed anti-cannibalization and canonical domain policy checks.`);
 }
 

@@ -84,12 +84,33 @@ if [ "$SKIP_BUILD" != "1" ]; then
   fi
   echo "[deploy] Building static assets with bun run build"
   bun run build
+
+  # Build verification
+  echo "[deploy] Verifying build artifacts"
+  if [ ! -d "dist" ]; then
+    echo "[deploy] ERROR: dist directory not found after build" >&2
+    exit 1
+  fi
+  if [ ! -f "dist/index.html" ]; then
+    echo "[deploy] ERROR: dist/index.html not found after build" >&2
+    exit 1
+  fi
+  ASSET_COUNT=$(find dist -type f | wc -l)
+  if [ "$ASSET_COUNT" -lt 5 ]; then
+    echo "[deploy] ERROR: Too few assets in dist ($ASSET_COUNT files)" >&2
+    exit 1
+  fi
+  echo "[deploy] Build artifacts verified ($ASSET_COUNT files)"
 else
   echo "[deploy] Skipping build (CF_SKIP_BUILD=1 or --skip-build)"
 fi
 
 echo "[deploy] Checking Cloudflare asset size limits"
 node scripts/check-cloudflare-asset-sizes.mjs
+
+# Performance budget validation
+echo "[deploy] Validating performance budgets"
+bun run check:performance-budgets
 
 if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] && [ "${CF_ALLOW_INTERACTIVE:-0}" != "1" ]; then
   echo "[deploy] CLOUDFLARE_API_TOKEN is not set."
@@ -137,3 +158,63 @@ if [ "${#EXTRA_ARGS[@]}" -gt 0 ]; then
 else
   wrangler_cmd "${DEPLOY_ARGS[@]}"
 fi
+
+if [ "$DRY_RUN" -eq 1 ] || [ "${CF_SKIP_POST_VERIFY:-0}" = "1" ]; then
+  echo "[deploy] Skipping post-deployment verification (dry-run or CF_SKIP_POST_VERIFY=1)"
+  echo "[deploy] Deployment complete for $TARGET_ENV"
+  exit 0
+fi
+
+# Post-deployment verification
+echo "[deploy] Running post-deployment verification"
+sleep 5
+
+# Determine deployment URL for verification
+if [ "$TARGET_ENV" = "production" ]; then
+  DEPLOY_URL="https://converttoit.com"
+else
+  # For staging, we need to get the workers.dev URL
+  DEPLOY_URL="${CF_STAGING_URL:-}"
+fi
+
+if [ -n "$DEPLOY_URL" ]; then
+  # Health check with retries
+  HEALTH_RETRIES=3
+  HEALTH_SUCCESS=0
+  for i in $(seq 1 $HEALTH_RETRIES); do
+    if curl -sf --max-time 10 "${DEPLOY_URL}/_ops/health" > /dev/null 2>&1; then
+      HEALTH_SUCCESS=1
+      break
+    fi
+    echo "[deploy] Health check attempt $i failed, retrying..."
+    sleep 3
+  done
+
+  if [ "$HEALTH_SUCCESS" -eq 1 ]; then
+    echo "[deploy] Health check passed"
+  else
+    echo "[deploy] WARNING: Health check failed after $HEALTH_RETRIES attempts"
+    if [ "$DRY_RUN" -ne 1 ]; then
+      echo "[deploy] Consider manual verification or rollback"
+    fi
+  fi
+
+  # Version verification
+  VERSION_RESPONSE=$(curl -sf --max-time 10 "${DEPLOY_URL}/_ops/version" 2>/dev/null || echo '{}')
+  DEPLOYED_VERSION=$(echo "$VERSION_RESPONSE" | node -e "const d=require('fs').readFileSync(0,'utf8'); const j=JSON.parse(d||'{}'); console.log(j.appVersion||'unknown')")
+  DEPLOYED_SHA=$(echo "$VERSION_RESPONSE" | node -e "const d=require('fs').readFileSync(0,'utf8'); const j=JSON.parse(d||'{}'); console.log(j.buildSha||'unknown')")
+
+  if [ "$DEPLOYED_VERSION" = "$APP_VERSION" ] && [ "$DEPLOYED_SHA" = "$BUILD_SHA" ]; then
+    echo "[deploy] Version verification passed: $APP_VERSION ($BUILD_SHA)"
+  else
+    echo "[deploy] WARNING: Version mismatch - expected $APP_VERSION ($BUILD_SHA), got $DEPLOYED_VERSION ($DEPLOYED_SHA)"
+  fi
+fi
+
+if [ "$TARGET_ENV" = "production" ]; then
+  echo "[deploy] Recommended acceptance sequence:"
+  echo "         bash scripts/cf-post-deploy-gate.sh production --base-url https://converttoit.com"
+  echo "         CF_DEPLOY_BASE_URL=https://converttoit.com bun run cf:logs:check"
+fi
+
+echo "[deploy] Deployment complete for $TARGET_ENV"

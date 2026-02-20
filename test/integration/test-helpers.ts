@@ -4,6 +4,7 @@
  * Common utilities and fixtures for browser-based integration tests.
  */
 
+import { resolve } from "node:path";
 import puppeteer, { type Browser, type Page } from "puppeteer";
 import type { FileData, FileFormat, FormatHandler, ConvertPathNode } from "../../src/FormatHandler.js";
 
@@ -37,7 +38,13 @@ export interface TestContext {
   browser: Browser;
   page: Page;
   server: TestServer;
+  baseUrl: string;
 }
+
+type PageWithCompat = Page & {
+  __testBaseUrl?: string;
+  waitForTimeout?: (ms: number) => Promise<void>;
+};
 
 /**
  * Creates and starts a test server for serving the built application.
@@ -65,6 +72,7 @@ export function createTestServer(port: number = 8080): TestServer {
  */
 export async function createTestContext(serverPort: number = 8080): Promise<TestContext> {
   const server = createTestServer(serverPort);
+  const baseUrl = `http://localhost:${serverPort}`;
 
   const browser = await puppeteer.launch({
     headless: true,
@@ -72,9 +80,15 @@ export async function createTestContext(serverPort: number = 8080): Promise<Test
   });
 
   const page = await browser.newPage();
+  const pageCompat = page as PageWithCompat;
 
   // Set viewport to a consistent size for tests
   await page.setViewport({ width: 1280, height: 720 });
+  pageCompat.__testBaseUrl = baseUrl;
+  if (typeof pageCompat.waitForTimeout !== "function") {
+    pageCompat.waitForTimeout = async (ms: number) =>
+      await new Promise<void>(resolve => setTimeout(resolve, ms));
+  }
 
   // Configure console logging for debugging
   page.on("console", msg => {
@@ -94,28 +108,25 @@ export async function createTestContext(serverPort: number = 8080): Promise<Test
     console.error("[Browser Page Error]", error.message);
   });
 
-  return { browser, page, server };
+  return { browser, page, server, baseUrl };
 }
 
 /**
  * Waits for the application to be fully initialized.
  */
-export async function waitForAppReady(page: Page, timeout: number = 30000): Promise<void> {
-  await Promise.race([
-    new Promise<void>((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        reject(new Error("App did not initialize within timeout"));
-      }, timeout);
-
-      page.on("console", msg => {
-        if (msg.text() === "Built initial format list.") {
-          clearTimeout(timeoutId);
-          resolve();
-        }
-      });
-    }),
-    page.goto(`http://localhost:8080/convert/index.html`, { waitUntil: "domcontentloaded" })
-  ]);
+export async function waitForAppReady(page: Page, timeout: number = 60000): Promise<void> {
+  const baseUrl = (page as PageWithCompat).__testBaseUrl || "http://localhost:8080";
+  await page.goto(`${baseUrl}/convert/index.html`, { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(
+    () => {
+      const hasTraversal = typeof (window as any).tryConvertByTraversing === "function";
+      const hasConvertButton = document.querySelector("#convert-button") !== null;
+      const fromButtons = document.querySelectorAll("#from-list button").length;
+      const toButtons = document.querySelectorAll("#to-list button").length;
+      return hasTraversal && hasConvertButton && fromButtons > 0 && toButtons > 0;
+    },
+    { timeout }
+  );
 }
 
 /**
@@ -130,19 +141,18 @@ export async function cleanupTestContext(context: TestContext): Promise<void> {
 /**
  * Loads a test file as a FileData object.
  */
-export async function loadTestFile(fileName: string, serverUrl: string = "http://localhost:8080"): Promise<FileData> {
-  const response = await fetch(`${serverUrl}/test/${fileName}`);
-  if (!response.ok) {
+export async function loadTestFile(fileName: string, _serverUrl?: string): Promise<FileData> {
+  const file = Bun.file(`${__dirname}/../resources/${fileName}`);
+  if (!(await file.exists())) {
     throw new Error(`Failed to load test file: ${fileName}`);
   }
-  const bytes = await response.bytes();
-  return { name: fileName, bytes };
+  return { name: fileName, bytes: await file.bytes() };
 }
 
 /**
  * Loads multiple test files.
  */
-export async function loadTestFiles(fileNames: string[], serverUrl: string = "http://localhost:8080"): Promise<FileData[]> {
+export async function loadTestFiles(fileNames: string[], serverUrl?: string): Promise<FileData[]> {
   return Promise.all(fileNames.map(name => loadTestFile(name, serverUrl)));
 }
 
@@ -207,35 +217,25 @@ export async function uploadFileByDragDrop(
   selector: string = "#file-area"
 ): Promise<void> {
   const file = await loadTestFile(fileName);
-
-  // Get the file element
-  const fileHandle = await page.evaluateHandle(async (fileName, fileBytes) => {
-    const arrayBuffer = new Uint8Array(fileBytes).buffer;
-    const file = new File([arrayBuffer], fileName, { type: "application/octet-stream" });
-    return file;
-  }, fileName, Array.from(file.bytes));
-
-  // Create the DataTransfer and drag events
-  await page.evaluateHandle((fileHandle) => {
-    const dataTransfer = new DataTransfer();
-    dataTransfer.items.add(fileHandle as File);
-    return dataTransfer;
-  }, fileHandle);
-
-  // Dispatch drop event
-  await page.evaluate((selector) => {
+  await page.evaluate((selector, fileName, fileBytes) => {
     const element = document.querySelector(selector);
     if (!element) throw new Error(`Element not found: ${selector}`);
 
+    const bytes = new Uint8Array(fileBytes);
+    const blob = new Blob([bytes], { type: "application/octet-stream" });
+    const file = new File([blob], fileName, { type: "application/octet-stream" });
     const dataTransfer = new DataTransfer();
-    const dropEvent = new DragEvent("drop", {
-      bubbles: true,
-      cancelable: true,
-      dataTransfer
-    });
+    dataTransfer.items.add(file);
 
-    element.dispatchEvent(dropEvent);
-  }, selector);
+    for (const type of ["dragenter", "dragover", "drop"]) {
+      const event = new DragEvent(type, {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer
+      });
+      element.dispatchEvent(event);
+    }
+  }, selector, fileName, Array.from(file.bytes));
 }
 
 /**
@@ -251,13 +251,8 @@ export async function uploadFileByInput(
     throw new Error(`File input not found: ${inputSelector}`);
   }
 
-  const file = await loadTestFile(fileName);
-
-  await fileInput.uploadFile({
-    name: fileName,
-    mimeType: "application/octet-stream",
-    buffer: Buffer.from(file.bytes)
-  });
+  const filePath = resolve(__dirname, "../resources", fileName);
+  await fileInput.uploadFile(filePath);
 }
 
 /**
@@ -366,6 +361,15 @@ export async function getFileSelectionState(page: Page): Promise<{
     if (!title) return { fileCount: 0, fileName: null };
 
     const text = title.textContent || "";
+    const normalized = text.toLowerCase();
+    if (
+      normalized.includes("select files") ||
+      normalized.includes("drop files") ||
+      normalized.includes("click to upload")
+    ) {
+      return { fileCount: 0, fileName: null };
+    }
+
     const match = text.match(/^(.+?)(?:\s|\.\.\.|$)/);
 
     return {

@@ -1,36 +1,74 @@
 import { ConvertPathNode, type FileFormat, type FormatHandler } from "./FormatHandler.ts";
 import { PriorityQueue } from './PriorityQueue.ts';
 
+/**
+ * Represents a node in the priority queue for pathfinding.
+ * Used by the A* search algorithm to track conversion paths.
+ */
 interface QueueNode {
+    /** Index of the format node in the graph */
     index: number;
+    /** Accumulated cost to reach this node */
     cost: number;
+    /** Path taken to reach this node */
     path: ConvertPathNode[];
+    /** Index in the visited array where this path was created */
     visitedBorder: number;
-};
-interface CategoryChangeCost {
-    from: string;
-    to: string;
-    handler?: string; // Optional handler name to specify that this cost only applies when using a specific handler for the category change. If not specified, the cost applies to all handlers for that category change.
-    cost: number;
-};
-
-interface CategoryAdaptiveCost {
-    categories: string[]; // List of sequential categories
-    cost: number; // Cost to apply when a conversion involves all of the specified categories in sequence.
 }
 
+/**
+ * Defines the cost penalty for converting between categories.
+ * Used to discourage low-quality conversions (e.g., image -> audio).
+ */
+interface CategoryChangeCost {
+    /** Source category */
+    from: string;
+    /** Target category */
+    to: string;
+    /** Optional handler name for handler-specific costs */
+    handler?: string;
+    /** Cost value (higher = more expensive) */
+    cost: number;
+}
+
+/**
+ * Defines adaptive costs for specific category sequences.
+ * Used to penalize particularly bad conversion chains.
+ */
+interface CategoryAdaptiveCost {
+    /** Sequential categories that trigger this cost */
+    categories: string[];
+    /** Additional cost when this sequence is detected */
+    cost: number;
+}
+
+/**
+ * Entry in the LRU path cache.
+ */
 interface CacheEntry {
+    /** Cached conversion path */
     path: ConvertPathNode[];
+    /** Timestamp for LRU eviction */
     timestamp: number;
+    /** Cache hit count for metrics */
     hits: number;
 }
 
+/**
+ * Performance metrics for the pathfinding system.
+ */
 interface PerformanceMetrics {
+    /** Number of cache hits */
     cacheHits: number;
+    /** Number of cache misses */
     cacheMisses: number;
+    /** Total number of searches performed */
     totalSearches: number;
+    /** Average search time in milliseconds */
     averageSearchTime: number;
+    /** Number of searches that timed out */
     timeoutCount: number;
+    /** Longest search time recorded */
     longestSearch: number;
 }
 
@@ -130,28 +168,58 @@ class PathCache {
 }
 
 
-// Parameters for pathfinding algorithm.
-const DEPTH_COST: number = 1; // Base cost for each conversion step. Higher values will make the algorithm prefer shorter paths more strongly.
-const DEFAULT_CATEGORY_CHANGE_COST : number = 0.6; // Default cost for category changes not specified in CATEGORY_CHANGE_COSTS
-const LOSSY_COST_MULTIPLIER : number = 1.4; // Cost multiplier for lossy conversions. Higher values will make the algorithm prefer lossless conversions more strongly.
-const HANDLER_PRIORITY_COST : number = 0.2; // Cost multiplier for handler priority. Higher values will make the algorithm prefer handlers with higher priority more strongly.
-const FORMAT_PRIORITY_COST : number = 0.05; // Cost multiplier for format priority. Higher values will make the algorithm prefer formats with higher priority more strongly.
+/**
+ * Pathfinding algorithm parameters.
+ * These constants control the behavior of the A* search algorithm.
+ */
 
+/** Base cost for each conversion step. Higher values make the algorithm prefer shorter paths more strongly. */
+const DEPTH_COST = 1;
+
+/** Default cost for category changes not explicitly defined. */
+const DEFAULT_CATEGORY_CHANGE_COST = 0.6;
+
+/** Cost multiplier for lossy conversions. Higher values prefer lossless conversions. */
+const LOSSY_COST_MULTIPLIER = 1.4;
+
+/** Cost multiplier for handler priority. Higher values prefer handlers with higher priority. */
+const HANDLER_PRIORITY_COST = 0.2;
+
+/** Cost multiplier for format priority. Higher values prefer formats with higher priority. */
+const FORMAT_PRIORITY_COST = 0.05;
+
+/** Log progress every N iterations (development only). */
 const LOG_FREQUENCY = 1000;
+
+/** Default search timeout in milliseconds. */
 const DEFAULT_TIMEOUT_MS = 5000;
+
+/** Maximum number of cached paths. */
 const MAX_CACHE_SIZE = 1000;
 
+/**
+ * Node in the conversion graph representing a file format.
+ */
 export interface Node {
+    /** MIME type identifier for this node */
     mime: string;
+    /** Indices of outgoing edges in the edges array */
     edges: Array<number>;
-};
+}
 
+/**
+ * Edge in the conversion graph representing a possible conversion.
+ */
 export interface Edge {
+    /** Source node information */
     from: {format: FileFormat, index: number};
+    /** Target node information */
     to: {format: FileFormat, index: number};
+    /** Name of the handler that can perform this conversion */
     handler: string;
+    /** Pre-computed cost for this conversion */
     cost: number;
-};
+}
 
 export type { PerformanceMetrics };
 
@@ -398,6 +466,71 @@ export class TraversionGraph {
             nodeIndexMap: Object.fromEntries(this.nodeIndexMap)
         };
     }
+
+    /**
+     * Returns all output MIME types reachable from a source MIME using BFS.
+     * Includes the source MIME itself to allow "same-format" conversions.
+     */
+    public getReachableOutputMimes(fromMime: string): Set<string> {
+        const startIndex = this.nodeIndexMap.get(fromMime);
+        if (startIndex === undefined) {
+            return new Set();
+        }
+
+        const reachable = new Set<string>([fromMime]);
+        const visited = new Set<number>([startIndex]);
+        const queue: number[] = [startIndex];
+
+        while (queue.length > 0) {
+            const currentIndex = queue.shift();
+            if (currentIndex === undefined) continue;
+
+            const node = this.nodes[currentIndex];
+            for (const edgeIndex of node.edges) {
+                const edge = this.edges[edgeIndex];
+                reachable.add(edge.to.format.mime);
+
+                if (!visited.has(edge.to.index)) {
+                    visited.add(edge.to.index);
+                    queue.push(edge.to.index);
+                }
+            }
+        }
+
+        return reachable;
+    }
+
+    /**
+     * Returns direct, low-cost target MIME recommendations from a source MIME.
+     * Prefers lossless outputs, then lower-cost edges.
+     */
+    public getRecommendedOutputMimes(fromMime: string, limit: number = 8): Set<string> {
+        const startIndex = this.nodeIndexMap.get(fromMime);
+        if (startIndex === undefined || limit <= 0) {
+            return new Set();
+        }
+
+        const directEdges = this.nodes[startIndex].edges
+            .map(edgeIndex => this.edges[edgeIndex])
+            .filter(edge => edge.from.index === startIndex)
+            .sort((a, b) => {
+                const aLossless = a.to.format.lossless ? 0 : 1;
+                const bLossless = b.to.format.lossless ? 0 : 1;
+                if (aLossless !== bLossless) return aLossless - bLossless;
+                if (a.cost !== b.cost) return a.cost - b.cost;
+                return a.to.format.mime.localeCompare(b.to.format.mime);
+            });
+
+        const recommendations = new Set<string>();
+        for (const edge of directEdges) {
+            if (edge.to.format.mime === fromMime) continue;
+            recommendations.add(edge.to.format.mime);
+            if (recommendations.size >= limit) break;
+        }
+
+        return recommendations;
+    }
+
     /**
      * @coverageIgnore
      */
@@ -481,10 +614,7 @@ export class TraversionGraph {
         let bestCost = Infinity;
         const directPaths: ConvertPathNode[][] = [];
 
-        // Early exit flag for simple mode
-        let shouldExit = false;
-
-        while (queue.size() > 0 && !timedOut && !shouldExit) {
+        while (queue.size() > 0 && !timedOut) {
             iterations++;
             const current = queue.poll()!;
 
@@ -551,10 +681,10 @@ export class TraversionGraph {
                     yield current.path;
                     pathsFound++;
 
-                    // Early termination for simple mode after finding first valid path
-                    if (simpleMode && current.path.length === 2) {
-                        shouldExit = true;
-                    }
+                    // Keep searching even in simple mode.
+                    // Runtime conversion can still fail for the first route due to
+                    // handler-specific constraints not represented by graph metadata.
+                    // Yielding additional candidates allows caller-side fallback.
                 } else {
                     this.dispatchEvent("skipped", current.path);
                 }

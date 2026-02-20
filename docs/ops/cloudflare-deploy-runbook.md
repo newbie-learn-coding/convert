@@ -1,167 +1,149 @@
-# Cloudflare production deploy runbook (Workers + static assets)
+# Cloudflare Production Operations Runbook (Authoritative)
 
-Last updated: 2026-02-19
+Last updated: 2026-02-20
 
-## 1) What is deployed
+This is the single source of truth for:
 
-- Static frontend assets: `dist/` (built by Vite)
-- Edge Worker entrypoint: `cloudflare/worker/index.mjs`
-- Wrangler config template: `wrangler.toml.example` (committed)
-- Wrangler runtime config: `wrangler.toml` (gitignored)
-- Ops endpoints:
-  - `GET|HEAD /_ops/health`
-  - `GET|HEAD /_ops/version`
-  - `GET|HEAD /_ops/log-ping` (optionally protected by `OPS_LOG_TOKEN`)
+- local setup
+- deploy environment variables
+- production deploy sequence
+- post-deploy gate + log verification
+- rollback
+- incident response checklist
 
-## 2) One-time prerequisites
+## 1) Scope and source files
+
+Deploy tooling for this runbook is implemented in:
+
+- `scripts/deploy.sh`
+- `scripts/cf-post-deploy-gate.sh`
+- `scripts/cf-log-check.sh`
+- `scripts/cf-rollback.sh`
+- `scripts/cf-common.sh`
+- `wrangler.toml.example` (copy to local `wrangler.toml`)
+- `.env.local.example` / `.env.cf.example`
+
+## 2) Local setup (one-time on each machine)
 
 ```bash
-# In repo root
+# repo root
 cp .env.local.example .env.local
 cp wrangler.toml.example wrangler.toml
-# Edit .env.local with real values, then load it:
+
+# edit .env.local with real values, then load
 source .env.local
 ```
 
-Required for non-interactive deploy:
+Do not commit `wrangler.toml` or any secret-bearing `.env*` file.
+
+## 3) Environment variables
+
+### Required for non-interactive deploy/rollback
 
 - `CLOUDFLARE_API_TOKEN`
-
-Recommended:
-
 - `CLOUDFLARE_ACCOUNT_ID`
 
-Optional (ops hardening):
+### Optional but recommended
 
-- `CF_OPS_LOG_TOKEN`
+- `CF_OPS_LOG_TOKEN` (if `/_ops/log-ping` is protected)
+- `CF_APP_VERSION` (otherwise package version is used)
+- `CF_BUILD_SHA` (otherwise current git short SHA is used)
+- `CF_DEPLOY_BASE_URL` (used by `bun run cf:logs:check`)
+- `CF_ALLOW_INTERACTIVE=1` (only for local interactive wrangler auth fallback)
 
-Use request header authentication for log ping checks:
+## 4) Production deploy sequence (safe order)
 
-- `x-ops-token: <token>`
-
-Set the Worker secret when you use `CF_OPS_LOG_TOKEN`:
-
-```bash
-echo -n "$CF_OPS_LOG_TOKEN" | bunx --bun wrangler@4 secret put OPS_LOG_TOKEN --config wrangler.toml
-```
-
-For staging:
+Run exactly in this order:
 
 ```bash
-echo -n "$CF_OPS_LOG_TOKEN" | bunx --bun wrangler@4 secret put OPS_LOG_TOKEN --config wrangler.toml --env staging
+bun run cf:deploy:dry-run
+bun run cf:deploy
+bash scripts/cf-post-deploy-gate.sh production --base-url https://converttoit.com
+CF_DEPLOY_BASE_URL=https://converttoit.com bun run cf:logs:check
 ```
 
-## 3) Deploy
+What each command covers:
 
-Domain policy guardrails (enforced in `scripts/deploy.sh` by default):
+1. `cf:deploy:dry-run` → build + policy/integrity/asset/perf checks + wrangler dry run.
+2. `cf:deploy` → real deploy with app version + build SHA injection.
+3. `cf-post-deploy-gate.sh` → strict production checks on `/_ops/health` and `/_ops/version`, then built-in log-tail verification.
+4. `cf:logs:check` → explicit standalone log-correlation acceptance proof.
 
-- Canonical domain is `https://converttoit.com` only.
-- `converttoit.app` is redirect-only and must never be used as a canonical target.
-- Keep host-level redirect rules in the Cloudflare redirect rules file for the `.app` zone (or equivalent zone rules).
-- Keep `public/_redirects` path-relative only (Workers assets reject host-based rules).
-- Preflight checks run automatically:
-  - `node scripts/check-seo-domain-policy.mjs`
-  - `node scripts/check-critical-files.mjs`
-  - `node scripts/check-cloudflare-asset-sizes.mjs`
+> Note: step 3 already includes a log-correlation check. Keep step 4 anyway for explicit release evidence.
 
-Dry run (build + bundle verification):
+## 5) Manual log tailing (ad-hoc troubleshooting)
 
 ```bash
-bun run validate:production-readiness
-bash scripts/deploy.sh production --dry-run
+# production tail
+node_modules/.bin/wrangler tail --config wrangler.toml --format pretty
+
+# staging tail
+node_modules/.bin/wrangler tail --config wrangler.toml --env staging --format pretty
 ```
 
-Production deploy:
+Structured log verification helper:
 
 ```bash
-bash scripts/deploy.sh production
+bash scripts/cf-log-check.sh production --base-url https://converttoit.com
 ```
 
-Staging deploy:
+## 6) Rollback
 
-```bash
-bash scripts/deploy.sh staging
-```
-
-Emergency bypass (not recommended):
-
-```bash
-bash scripts/deploy.sh production --skip-policy-checks
-```
-
-GitHub workflow groundwork:
-
-- `.github/workflows/cloudflare-deploy.yml` and `.github/workflows/pages.yml` both run `bun run validate:production-readiness` in their verify jobs.
-- This keeps canonical/domain controls and Cloudflare asset limits as mandatory merge gates.
-
-## 4) Post-deploy verification
-
-Check health/version quickly:
-
-```bash
-curl -fsS https://<your-worker-url>/_ops/health | jq
-curl -fsS https://<your-worker-url>/_ops/version | jq
-```
-
-Verify logs end-to-end with correlation id:
-
-```bash
-CF_DEPLOY_BASE_URL="https://<your-worker-url>" \
-CF_OPS_LOG_TOKEN="${CF_OPS_LOG_TOKEN:-}" \
-bash scripts/cf-log-check.sh production
-```
-
-Notes:
-
-- `--base-url` must be `https://...`.
-- `converttoit.app` is blocked for `--base-url` (redirect-only domain).
-
-Expected result:
-
-- Script prints a JSON response from `/_ops/log-ping`
-- Script ends with `SUCCESS: correlation id found in Cloudflare tail output.`
-
-## 5) Rollback
-
-Rollback to previous version:
+### Fast rollback to previous version
 
 ```bash
 bash scripts/cf-rollback.sh production --yes
 ```
 
-Rollback to a specific version id:
-
-```bash
-# List versions first
-bunx --bun wrangler@4 versions list --config wrangler.toml
-
-# Then rollback
-bash scripts/cf-rollback.sh production <version-id> --yes
-```
-
-Staging rollback:
-
-```bash
-bash scripts/cf-rollback.sh staging
-```
-
-List deployable versions before rollback:
+### Rollback to a specific version
 
 ```bash
 bash scripts/cf-rollback.sh production --list
+bash scripts/cf-rollback.sh production <version-id> --yes
 ```
 
-Tip: `--yes` is recommended for explicit/non-interactive production rollback flows.
+### Rollback verification
 
-## 6) Troubleshooting
+```bash
+curl -fsS https://converttoit.com/_ops/health
+curl -fsS https://converttoit.com/_ops/version
+CF_DEPLOY_BASE_URL=https://converttoit.com bun run cf:logs:check
+```
 
-- `CLOUDFLARE_API_TOKEN is not set`
-  - Export token, or set `CF_ALLOW_INTERACTIVE=1` for local authenticated wrangler sessions.
-- `ASSETS binding is not configured`
-  - Ensure deploy was run with `wrangler.toml` and static assets were built into `dist/`.
-- `Asset too large`
-  - Workers static assets have a hard 25 MiB per-file limit.
-  - This project loads FFmpeg core and Pandoc wasm from remote URLs by default to avoid bundling oversized wasm in `dist/`.
-  - You can override sources with `VITE_FFMPEG_CORE_BASE_URL` and `VITE_PANDOC_WASM_URL` during build if needed.
-- Log-check cannot find correlation id
-  - Verify correct `--base-url` and environment (`production` vs `staging`), then retry.
+## 7) Incident checklist (production)
+
+If any deploy gate fails, treat as an incident until resolved.
+
+### Immediate (0-5 minutes)
+
+- [ ] Stop further deploys.
+- [ ] Capture failing command output + timestamp.
+- [ ] Run:
+  - `curl -fsS https://converttoit.com/_ops/health`
+  - `curl -fsS https://converttoit.com/_ops/version`
+  - `CF_DEPLOY_BASE_URL=https://converttoit.com bun run cf:logs:check`
+- [ ] If service health/regression is confirmed: `bash scripts/cf-rollback.sh production --yes`.
+
+### Stabilization (5-30 minutes)
+
+- [ ] Confirm rollback/mitigation via health/version/log checks.
+- [ ] Record deployed version id before and after rollback.
+- [ ] Document user impact window.
+
+### Closure
+
+- [ ] Create incident notes with root cause + remediation.
+- [ ] Add follow-up task(s) to prevent recurrence.
+- [ ] Update runbook/checklists when process gaps are found.
+
+## 8) BLOCKED conditions and remediation
+
+If deployment is blocked, report `BLOCKED` with missing variable names only (never secret values).
+
+Typical blockers:
+
+- Missing `CLOUDFLARE_API_TOKEN`
+- Missing `CLOUDFLARE_ACCOUNT_ID`
+- Missing local `wrangler.toml` (create via `cp wrangler.toml.example wrangler.toml`)
+- Invalid `CF_DEPLOY_BASE_URL` / wrong host for production gate
+
