@@ -2088,12 +2088,18 @@ function renderFormatPage(page, allFormatPages, compareMap) {
     { label: `${page.from} to ${page.to}` }
   ];
 
-  const converterEmbedUrl = `${BASE_URL}/convert/?from=${fromExt}&to=${toExt}&embed=1`;
+  const converterLink = `${BASE_URL}/convert/?from=${fromExt}&to=${toExt}`;
   const converterWidget = `
   <section class="converter-widget" aria-label="Convert ${safeText(page.from)} to ${safeText(page.to)} online">
     <h2>Convert ${safeText(page.from)} to ${safeText(page.to)} now</h2>
     <p>Free, private, browser-only. No upload, no account needed.</p>
-    <iframe src="${converterEmbedUrl}" class="converter-iframe" loading="lazy" sandbox="allow-scripts allow-same-origin allow-downloads" title="Convert ${safeText(page.from)} to ${safeText(page.to)}"></iframe>
+    <a href="${converterLink}" class="converter-cta-button">
+      <span class="converter-cta-icon" aria-hidden="true">⇪</span>
+      <span class="converter-cta-text">
+        <strong>Open ${safeText(page.from)} → ${safeText(page.to)} converter</strong>
+        <small>Formats pre-selected · Drop file and convert</small>
+      </span>
+    </a>
     <p class="converter-widget-note">All processing happens locally in your browser. Files never leave your device.</p>
   </section>`;
 
