@@ -1,4 +1,14 @@
 /index.html / 301
 
+# Deprecated compare slugs (content retired from sitemap/keyword map)
+/compare/heic-vs-jpg /compare/png-vs-jpg/ 301
+/compare/heic-vs-jpg/ /compare/png-vs-jpg/ 301
+/compare/mp3-vs-flac /compare/wav-vs-mp3/ 301
+/compare/mp3-vs-flac/ /compare/wav-vs-mp3/ 301
+/compare/mp4-vs-avi /compare/mov-vs-mp4/ 301
+/compare/mp4-vs-avi/ /compare/mov-vs-mp4/ 301
+/compare/webp-vs-png /compare/jpg-vs-webp/ 301
+/compare/webp-vs-png/ /compare/jpg-vs-webp/ 301
+
 # CSP violation reporting endpoint is served as a static path:
 # /csp-violation-report-endpoint/index.html

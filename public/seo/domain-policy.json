@@ -7,10 +7,16 @@
     "https://www.converttoit.app",
     "http://www.converttoit.app"
   ],
+  "deprecatedCompareRedirects": {
+    "heic-vs-jpg": "/compare/png-vs-jpg/",
+    "mp3-vs-flac": "/compare/wav-vs-mp3/",
+    "mp4-vs-avi": "/compare/mov-vs-mp4/",
+    "webp-vs-png": "/compare/jpg-vs-webp/"
+  },
   "rules": [
     "Canonical and hreflang URLs must always use https://converttoit.com.",
     ".app hostnames are valid only as redirect sources into the canonical .com host.",
     "Sitemap and generated page metadata must not contain .app canonical targets."
   ],
-  "generatedAt": "2026-02-20T06:03:31.789Z"
+  "generatedAt": "2026-02-20T08:38:46.577Z"
 }

@@ -9,8 +9,8 @@
     "maxScore": 29,
     "passingPages": 25,
     "contentDepthTargetWords": 1000,
-    "minWordCount": 1017,
-    "averageWordCount": 1509.4
+    "minWordCount": 1061,
+    "averageWordCount": 1511.2
   },
   "pageScores": [
     {
@@ -49,7 +49,7 @@
       "descriptionLength": 158,
       "keywordInFirst100Words": true,
       "internalSelfLinkCount": 2,
-      "wordCount": 1017
+      "wordCount": 1061
     },
     {
       "url": "/format/png-to-jpg/",

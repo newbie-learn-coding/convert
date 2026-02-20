@@ -919,6 +919,7 @@ const comparePages = [
     intent: "commercial",
     primaryKeyword: "png vs jpg",
     secondaryKeywords: ["png vs jpeg quality", "png or jpg for web", "png versus jpg size"],
+    primaryDecisionSignal: "Transparency and sharp text fidelity vs smaller photographic delivery size",
     decisionSummary: "PNG prioritizes lossless clarity and transparency; JPG usually wins on file size for photo-heavy pages.",
     chooseA: [
       "UI screenshots with text overlays.",
@@ -955,6 +956,7 @@ const comparePages = [
     intent: "commercial",
     primaryKeyword: "jpg vs webp",
     secondaryKeywords: ["webp vs jpeg", "webp for seo", "jpg webp compatibility"],
+    primaryDecisionSignal: "Legacy ecosystem compatibility vs modern compression efficiency",
     decisionSummary: "WEBP typically delivers smaller files for similar visual quality, while JPG still wins on universal legacy compatibility.",
     chooseA: [
       "Older CMS plugins and legacy email editors.",
@@ -991,6 +993,7 @@ const comparePages = [
     intent: "commercial",
     primaryKeyword: "svg vs png",
     secondaryKeywords: ["svg or png logo", "vector vs raster image", "svg png difference"],
+    primaryDecisionSignal: "Infinite vector scaling vs predictable fixed-pixel rendering",
     decisionSummary: "SVG scales infinitely and is ideal for line art and logos; PNG is safer for fixed-size image compatibility.",
     chooseA: [
       "Responsive logos and icons.",
@@ -1027,6 +1030,7 @@ const comparePages = [
     intent: "commercial",
     primaryKeyword: "mov vs mp4",
     secondaryKeywords: ["mov or mp4", "mp4 compatibility", "mov file size"],
+    primaryDecisionSignal: "Editing-friendly source workflows vs universal playback and delivery reach",
     decisionSummary: "MOV can retain Apple-centric editing workflows, while MP4 is the practical default for universal playback and distribution.",
     chooseA: [
       "Editing pipelines centered on Apple software.",
@@ -1063,6 +1067,7 @@ const comparePages = [
     intent: "commercial",
     primaryKeyword: "wav vs mp3",
     secondaryKeywords: ["wav or mp3", "wav mp3 quality", "audio file size comparison"],
+    primaryDecisionSignal: "Master-grade fidelity vs stream-friendly distribution size",
     decisionSummary: "WAV keeps full fidelity for production masters; MP3 is optimized for lightweight distribution and streaming.",
     chooseA: [
       "Studio mastering and archival storage.",
@@ -1099,6 +1104,7 @@ const comparePages = [
     intent: "commercial",
     primaryKeyword: "pdf vs docx",
     secondaryKeywords: ["pdf or word document", "docx vs pdf for sharing", "editable vs fixed document"],
+    primaryDecisionSignal: "Fixed-layout publishing certainty vs collaborative editability",
     decisionSummary: "PDF is best for fixed layout sharing; DOCX is better when collaborators need to edit and iterate.",
     chooseA: [
       "Final contracts, invoices, and reports.",
@@ -1155,6 +1161,12 @@ const REDIRECT_SOURCE_HOSTS = [
   "https://www.converttoit.app",
   "http://www.converttoit.app"
 ];
+const DEPRECATED_COMPARE_REDIRECTS = {
+  "heic-vs-jpg": "/compare/png-vs-jpg/",
+  "mp3-vs-flac": "/compare/wav-vs-mp3/",
+  "mp4-vs-avi": "/compare/mov-vs-mp4/",
+  "webp-vs-png": "/compare/jpg-vs-webp/"
+};
 const ENGLISH_STOP_WORDS = new Set([
   "a", "about", "after", "all", "also", "an", "and", "any", "are", "as", "at", "be", "before", "best", "but", "by",
   "can", "choose", "comparison", "convert", "converter", "converting", "for", "format", "from", "guide", "how", "if", "in", "into",
@@ -1338,6 +1350,18 @@ function compareFieldNotes(page) {
     ];
     return `Decision note ${index + 1}: ${patterns[index % patterns.length]}`;
   });
+}
+
+function resolvePrimaryDecisionSignal(page) {
+  if (typeof page.primaryDecisionSignal === "string" && page.primaryDecisionSignal.trim().length > 0) {
+    return page.primaryDecisionSignal.trim();
+  }
+  const fallbackA = page.chooseA?.[0];
+  const fallbackB = page.chooseB?.[0];
+  if (fallbackA && fallbackB) {
+    return `${page.a}: ${fallbackA} vs ${page.b}: ${fallbackB}`;
+  }
+  return "Quality, compatibility, and delivery-size trade-offs";
 }
 
 function ensureLengthInRange(label, value, min, max) {
@@ -1585,7 +1609,8 @@ function renderCompareHub(pages) {
     }
   ];
   const matrixRows = pages.map((page, index) => {
-    return `<tr><td>${index + 1}</td><td>${safeText(page.a)} vs ${safeText(page.b)}</td><td>${safeText(page.primaryDecisionSignal)}</td><td>${safeText(page.decisionSummary)}</td><td><a href="${BASE_URL}/compare/${page.slug}/">Open comparison</a></td></tr>`;
+    const primarySignal = resolvePrimaryDecisionSignal(page);
+    return `<tr><td>${index + 1}</td><td>${safeText(page.a)} vs ${safeText(page.b)}</td><td>${safeText(primarySignal)}</td><td>${safeText(page.decisionSummary)}</td><td><a href="${BASE_URL}/compare/${page.slug}/">Open comparison</a></td></tr>`;
   }).join("");
   const body = `
 <main class="page-wrap">
@@ -2205,7 +2230,10 @@ function renderComparePage(page, formatMap, allComparePages) {
         "@type": "ListItem",
         position: index + 1,
         name: `${page.a}: ${item}`,
-        item: `${page.a} | ${page.b}: ${item}`
+        item: {
+          "@type": "Thing",
+          name: `${page.a} | ${page.b}: ${item}`
+        }
       }))
     },
     {
@@ -2680,6 +2708,7 @@ function buildDomainPolicyArtifact() {
     canonicalDomain: BASE_URL,
     canonicalHost: "converttoit.com",
     redirectSourceHosts: REDIRECT_SOURCE_HOSTS,
+    deprecatedCompareRedirects: DEPRECATED_COMPARE_REDIRECTS,
     rules: [
       "Canonical and hreflang URLs must always use https://converttoit.com.",
       ".app hostnames are valid only as redirect sources into the canonical .com host.",
@@ -2693,6 +2722,25 @@ function writeFile(relativePath, content) {
   const absPath = path.join(PUBLIC_DIR, relativePath);
   ensureDir(path.dirname(absPath));
   fs.writeFileSync(absPath, content, "utf8");
+}
+
+function pruneStaleComparePages(activeCompareSlugs) {
+  const compareDir = path.join(PUBLIC_DIR, "compare");
+  if (!fs.existsSync(compareDir)) return [];
+
+  const activeSlugs = new Set(activeCompareSlugs);
+  const removed = [];
+
+  for (const entry of fs.readdirSync(compareDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    if (activeSlugs.has(entry.name)) continue;
+
+    const stalePath = path.join(compareDir, entry.name);
+    fs.rmSync(stalePath, { recursive: true, force: true });
+    removed.push(entry.name);
+  }
+
+  return removed.sort();
 }
 
 function buildSitemap(urls) {
@@ -2733,6 +2781,7 @@ function assertCanonicalDomainPolicy(pages, sitemap) {
 function main() {
   const formatMap = new Map(formatPages.map((page) => [page.slug, page]));
   const compareMap = new Map(comparePages.map((page) => [page.slug, page]));
+  const staleCompareSlugs = pruneStaleComparePages(comparePages.map((page) => page.slug));
 
   const generatedHtmlPages = [];
   const detailPages = [];
@@ -2828,6 +2877,12 @@ function main() {
   }
 
   console.log(`Generated ${formatPages.length} /format pages and ${comparePages.length} /compare pages.`);
+  if (staleCompareSlugs.length > 0) {
+    console.log(`Pruned stale /compare pages: ${staleCompareSlugs.join(", ")}.`);
+  }
+  console.log(
+    `Deprecated compare redirects tracked for: ${Object.keys(DEPRECATED_COMPARE_REDIRECTS).join(", ")}.`
+  );
   console.log(`Sitemap updated with ${sitemapUrls.length} URLs.`);
   console.log(
     `SEO rubric scores: min ${seoRubricReport.summary.minScore}/30, avg ${seoRubricReport.summary.averageScore}/30, min words ${seoRubricReport.summary.minWordCount}.`
