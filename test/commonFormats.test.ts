@@ -34,13 +34,8 @@ const browser = await puppeteer.launch({
 const page = await browser.newPage();
 
 await Promise.all([
-  new Promise(resolve => {
-    page.on("console", msg => {
-      const text = msg.text();
-      if (text === "Built initial format list.") resolve(null);
-    });
-  }),
-  page.goto("http://localhost:8080/convert/index.html")
+  page.goto("http://localhost:8080/convert/index.html"),
+  page.waitForFunction(() => (window as any).__formatListBuilt === true, { timeout: 30000 })
 ]);
 
 console.log("Setup finished.");

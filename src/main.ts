@@ -5,6 +5,7 @@ import { TraversionGraph } from "./TraversionGraph.js";
 import { initLogging, log } from "./logging.js";
 import { initPerformanceTracking } from "./performance.js";
 import { initPWA } from "./pwa.js";
+import { debugLog } from "./debug.js";
 
 /** Files currently selected for conversion */
 let selectedFiles: File[] = [];
@@ -403,7 +404,9 @@ async function buildOptionList () {
     );
   } finally {
     await buildOptionList();
-    console.log("Built initial format list.");
+    (window as unknown as { __formatListBuilt?: boolean }).__formatListBuilt = true;
+    window.dispatchEvent(new Event("converttoit:formats-ready"));
+    debugLog("Built initial format list.");
 
     // Deep-linking: pre-select formats via URL params (?from=png&to=jpg)
     const params = new URLSearchParams(window.location.search);

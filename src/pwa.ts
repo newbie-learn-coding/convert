@@ -3,6 +3,8 @@
  * Handles service worker registration, updates, offline status, and install prompts
  */
 
+import { debugInfo, debugLog, debugWarn } from "./debug";
+
 export interface PWAStatus {
   supported: boolean;
   registered: boolean;
@@ -36,12 +38,12 @@ export function isSWSupported(): boolean {
  */
 export async function registerServiceWorker(): Promise<boolean> {
   if (!isSWSupported()) {
-    console.warn("[PWA] Service workers not supported");
+    debugWarn("[PWA] Service workers not supported");
     return false;
   }
 
   if (isAutomationEnvironment()) {
-    console.info("[PWA] Skipping service worker registration in automated browser");
+    debugInfo("[PWA] Skipping service worker registration in automated browser");
     return false;
   }
 
@@ -51,7 +53,7 @@ export async function registerServiceWorker(): Promise<boolean> {
       updateViaCache: "imports",
     });
 
-    console.log("[PWA] Service worker registered:", registration.scope);
+    debugLog("[PWA] Service worker registered:", registration.scope);
 
     // Handle updates
     registration.addEventListener("updatefound", () => {

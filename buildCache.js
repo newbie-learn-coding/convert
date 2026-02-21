@@ -18,13 +18,8 @@ const browser = await puppeteer.launch({
 const page = await browser.newPage();
 
 await Promise.all([
-  new Promise(resolve => {
-    page.on("console", msg => {
-      const text = msg.text();
-      if (text === "Built initial format list.") resolve();
-    });
-  }),
-  page.goto("http://localhost:8080/convert/index.html")
+  page.goto("http://localhost:8080/convert/index.html"),
+  page.waitForFunction(() => window.__formatListBuilt === true, { timeout: 30000 })
 ]);
 
 const cacheJSON = await page.evaluate(() => {

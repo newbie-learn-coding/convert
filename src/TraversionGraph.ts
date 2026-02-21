@@ -1,5 +1,6 @@
 import { ConvertPathNode, type FileFormat, type FormatHandler } from "./FormatHandler.ts";
 import { PriorityQueue } from './PriorityQueue.ts';
+import { debugLog } from "./debug";
 
 interface QueueNode {
     index: number;
@@ -136,7 +137,7 @@ export class TraversionGraph {
         this.nodes.length = 0;
         this.edges.length = 0;
 
-        console.log("Initializing traversion graph...");
+        debugLog("Initializing traversion graph...");
         const startTime = performance.now();
         let handlerIndex = 0;
         supportedFormatCache.forEach((formats, handler) => {
@@ -172,7 +173,7 @@ export class TraversionGraph {
             handlerIndex++;
         });
         const endTime = performance.now();
-        console.log(`Traversion graph initialized in ${(endTime - startTime).toFixed(2)} ms with ${this.nodes.length} nodes and ${this.edges.length} edges.`);
+        debugLog(`Traversion graph initialized in ${(endTime - startTime).toFixed(2)} ms with ${this.nodes.length} nodes and ${this.edges.length} edges.`);
     }
     /**
      * Cost function for calculating the cost of converting from one format to another using a specific handler.
