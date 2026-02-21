@@ -11,7 +11,15 @@ cache.json
 .dev.vars
 .env.cf.local
 .env.local
+.envrc
 wrangler.toml
+.wrangler/
+
+# private key material (never commit)
+*.pem
+*.key
+*.p12
+*.pfx
 
 # local assistant docs
 CLAUDE.md

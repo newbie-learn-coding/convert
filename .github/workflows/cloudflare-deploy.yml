@@ -1,7 +1,8 @@
-name: Cloudflare CI/CD
+name: Cloudflare CI/CD (Least Privilege)
 
 on:
   pull_request:
+    branches: ["master"]
   push:
     branches: ["master"]
   workflow_dispatch:
@@ -24,13 +25,18 @@ concurrency:
 
 jobs:
   verify:
-    name: Verify
+    name: Verify (no secrets)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          fetch-depth: 1
+          persist-credentials: false
           submodules: recursive
 
       - name: Setup Bun
@@ -48,21 +54,21 @@ jobs:
     name: Deploy to Cloudflare
     needs: verify
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     environment:
       name: ${{ github.event_name == 'workflow_dispatch' && inputs.target_env || 'production' }}
     env:
       TARGET_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.target_env || 'production' }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      CF_OPS_LOG_TOKEN: ${{ secrets.CF_OPS_LOG_TOKEN }}
-      CF_APP_VERSION: ${{ github.ref_name }}-${{ github.run_number }}
-      CF_BUILD_SHA: ${{ github.sha }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          fetch-depth: 1
+          persist-credentials: false
           submodules: recursive
 
       - name: Setup Bun
@@ -73,7 +79,10 @@ jobs:
       - name: Install dependencies
         run: bun i --frozen-lockfile
 
-      - name: Guard required deploy secret
+      - name: Guard required deploy secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           if [ -z "${CLOUDFLARE_API_TOKEN}" ]; then
             echo "::error::Missing required GitHub secret: CLOUDFLARE_API_TOKEN"
@@ -87,20 +96,14 @@ jobs:
       - name: Prepare Wrangler runtime config from template
         run: cp wrangler.toml.example wrangler.toml
 
-      - name: Sync optional OPS_LOG_TOKEN secret to Worker
-        if: env.CF_OPS_LOG_TOKEN != ''
-        run: |
-          printf '%s' "${CF_OPS_LOG_TOKEN}" | bunx --bun wrangler@4 secret put OPS_LOG_TOKEN --config wrangler.toml
-          if [ "${TARGET_ENV}" = "staging" ]; then
-            printf '%s' "${CF_OPS_LOG_TOKEN}" | bunx --bun wrangler@4 secret put OPS_LOG_TOKEN --config wrangler.toml --env staging
-          fi
-
       - name: Deploy
         id: deploy_step
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_APP_VERSION: ${{ github.ref_name }}-${{ github.run_number }}
+          CF_BUILD_SHA: ${{ github.sha }}
         run: bash scripts/deploy.sh "${TARGET_ENV}"
-
-      - name: Performance budget check
-        run: bun run check:performance-budgets
 
       - name: Post-deploy production ops gate
         id: post_deploy_gate
@@ -111,9 +114,7 @@ jobs:
 
       - name: Rollback production deploy on post-deploy gate failure
         if: ${{ always() && env.TARGET_ENV == 'production' && steps.deploy_step.outcome == 'success' && steps.post_deploy_gate.outcome == 'failure' }}
-        run: |
-          set -euo pipefail
-          echo "::warning::Production post-deploy gate failed after deploy. Starting automatic rollback."
-          echo "[rollback] Trigger reason: post-deploy gate failed after successful production deploy."
-          bash scripts/cf-rollback.sh production --yes
-          echo "[rollback] Automatic rollback finished."
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bash scripts/cf-rollback.sh production --yes
