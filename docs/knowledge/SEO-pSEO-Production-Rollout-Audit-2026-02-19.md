@@ -9,7 +9,7 @@ tags:
   - audit
   - obsidian
 aliases:
-  - ConvertToIt SEO pSEO Audit 2026-02-19
+  - Convert To It SEO pSEO Audit 2026-02-19
 ---
 
 # SEO + pSEO Production Rollout Audit (2026-02-19)

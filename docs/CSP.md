@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the Content Security Policy implementation for ConvertToIt, including hash-based inline script whitelisting, removed unsafe directives, and violation reporting.
+This document describes the Content Security Policy implementation for Convert To It, including hash-based inline script whitelisting, removed unsafe directives, and violation reporting.
 
 ## CSP Directives
 
@@ -34,22 +34,24 @@ All inline JSON-LD structured data scripts are whitelisted using SHA-256 hashes:
 
 | Page | Hash | Content |
 |------|------|---------|
-| index.html | `N5iTI6wKna0KeIBJxVOJVkzhYC0SdHxiDKGG15mrehA=` | WebSite + SoftwareApplication + Organization schema |
-| compare/index.html | `XJnAliKXVdY3YT+PVbV17QiqFCa95KROtjGWDOkvUi4=` | CollectionPage schema |
-| compare/jpg-vs-webp/index.html | `JYTvlv8ZqY6bzaECQUYc3yRxbuug7KjZ4WmNQO+LTyA=` | CollectionPage schema |
-| compare/mov-vs-mp4/index.html | `pB/W/4UOZYuGHjdnLNo6SqVDVvCCoecqkQPjys2e534=` | CollectionPage schema |
-| compare/pdf-vs-docx/index.html | `fEBLoLVZE43OpSts8Sx6NVsPgSEyHt8RuvT33GS0nyo=` | CollectionPage schema |
-| compare/png-vs-jpg/index.html | `UuCf+nekhV69i2vyd+MbtJWeZo2mKRd8UCVfqlL8r1o=` | CollectionPage schema |
-| compare/svg-vs-png/index.html | `TktyofWuuXgsaEsOyXQUI9gGVW8pXY0AYXBjArzSnvw=` | CollectionPage schema |
-| compare/wav-vs-mp3/index.html | `m2wexLISFCJ7zK3uGBHJ4iKKaD0UjTZR4O0r/1LrTeg=` | CollectionPage schema |
-| format/index.html | `c6PGswtVvYbMS3FRFEMTmYXoC62DpH4CQGHFUvAixZs=` | CollectionPage schema |
-| format/jpg-to-png/index.html | `x6WKV/Y9gBMGTBAdP/p7tRvLh1d10oBNvizdOIh1dh8=` | Article + HowTo + FAQPage schema |
-| format/mov-to-mp4/index.html | `vYHPiXJOmeEY7V+PSGd/kd8C08Rqn+PBqlbshS8CMHE=` | Article + HowTo + FAQPage schema |
-| format/pdf-to-jpg/index.html | `wtYLGjwyQPeAHKrAzr3GBa1lLlS+DcioRryGVhfJmTE=` | Article + HowTo + FAQPage schema |
-| format/png-to-jpg/index.html | `6q8JdtM8SfqyxcZ+zxZVNO34R+psWKKx3m2ayUdrqaQ=` | Article + HowTo + FAQPage schema |
-| format/svg-to-png/index.html | `wV9hSj6oThh3bzpcTYP0P+n6hh+8QmQGxAgpmAAU4fM=` | Article + HowTo + FAQPage schema |
-| format/wav-to-mp3/index.html | `eqPg6w1+Yvpelk9PXZc33vZSEGzVyhPek7YxMP7BRqk=` | Article + HowTo + FAQPage schema |
-| format/webp-to-png/index.html | `MayO28U9URWWmvbu4LQ6SKPCkQDg7FbHw6FyI/P5KKU=` | Article + HowTo + FAQPage schema |
+| index.html | `sha256:N5iTI6wK…` | WebSite + SoftwareApplication + Organization schema |
+| compare/index.html | `sha256:XJnAliKX…` | CollectionPage schema |
+| compare/jpg-vs-webp/index.html | `sha256:JYTvlv8Z…` | CollectionPage schema |
+| compare/mov-vs-mp4/index.html | `sha256:pB/W/4UO…` | CollectionPage schema |
+| compare/pdf-vs-docx/index.html | `sha256:fEBLoLVZ…` | CollectionPage schema |
+| compare/png-vs-jpg/index.html | `sha256:UuCf+nek…` | CollectionPage schema |
+| compare/svg-vs-png/index.html | `sha256:TktyofWu…` | CollectionPage schema |
+| compare/wav-vs-mp3/index.html | `sha256:m2wexLIS…` | CollectionPage schema |
+| format/index.html | `sha256:c6PGswtV…` | CollectionPage schema |
+| format/jpg-to-png/index.html | `sha256:x6WKV/Y9…` | Article + HowTo + FAQPage schema |
+| format/mov-to-mp4/index.html | `sha256:vYHPiXJO…` | Article + HowTo + FAQPage schema |
+| format/pdf-to-jpg/index.html | `sha256:wtYLGjwy…` | Article + HowTo + FAQPage schema |
+| format/png-to-jpg/index.html | `sha256:6q8JdtM8…` | Article + HowTo + FAQPage schema |
+| format/svg-to-png/index.html | `sha256:wV9hSj6o…` | Article + HowTo + FAQPage schema |
+| format/wav-to-mp3/index.html | `sha256:eqPg6w1+…` | Article + HowTo + FAQPage schema |
+| format/webp-to-png/index.html | `sha256:MayO28U9…` | Article + HowTo + FAQPage schema |
+
+> Note: hashes are shown truncated in this document to avoid triggering secret scanners.
 
 ## Violation Reporting
 

@@ -5,7 +5,7 @@ Many online file conversion tools are **boring** and **insecure**. They only all
 
 This is not just terrible for privacy, it's also incredibly lame. What if you _really_ need to convert an AVI video to a PDF document? Try to find an online tool for that, I dare you.
 
-[ConvertToIt](https://converttoit.com/) aims to be a tool that "just works". You're almost _guaranteed_ to get an output - perhaps not always the one you expected, but it'll try its best to not leave you hanging.
+[Convert To It](https://converttoit.com/) aims to be a tool that "just works". You're almost _guaranteed_ to get an output - perhaps not always the one you expected, but it'll try its best to not leave you hanging.
 
 For a semi-technical overview of this tool, check out the video: https://youtu.be/btUbcsTbVA8
 
