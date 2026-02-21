@@ -48,9 +48,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: pnpm
+
+      - name: Enable pnpm via Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.15.0 --activate
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Production readiness gates (canonical + deploy)
         run: bun run validate:production-readiness
@@ -85,9 +91,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: pnpm
+
+      - name: Enable pnpm via Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.15.0 --activate
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Guard required deploy secrets
         env:
