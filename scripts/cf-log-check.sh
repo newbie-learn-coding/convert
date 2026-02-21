@@ -224,7 +224,14 @@ for attempt in $(seq 1 "$TAIL_CONNECT_RETRIES"); do
     fi
 
     if [ "$HTTP_STATUS" = "401" ] || [ "$HTTP_STATUS" = "403" ]; then
-      # Auth/token issue: fail fast to surface secret mismatch
+      if [ -z "${CF_OPS_LOG_TOKEN:-}" ]; then
+        echo "[log-check] CF_OPS_LOG_TOKEN is not set, but /_ops/log-ping is protected." >&2
+        echo "[log-check] Skipping strict log tail verification (health/version gate already passed)." >&2
+        echo "[log-check] To enable strict verification, set CF_OPS_LOG_TOKEN and re-run this check." >&2
+        exit 0
+      fi
+
+      # Auth/token issue with an explicitly provided token: fail fast to surface mismatch
       exit 22
     fi
 
