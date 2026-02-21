@@ -3,7 +3,8 @@ node_modules
 .pnpm-store/
 start.sh
 dist
-cache.json
+/cache.json
+!/public/cache.json
 
 # local secrets / runtime vars
 .env*
