@@ -117,12 +117,21 @@ else
   echo "[deploy] Skipping build (CF_SKIP_BUILD=1 or --skip-build)"
 fi
 
-echo "[deploy] Checking Cloudflare asset size limits"
-node scripts/check-cloudflare-asset-sizes.mjs
+if [ -d "dist" ]; then
+  echo "[deploy] Checking Cloudflare asset size limits"
+  node scripts/check-cloudflare-asset-sizes.mjs
 
-# Performance budget validation
-echo "[deploy] Validating performance budgets"
-bun run check:performance-budgets
+  # Performance budget validation
+  echo "[deploy] Validating performance budgets"
+  bun run check:performance-budgets
+else
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "[deploy] dist/ not present; skipping asset/perf checks (dry-run + skip-build)" >&2
+  else
+    echo "[deploy] ERROR: dist/ is missing. Run build (default) or provide dist/ before deploying." >&2
+    exit 1
+  fi
+fi
 
 if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] && [ "${CF_ALLOW_INTERACTIVE:-0}" != "1" ]; then
   echo "[deploy] CLOUDFLARE_API_TOKEN is not set."
