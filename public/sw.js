@@ -1,5 +1,5 @@
 /**
- * ConvertToIt Service Worker
+ * Convert To It Service Worker
  * Cache-first strategy for static assets, network-first for dynamic content
  * Supports offline conversion for common formats
  */
@@ -160,7 +160,7 @@ async function cacheFirst(request, cacheName = CONFIG.RUNTIME_CACHE, options = {
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Offline - ConvertToIt</title>
+          <title>Offline - Convert To It</title>
           <style>
             body { font-family: system-ui, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #f5f5f5; }
             .offline { text-align: center; padding: 2rem; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; }

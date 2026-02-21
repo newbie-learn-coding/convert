@@ -1,7 +1,7 @@
 {
-  "name": "ConvertToIt - Free File Converter",
-  "short_name": "ConvertToIt",
-  "description": "Convert files online for free in your browser. Supports image, audio, video, document, and archive formats. Privacy-focused: files never leave your device.",
+  "name": "Convert To It - Free Online File Converter",
+  "short_name": "Convert To It",
+  "description": "Convert files online for free in your browser. Transform image, video, audio, document, and archive formats instantly with local processing and no uploads.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

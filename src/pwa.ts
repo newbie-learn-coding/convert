@@ -453,7 +453,7 @@ function showInstallPrompt(): void {
   prompt.id = "pwa-install-prompt";
   prompt.className = "pwa-notification";
   prompt.setAttribute("role", "dialog");
-  prompt.setAttribute("aria-label", "Install ConvertToIt app");
+  prompt.setAttribute("aria-label", "Install Convert To It app");
   prompt.setAttribute("aria-live", "polite");
 
   const content = document.createElement("div");
@@ -468,7 +468,7 @@ function showInstallPrompt(): void {
   textDiv.className = "pwa-notification-text";
 
   const strong = document.createElement("strong");
-  strong.textContent = "Install ConvertToIt";
+  strong.textContent = "Install Convert To It";
 
   const span = document.createElement("span");
   span.textContent = "Install for offline access and better experience";
