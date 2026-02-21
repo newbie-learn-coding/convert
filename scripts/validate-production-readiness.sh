@@ -6,7 +6,6 @@ cd "$ROOT_DIR"
 
 echo "Running production readiness gates (canonical policy + deploy guardrails)..."
 
-bun run check:seo-policy
 bun run check:integrity
 bun run test:ops-hardening
 bun run build

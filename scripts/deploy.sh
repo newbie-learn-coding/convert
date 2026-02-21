@@ -83,8 +83,7 @@ if ! ensure_wrangler_config; then
 fi
 
 if [ "$SKIP_POLICY_CHECKS" != "1" ]; then
-  echo "[deploy] Running SEO/domain preflight checks"
-  node scripts/check-seo-domain-policy.mjs
+  echo "[deploy] Running integrity preflight checks"
   node scripts/check-critical-files.mjs
 else
   echo "[deploy] Skipping SEO/domain preflight checks (CF_SKIP_POLICY_CHECKS=1 or --skip-policy-checks)"

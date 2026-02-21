@@ -54,7 +54,6 @@ run_optional_script() {
 echo "Validation profile: deterministic local/CI checks (no dev server, Docker, or database)."
 echo
 
-run_required_script "check:seo-policy"
 run_required_script "check:integrity"
 run_required_script "test:unit"
 

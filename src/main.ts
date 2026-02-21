@@ -2,6 +2,9 @@ import type { FileFormat, FileData, FormatHandler, ConvertPathNode } from "./For
 import normalizeMimeType from "./normalizeMimeType.js";
 import handlers from "./handlers";
 import { TraversionGraph } from "./TraversionGraph.js";
+import { initLogging, log } from "./logging.js";
+import { initPerformanceTracking } from "./performance.js";
+import { initPWA } from "./pwa.js";
 
 /** Files currently selected for conversion */
 let selectedFiles: File[] = [];
@@ -646,3 +649,10 @@ ui.convertButton.onclick = async function () {
     commitElement.textContent = import.meta.env.VITE_COMMIT_SHA ?? "unknown";
   }
 }
+
+// Initialize observability and PWA
+initLogging();
+initPerformanceTracking();
+initPWA().catch((err) => {
+  log.warn("pwa", "PWA initialization failed", { error: String(err) });
+});

@@ -23,11 +23,6 @@ const BUDGET_RULES = [
     budget: { raw: 80, gzip: 20, brotli: 16 }
   },
   {
-    name: "pseo-html",
-    test: (artifactPath) => artifactPath.startsWith("format/") || artifactPath.startsWith("compare/"),
-    budget: { raw: 40, gzip: 10, brotli: 8 }
-  },
-  {
     name: "entry-js",
     test: (artifactPath) =>
       /^assets\/(index|main|polyfills|worker|flo\.worker|sqlite3-opfs-async-proxy|sqlite3-worker1)-.*\.js$/.test(artifactPath),
@@ -67,11 +62,6 @@ const BUDGET_RULES = [
     name: "css",
     test: (artifactPath) => artifactPath.endsWith(".css"),
     budget: { raw: 120, gzip: 35, brotli: 30 }
-  },
-  {
-    name: "seo-json",
-    test: (artifactPath) => artifactPath.startsWith("seo/") && artifactPath.endsWith(".json"),
-    budget: { raw: 100, gzip: 20, brotli: 18 }
   },
   {
     name: "espeak-worker-js",

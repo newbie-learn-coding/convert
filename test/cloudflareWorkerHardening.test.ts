@@ -118,19 +118,19 @@ async function withSuppressedConsole(callback: () => Promise<void>) {
 describe("Cloudflare worker hardening", () => {
   test("redirects .app host to canonical .com host", async () => {
     const response = await worker.fetch(
-      new Request("https://converttoit.app/format/png-to-jpg/?q=1"),
+      new Request("https://converttoit.app/some-path/?q=1"),
       createEnv()
     );
 
     expect(response.status).toBe(301);
-    expect(response.headers.get("location")).toBe("https://converttoit.com/format/png-to-jpg/?q=1");
+    expect(response.headers.get("location")).toBe("https://converttoit.com/some-path/?q=1");
   });
 
   test("redirects www host to canonical apex host", async () => {
-    const response = await worker.fetch(new Request("https://www.converttoit.com/compare/"), createEnv());
+    const response = await worker.fetch(new Request("https://www.converttoit.com/"), createEnv());
 
     expect(response.status).toBe(301);
-    expect(response.headers.get("location")).toBe("https://converttoit.com/compare/");
+    expect(response.headers.get("location")).toBe("https://converttoit.com/");
   });
 
   test("adds noindex + security headers to ops responses", async () => {

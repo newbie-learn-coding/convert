@@ -17,7 +17,7 @@ const CACHE_CONFIG = {
     edgeTTL: 300,
     staleWhileRevalidate: 60
   },
-  PSEO_PAGES: {
+  IMAGES: {
     browserTTL: 3600,
     edgeTTL: 86400,
     staleWhileRevalidate: 86400
@@ -48,7 +48,7 @@ const OPS_NO_CACHE_HEADERS = {
 const CACHE_CONTROL_DIRECTIVES = {
   staticAssets: `public, max-age=${CACHE_CONFIG.STATIC_ASSETS.browserTTL}, s-maxage=${CACHE_CONFIG.STATIC_ASSETS.edgeTTL}, stale-while-revalidate=${CACHE_CONFIG.STATIC_ASSETS.staleWhileRevalidate}, immutable`,
   html: `public, max-age=${CACHE_CONFIG.HTML.browserTTL}, s-maxage=${CACHE_CONFIG.HTML.edgeTTL}, stale-while-revalidate=${CACHE_CONFIG.HTML.staleWhileRevalidate}, must-revalidate`,
-  pseoPages: `public, max-age=${CACHE_CONFIG.PSEO_PAGES.browserTTL}, s-maxage=${CACHE_CONFIG.PSEO_PAGES.edgeTTL}, stale-while-revalidate=${CACHE_CONFIG.PSEO_PAGES.staleWhileRevalidate}`,
+  images: `public, max-age=${CACHE_CONFIG.IMAGES.browserTTL}, s-maxage=${CACHE_CONFIG.IMAGES.edgeTTL}, stale-while-revalidate=${CACHE_CONFIG.IMAGES.staleWhileRevalidate}`,
   wasm: `public, max-age=${CACHE_CONFIG.WASM.browserTTL}, s-maxage=${CACHE_CONFIG.WASM.edgeTTL}, stale-while-revalidate=${CACHE_CONFIG.WASM.staleWhileRevalidate}`,
   api: `public, max-age=${CACHE_CONFIG.API.browserTTL}, s-maxage=${CACHE_CONFIG.API.edgeTTL}, stale-while-revalidate=${CACHE_CONFIG.API.staleWhileRevalidate}`,
   noCache: "no-store, no-cache, must-revalidate, private"
@@ -428,9 +428,6 @@ function getCacheControlForPath(pathname) {
   if (pathname.startsWith("/wasm/")) {
     return CACHE_CONTROL_DIRECTIVES.wasm;
   }
-  if (pathname.startsWith("/format/") || pathname.startsWith("/compare/")) {
-    return CACHE_CONTROL_DIRECTIVES.pseoPages;
-  }
   if (pathname.endsWith(".html") || pathname === "/") {
     return CACHE_CONTROL_DIRECTIVES.html;
   }
@@ -438,7 +435,7 @@ function getCacheControlForPath(pathname) {
     return CACHE_CONTROL_DIRECTIVES.staticAssets;
   }
   if (pathname.match(/\.(ico|svg|png|webp|jpg|jpeg)$/)) {
-    return CACHE_CONTROL_DIRECTIVES.pseoPages;
+    return CACHE_CONTROL_DIRECTIVES.images;
   }
   if (pathname === "/robots.txt" || pathname === "/sitemap.xml") {
     return `public, max-age=86400, s-maxage=86400, stale-while-revalidate=86400`;
@@ -1714,8 +1711,6 @@ export default {
 function getPathType(pathname) {
   if (pathname.startsWith("/assets/")) return "static_asset";
   if (pathname.startsWith("/wasm/")) return "wasm";
-  if (pathname.startsWith("/format/")) return "pseo_format";
-  if (pathname.startsWith("/compare/")) return "pseo_compare";
   if (pathname.startsWith("/_ops/")) return "ops";
   if (pathname.endsWith(".html")) return "html";
   return "other";

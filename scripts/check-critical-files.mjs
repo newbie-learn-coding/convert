@@ -41,21 +41,11 @@ const requiredFiles = [
   ".github/workflows/pages.yml",
   "public/robots.txt",
   "public/sitemap.xml",
-  "public/privacy.html",
-  "public/terms.html",
-  "public/format/index.html",
-  "public/compare/index.html",
   "public/_headers",
   "public/_redirects",
-  "public/seo/keyword-intent-map.json",
-  "public/seo/anti-cannibalization-report.json",
-  "public/seo/seo-rubric-report.json",
-  "public/seo/domain-policy.json",
-  "public/seo/url-patterns.json",
   "cloudflare/redirects/converttoit.app/_redirects",
   "cloudflare/worker/index.mjs",
   "wrangler.toml.example",
-  "scripts/build-pseo.mjs",
   "scripts/cf-common.sh",
   "scripts/check-cloudflare-asset-sizes.mjs",
   "scripts/cf-post-deploy-gate.sh",
@@ -83,19 +73,8 @@ if (!sitemap.includes("<urlset")) {
   errors.push("public/sitemap.xml: missing <urlset>");
 }
 const sitemapLocs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
-if (sitemapLocs.length < 5) {
-  errors.push(`public/sitemap.xml: expected at least 5 URLs, found ${sitemapLocs.length}`);
-}
-for (const mustInclude of [
-  `${PRIMARY_DOMAIN}/`,
-  `${PRIMARY_DOMAIN}/privacy.html`,
-  `${PRIMARY_DOMAIN}/terms.html`,
-  `${PRIMARY_DOMAIN}/format/`,
-  `${PRIMARY_DOMAIN}/compare/`
-]) {
-  if (!sitemapLocs.includes(mustInclude)) {
-    errors.push(`public/sitemap.xml: missing required URL ${mustInclude}`);
-  }
+if (!sitemapLocs.includes(`${PRIMARY_DOMAIN}/`)) {
+  errors.push(`public/sitemap.xml: missing required URL ${PRIMARY_DOMAIN}/`);
 }
 
 const headers = readFile("public/_headers");
@@ -228,7 +207,6 @@ for (const requiredToken of [
 
 const productionReadinessScript = readFile("scripts/validate-production-readiness.sh");
 for (const requiredToken of [
-  "bun run check:seo-policy",
   "bun run check:integrity",
   "bun run test:ops-hardening",
   "bun run build",
@@ -236,95 +214,6 @@ for (const requiredToken of [
 ]) {
   if (!productionReadinessScript.includes(requiredToken)) {
     errors.push(`scripts/validate-production-readiness.sh: missing gate command -> ${requiredToken}`);
-  }
-}
-
-const keywordIntentMap = JSON.parse(readFile("public/seo/keyword-intent-map.json"));
-if (keywordIntentMap.domain !== PRIMARY_DOMAIN) {
-  errors.push(`public/seo/keyword-intent-map.json: domain must be ${PRIMARY_DOMAIN}`);
-}
-if (!Array.isArray(keywordIntentMap.entries) || keywordIntentMap.entries.length === 0) {
-  errors.push("public/seo/keyword-intent-map.json: entries must be a non-empty array");
-}
-
-const antiCannibalization = JSON.parse(readFile("public/seo/anti-cannibalization-report.json"));
-const uniquenessThreshold =
-  antiCannibalization?.thresholds?.minMeaningfulUniquenessRaw ??
-  antiCannibalization?.thresholds?.minMeaningfulUniqueness ??
-  antiCannibalization?.threshold;
-if (typeof uniquenessThreshold !== "number" || uniquenessThreshold < 0.5) {
-  errors.push("public/seo/anti-cannibalization-report.json: minMeaningfulUniqueness threshold must be >= 0.5");
-}
-const strategyThreshold = antiCannibalization?.thresholds?.minMeaningfulUniquenessStrategyScore;
-if (typeof strategyThreshold !== "number" || strategyThreshold < 80) {
-  errors.push("public/seo/anti-cannibalization-report.json: minMeaningfulUniquenessStrategyScore threshold must be >= 80");
-}
-if (!Array.isArray(antiCannibalization.pageStats) || antiCannibalization.pageStats.length === 0) {
-  errors.push("public/seo/anti-cannibalization-report.json: pageStats must be a non-empty array");
-} else {
-  const failingPages = antiCannibalization.pageStats.filter((entry) => entry.pass !== true);
-  if (failingPages.length > 0) {
-    errors.push(
-      `public/seo/anti-cannibalization-report.json: found failing pages -> ${failingPages
-        .map((entry) => entry.url)
-        .join(", ")}`
-    );
-  }
-  if (typeof strategyThreshold === "number") {
-    const weakStrategyPages = antiCannibalization.pageStats
-      .filter((entry) => typeof entry.meaningfulUniquenessStrategyScore !== "number" || entry.meaningfulUniquenessStrategyScore < strategyThreshold);
-    if (weakStrategyPages.length > 0) {
-      errors.push(
-        `public/seo/anti-cannibalization-report.json: strategy score below ${strategyThreshold} -> ${weakStrategyPages
-          .map((entry) => `${entry.url} (${entry.meaningfulUniquenessStrategyScore ?? "n/a"})`)
-          .join(", ")}`
-      );
-    }
-  }
-}
-
-const seoRubric = JSON.parse(readFile("public/seo/seo-rubric-report.json"));
-if (typeof seoRubric?.targetMinimumScore !== "number") {
-  errors.push("public/seo/seo-rubric-report.json: targetMinimumScore is missing");
-}
-if (typeof seoRubric?.summary?.minScore !== "number") {
-  errors.push("public/seo/seo-rubric-report.json: summary.minScore is missing");
-} else if (typeof seoRubric?.targetMinimumScore === "number" && seoRubric.summary.minScore < seoRubric.targetMinimumScore) {
-  errors.push(
-    `public/seo/seo-rubric-report.json: minScore (${seoRubric.summary.minScore}) is below targetMinimumScore (${seoRubric.targetMinimumScore})`
-  );
-}
-
-const domainPolicy = JSON.parse(readFile("public/seo/domain-policy.json"));
-if (domainPolicy?.canonicalDomain !== PRIMARY_DOMAIN) {
-  errors.push(`public/seo/domain-policy.json: canonicalDomain must be ${PRIMARY_DOMAIN}`);
-}
-if (!Array.isArray(domainPolicy?.redirectSourceHosts) || domainPolicy.redirectSourceHosts.length < 4) {
-  errors.push("public/seo/domain-policy.json: redirectSourceHosts must contain all legacy redirect host variants");
-}
-
-const urlPatterns = JSON.parse(readFile("public/seo/url-patterns.json"));
-if (urlPatterns.domain !== PRIMARY_DOMAIN) {
-  errors.push(`public/seo/url-patterns.json: domain must be ${PRIMARY_DOMAIN}`);
-}
-if (!urlPatterns.patterns || typeof urlPatterns.patterns !== "object") {
-  errors.push("public/seo/url-patterns.json: patterns object is missing");
-} else {
-  if (urlPatterns.patterns.format !== "/format/{from}-to-{to}/") {
-    errors.push("public/seo/url-patterns.json: unexpected format URL pattern");
-  }
-  if (urlPatterns.patterns.compare !== "/compare/{format-a}-vs-{format-b}/") {
-    errors.push("public/seo/url-patterns.json: unexpected compare URL pattern");
-  }
-}
-
-for (const legalPage of ["public/privacy.html", "public/terms.html"]) {
-  const html = readFile(legalPage);
-  if (!/<title>.+<\/title>/i.test(html)) {
-    errors.push(`${legalPage}: missing <title>`);
-  }
-  if (!/<link[^>]*rel=["']canonical["']/i.test(html)) {
-    errors.push(`${legalPage}: missing canonical link`);
   }
 }
 

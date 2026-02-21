@@ -17,7 +17,10 @@
   <link rel="canonical" href="https://converttoit.com/">
   <link rel="alternate" hreflang="en" href="https://converttoit.com/">
   <link rel="alternate" hreflang="x-default" href="https://converttoit.com/">
+  <link rel="preconnect" href="https://converttoit.com" crossorigin>
+  <link rel="dns-prefetch" href="https://converttoit.com">
   <link rel="stylesheet" href="style.css">
+  <link rel="preload" href="/cache.json" as="fetch" crossorigin>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -144,8 +147,6 @@
         <a href="#file-area">Converter</a>
         <a href="#how-it-works">How it works</a>
         <a href="#faq">FAQ</a>
-        <a href="/format/">Format Guides</a>
-        <a href="/compare/">Compare Formats</a>
       </nav>
     </div>
   </header>
@@ -261,7 +262,7 @@
             <li><strong>Pick output format</strong> with smart suggestions.</li>
             <li><strong>Convert and download</strong> instantly.</li>
           </ol>
-          <p>Need details? Explore <a href="/format/">Format Guides</a> and <a href="/compare/">Compare Formats</a>.</p>
+          <p>Need details? Check the FAQ below.</p>
         </div>
       </details>
     </section>
@@ -299,7 +300,7 @@
           <details class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
             <summary itemprop="name">What file formats are supported?</summary>
             <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
-              <p itemprop="text">Images, videos, audio, documents, and archives. Visit <a href="/format/">Format Guides</a> for full coverage.</p>
+              <p itemprop="text">Images, videos, audio, documents, and archives — all converted locally in your browser.</p>
             </div>
           </details>
 
@@ -320,68 +321,11 @@
       </details>
     </section>
 
-    <section id="popular-conversions" class="seo-content seo-disclosure">
-      <details>
-        <summary>
-          <span>Popular conversions</span>
-          <small>Quick links</small>
-        </summary>
-        <div class="seo-content-body">
-          <h2 class="sr-only">Popular conversions</h2>
-          <ul class="link-grid">
-            <li><a href="/format/png-to-jpg/">PNG to JPG</a></li>
-            <li><a href="/format/jpg-to-png/">JPG to PNG</a></li>
-            <li><a href="/format/webp-to-png/">WEBP to PNG</a></li>
-            <li><a href="/format/svg-to-png/">SVG to PNG</a></li>
-            <li><a href="/format/pdf-to-jpg/">PDF to JPG</a></li>
-            <li><a href="/format/mov-to-mp4/">MOV to MP4</a></li>
-            <li><a href="/format/wav-to-mp3/">WAV to MP3</a></li>
-          </ul>
-        </div>
-      </details>
-    </section>
-
-    <section id="format-listing" class="seo-content seo-disclosure">
-      <details>
-        <summary>
-          <span>Browse all format paths</span>
-          <small>SEO + no-JS fallback</small>
-        </summary>
-        <div class="seo-content-body">
-          <h2 class="sr-only">Browse all available format paths</h2>
-          <p>These static links stay crawlable and available when JavaScript is disabled.</p>
-          <ul class="link-grid">
-            <li><a href="/format/">All format guides</a></li>
-            <li><a href="/format/png-to-jpg/">PNG to JPG</a></li>
-            <li><a href="/format/jpg-to-png/">JPG to PNG</a></li>
-            <li><a href="/format/webp-to-png/">WEBP to PNG</a></li>
-            <li><a href="/format/svg-to-png/">SVG to PNG</a></li>
-            <li><a href="/format/pdf-to-jpg/">PDF to JPG</a></li>
-            <li><a href="/format/mov-to-mp4/">MOV to MP4</a></li>
-            <li><a href="/format/wav-to-mp3/">WAV to MP3</a></li>
-            <li><a href="/compare/">All comparison guides</a></li>
-            <li><a href="/compare/png-vs-jpg/">PNG vs JPG</a></li>
-            <li><a href="/compare/jpg-vs-webp/">JPG vs WEBP</a></li>
-            <li><a href="/compare/svg-vs-png/">SVG vs PNG</a></li>
-            <li><a href="/compare/mov-vs-mp4/">MOV vs MP4</a></li>
-            <li><a href="/compare/wav-vs-mp3/">WAV vs MP3</a></li>
-            <li><a href="/compare/pdf-vs-docx/">PDF vs DOCX</a></li>
-          </ul>
-          <noscript>
-            <p>JavaScript is disabled. You can still access every conversion guide using the links above.</p>
-          </noscript>
-        </div>
-      </details>
-    </section>
   </section>
   </main>
 
   <footer class="site-footer" aria-label="Footer links">
     <a href="/">Home</a>
-    <a href="/format/">Format Guides</a>
-    <a href="/compare/">Compare</a>
-    <a href="/privacy.html">Privacy</a>
-    <a href="/terms.html">Terms</a>
   </footer>
 
   <div id="popup-bg" hidden aria-hidden="true"></div>
