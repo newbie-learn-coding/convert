@@ -2,7 +2,7 @@
 // npm install ts-flp buffer
 
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
-import { Buffer } from "buffer";
+import { Buffer } from "buffer/";
 import CommonFormats from "src/CommonFormats.ts";
 
 if (typeof window !== "undefined") {
@@ -60,7 +60,7 @@ class flptojsonHandler implements FormatHandler {
       try {
         //FLP to raw byte convert for Parsing
         const rawBytes = inputFile.bytes as Uint8Array;
-        const buffer = Buffer.from(rawBytes);
+        const buffer = Buffer.from(rawBytes) as unknown as any;
 
         const parsed = parseFlp(buffer);
 

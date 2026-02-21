@@ -5,7 +5,7 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import * as Pe from "pe-library"; 
 import JSZip from "jszip";
 
-import { Buffer } from "buffer";
+import { Buffer } from "buffer/";
 import CommonFormats from "src/CommonFormats.ts";
 if (typeof window !== "undefined") {
   (window as any).Buffer = Buffer;
@@ -59,7 +59,7 @@ class peToZipHandler implements FormatHandler {
       try {
         //initialize JSzip + buffer
         const zip = new JSZip();
-        const buffer = Buffer.from(inputFile.bytes as Uint8Array);
+        const buffer = Buffer.from(inputFile.bytes as Uint8Array) as unknown as any;
 
         // Get metadata from PE headers
         //@ts-ignore
