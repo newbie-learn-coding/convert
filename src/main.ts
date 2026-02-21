@@ -96,6 +96,25 @@ document.addEventListener("click", (event: MouseEvent) => {
   openDisclosureForHash(href, { scroll: true, focusSummary: true });
 });
 
+function applyModeUiState(): void {
+  // Mode classes are used by CSS to switch color accents.
+  document.body.classList.toggle("mode-simple", simpleMode);
+  document.body.classList.toggle("mode-advanced", !simpleMode);
+
+  ui.modeToggleButton.textContent = simpleMode ? "Advanced mode" : "Simple mode";
+  ui.modeToggleButton.setAttribute(
+    "aria-label",
+    simpleMode ? "Switch to advanced mode" : "Switch to simple mode",
+  );
+  // aria-pressed indicates "advanced mode enabled"
+  ui.modeToggleButton.setAttribute("aria-pressed", String(!simpleMode));
+
+  // Keep legacy variable in sync for any consumers that read it directly.
+  document.body.style.setProperty("--highlight-color", simpleMode ? "#1C77FF" : "#FF6F1C");
+}
+
+applyModeUiState();
+
 function updateConvertCtaState(): void {
   const hasFiles = selectedFiles.length > 0;
   const hasInput = document.querySelector("#from-list .selected") instanceof HTMLButtonElement;
@@ -450,13 +469,7 @@ async function buildOptionList () {
 
 ui.modeToggleButton.addEventListener("click", () => {
   simpleMode = !simpleMode;
-  if (simpleMode) {
-    ui.modeToggleButton.textContent = "Advanced mode";
-    document.body.style.setProperty("--highlight-color", "#1C77FF");
-  } else {
-    ui.modeToggleButton.textContent = "Simple mode";
-    document.body.style.setProperty("--highlight-color", "#FF6F1C");
-  }
+  applyModeUiState();
   buildOptionList();
 });
 
