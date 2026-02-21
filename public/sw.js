@@ -4,7 +4,7 @@
  * Supports offline conversion for common formats
  */
 
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const CACHE_PREFIX = "converttoit-";
 
 // Cache configuration
@@ -26,7 +26,6 @@ const CONFIG = {
 // Core assets to pre-cache - app shell and critical files
 const PRECACHE_ASSETS = [
   "/",
-  "/style.css",
   "/cache.json",
   "/apple-touch-icon.png",
   "/favicon.svg",
@@ -53,7 +52,13 @@ self.addEventListener("install", (event) => {
     (async () => {
       const cache = await caches.open(CONFIG.PRECACHE_CACHE);
       try {
-        await cache.addAll(PRECACHE_ASSETS.map(url => new Request(url, { cache: "reload" })));
+        await Promise.allSettled(
+          PRECACHE_ASSETS.map(url =>
+            cache.add(new Request(url, { cache: "reload" })).catch(e =>
+              console.warn("[SW] Failed to pre-cache:", url, e.message)
+            )
+          )
+        );
         console.log("[SW] Pre-cached core assets");
       } catch (error) {
         console.warn("[SW] Some assets failed to pre-cache:", error);
@@ -289,12 +294,10 @@ self.addEventListener("fetch", (event) => {
   // Skip non-HTTP requests
   if (!event.request.url.startsWith("http")) return;
 
-  // Skip chrome-extension and other non-standard protocols
+  // Skip cross-origin requests — let the browser handle them directly
   try {
     const url = new URL(event.request.url);
-    if (url.protocol === "chrome-extension:" || url.protocol === "moz-extension:") {
-      return;
-    }
+    if (url.origin !== self.location.origin) return;
   } catch {
     return;
   }

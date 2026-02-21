@@ -50,20 +50,27 @@ function resolveWasmUrl(value) {
 
 async function instantiatePandocWasm() {
   const configuredUrl = `${import.meta.env.VITE_PANDOC_WASM_URL ?? ""}`.trim();
-  const candidates = configuredUrl.length > 0
-    ? [configuredUrl]
-    : [DEFAULT_PANDOC_WASM_URL, "wasm/pandoc.wasm"];
+  // Keep safe fallbacks even when an explicit URL is configured.
+  const candidates = Array.from(new Set([
+    configuredUrl,
+    DEFAULT_PANDOC_WASM_URL,
+    "wasm/pandoc.wasm",
+  ].filter((value) => `${value ?? ""}`.trim().length > 0)));
 
   let lastError;
   for (const candidate of candidates) {
     try {
       const wasmUrl = resolveWasmUrl(candidate);
-      return await WebAssembly.instantiateStreaming(
-        fetch(wasmUrl),
-        {
-          wasi_snapshot_preview1: wasi.wasiImport,
-        }
-      );
+      const response = await fetch(wasmUrl);
+      if (!response.ok) throw new Error(`HTTP ${response.status} for ${wasmUrl}`);
+      const imports = { wasi_snapshot_preview1: wasi.wasiImport };
+      // Try streaming first, fall back to arrayBuffer for non-wasm content-type
+      try {
+        return await WebAssembly.instantiateStreaming(response.clone(), imports);
+      } catch {
+        const buf = await response.arrayBuffer();
+        return await WebAssembly.instantiate(buf, imports);
+      }
     } catch (error) {
       lastError = error;
     }
