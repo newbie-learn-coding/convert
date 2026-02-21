@@ -24,26 +24,26 @@ importers:
         specifier: ^0.1.2
         version: 0.1.2
       '@imagemagick/magick-wasm':
-        specifier: ^0.0.38
-        version: 0.0.38
+        specifier: ^0.0.37
+        version: 0.0.37
       '@sqlite.org/sqlite-wasm':
         specifier: ^3.51.2-build6
         version: 3.51.2-build6
       '@std/yaml':
         specifier: npm:@jsr/std__yaml
-        version: '@jsr/std__yaml@1.0.11'
+        version: '@jsr/std__yaml@1.0.12'
       '@types/bun':
         specifier: ^1.3.9
         version: 1.3.9
+      '@types/meyda':
+        specifier: ^5.3.0
+        version: 5.3.0(rollup@4.57.1)
       '@types/pako':
         specifier: ^2.0.4
         version: 2.0.4
       '@types/three':
-        specifier: ^0.183.0
-        version: 0.183.0
-      buffer:
-        specifier: ^6.0.3
-        version: 6.0.3
+        specifier: ^0.182.0
+        version: 0.182.0
       imagetracer:
         specifier: ^0.2.2
         version: 0.2.2
@@ -69,14 +69,14 @@ importers:
         specifier: ^2.0.1
         version: 2.0.1
       three:
-        specifier: ^0.183.0
-        version: 0.183.0
+        specifier: ^0.182.0
+        version: 0.182.0
       three-bvh-csg:
-        specifier: ^0.0.18
-        version: 0.0.18(three-mesh-bvh@0.9.8(three@0.183.0))(three@0.183.0)
+        specifier: ^0.0.17
+        version: 0.0.17(three-mesh-bvh@0.9.8(three@0.182.0))(three@0.182.0)
       three-mesh-bvh:
         specifier: ^0.9.8
-        version: 0.9.8(three@0.183.0)
+        version: 0.9.8(three@0.182.0)
       ts-flp:
         specifier: ^1.0.3
         version: 1.0.3
@@ -86,13 +86,10 @@ importers:
       wavefile:
         specifier: ^11.0.0
         version: 11.0.0
-      web-vitals:
-        specifier: ^5.1.0
-        version: 5.1.0
     devDependencies:
-      '@axe-core/puppeteer':
-        specifier: ^4.10.0
-        version: 4.11.1(puppeteer@24.37.4(typescript@5.9.3))
+      '@types/jszip':
+        specifier: ^3.4.0
+        version: 3.4.1
       puppeteer:
         specifier: ^24.36.0
         version: 24.37.4(typescript@5.9.3)
@@ -107,12 +104,6 @@ importers:
         version: 6.1.1(typescript@5.9.3)(vite@7.3.1(@types/node@25.3.0))
 
 packages:
-
-  '@axe-core/puppeteer@4.11.1':
-    resolution: {integrity: sha512-xXnHGmVtPxGGf9FCtUetY9sptsR/bbQypMODuBenYyufhX2XNgsEbmx8u0WyL75Ft1IGUuBaLB4u2m7CrM63jQ==}
-    engines: {node: '>=6.4.0'}
-    peerDependencies:
-      puppeteer: '>=1.10.0'
 
   '@babel/code-frame@7.29.0':
     resolution: {integrity: sha512-9NhCeYjq9+3uxgdtp20LSiJXJvN0FeCtNGpJxuMFZ1Kv3cWUNb6DOhJwUvcVCzKGR66cw4njwM6hrJLqgOwbcw==}
@@ -303,11 +294,11 @@ packages:
   '@flo-audio/reflo@0.1.2':
     resolution: {integrity: sha512-drjhfovfuYFEh0Cc+2P/rnmHo0+AYpkCPyjanJjlHNpLlSJeTu1NiOWKA4RfxEitYip+3HiAgWygRkJnKTsCfQ==}
 
-  '@imagemagick/magick-wasm@0.0.38':
-    resolution: {integrity: sha512-xg3q6ZMqUADyyy0h/1IndT9DUWUXY5lRhevF2WB+AYvphJ5yraH+R0IGO7H7DFnLSMrJ6zsxEbXfOnhNfark9w==}
+  '@imagemagick/magick-wasm@0.0.37':
+    resolution: {integrity: sha512-tVs9hcWu9u7I3Jz/XvUYVvCEniuxAR+JjZEzI+yKtQmYAtNsLF1WjoH1HZGCKPumaB9jAHZlcf2RGT9+1l3nxQ==}
 
-  '@jsr/std__yaml@1.0.11':
-    resolution: {integrity: sha512-uSVzU72mlSkYU2Gxm2ECUoVrd6cY1n7krZ8l75QWwyGuasP1LKyLvEO3veVujKwOwthLQD7oBQvPpYNwYzt15A==, tarball: https://npm.jsr.io/~/11/@jsr/std__yaml/1.0.11.tgz}
+  '@jsr/std__yaml@1.0.12':
+    resolution: {integrity: sha512-pz/BisWZWH16JvLJBwrNwUwfIsRnf9qniMrmI6Z3vIAcVRVFcA5+i4o6z6QqsMKqFzjlB66WZE+jSyujT/RvRg==, tarball: https://npm.jsr.io/~/11/@jsr/std__yaml/1.0.12.tgz}
 
   '@protobufjs/aspromise@1.1.2':
     resolution: {integrity: sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ==}
@@ -503,6 +494,14 @@ packages:
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
+  '@types/jszip@3.4.1':
+    resolution: {integrity: sha512-TezXjmf3lj+zQ651r6hPqvSScqBLvyPI9FxdXBqpEwBijNGQ2NXpaFW/7joGzveYkKQUil7iiDHLo6LV71Pc0A==}
+    deprecated: This is a stub types definition. jszip provides its own type definitions, so you do not need this installed.
+
+  '@types/meyda@5.3.0':
+    resolution: {integrity: sha512-rqiICU17xTksad5wqm10kmlfyQV50xR9IAXfyc4ZF866Auk/1pK6c3R1ymOFU77BFkTPI8BbmSyQ6vfZhRnU/Q==}
+    deprecated: This is a stub types definition. meyda provides its own type definitions, so you do not need this installed.
+
   '@types/node@25.3.0':
     resolution: {integrity: sha512-4K3bqJpXpqfg2XKGK9bpDTc6xO/xoUP/RBWS7AtRMug6zZFaRekiLzjVtAoZMquxoAbzBvy5nxQ7veS5eYzf8A==}
 
@@ -515,8 +514,8 @@ packages:
   '@types/stats.js@0.17.4':
     resolution: {integrity: sha512-jIBvWWShCvlBqBNIZt0KAshWpvSjhkwkEu4ZUcASoAvhmrgAUI2t1dXrjSL4xXVLB4FznPrIsX3nKXFl/Dt4vA==}
 
-  '@types/three@0.183.0':
-    resolution: {integrity: sha512-AaGkvloQhxdrfMm/HbY8cpOz1K1jkEELn6zjFoY3yhAiC7zhhZE19+gDBybYwKk+GqXmWKxqDCB43NqyW3+QZw==}
+  '@types/three@0.182.0':
+    resolution: {integrity: sha512-WByN9V3Sbwbe2OkWuSGyoqQO8Du6yhYaXtXLoA5FkKTUJorZ+yOHBZ35zUUPQXlAKABZmbYp5oAqpA4RBjtJ/Q==}
 
   '@types/webxr@0.5.24':
     resolution: {integrity: sha512-h8fgEd/DpoS9CBrjEQXR+dIDraopAEfu4wYVNY2tEPwk60stPWhvZMf4Foo5FakuQ7HFZoa8WceaWFervK2Ovg==}
@@ -556,10 +555,6 @@ packages:
 
   ast-types@0.13.4:
     resolution: {integrity: sha512-x1FCFnFifvYDDzTaLII71vG5uvDwgtmDTEVWAxrgeiR8VjMONcCXJx7E+USjDtHlwFmt9MysbqgF9b9Vjr6w+w==}
-    engines: {node: '>=4'}
-
-  axe-core@4.11.1:
-    resolution: {integrity: sha512-BASOg+YwO2C+346x3LZOeoovTIoTrRqEsqMa6fmfAV0P+U9mFr9NsyOEpiYvFjbc64NMrSswhV50WdXzdb/Z5A==}
     engines: {node: '>=4'}
 
   b4a@1.7.5:
@@ -646,9 +641,6 @@ packages:
 
   buffer@5.7.1:
     resolution: {integrity: sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ==}
-
-  buffer@6.0.3:
-    resolution: {integrity: sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==}
 
   bun-types@1.3.9:
     resolution: {integrity: sha512-+UBWWOakIP4Tswh0Bt0QD0alpTY8cb5hvgiYeWCMet9YukHbzuruIEeXC2D7nMJPB12kbh8C7XJykSexEqGKJg==}
@@ -965,8 +957,8 @@ packages:
     resolution: {integrity: sha512-jumlc0BIUrS3qJGgIkWZsyfAM7NCWiBcCDhnd+3NNM5KbBmLTgHVfWBcg6W+rLUsIpzpERPsvwUP7CckAQSOoA==}
     engines: {node: '>=12'}
 
-  meshoptimizer@1.0.1:
-    resolution: {integrity: sha512-Vix+QlA1YYT3FwmBBZ+49cE5y/b+pRrcXKqGpS5ouh33d3lSp2PoTpCw19E0cKDFWalembrHnIaZetf27a+W2g==}
+  meshoptimizer@0.22.0:
+    resolution: {integrity: sha512-IebiK79sqIy+E4EgOr+CAw+Ke8hAspXKzBd0JdgEmPHiAwmvEj2S4h1rfvo+o/BnfEYd/jAOg5IeeIjzlzSnDg==}
 
   meyda@5.6.3:
     resolution: {integrity: sha512-fAdwfzIi1WDoL0idUQvCD7dZ7EN74FYH83G+jZQO3Nr9yOEBtzFvcMg2KLdLlu6psSP8XFlO0kYynG5o/E681Q==}
@@ -1266,19 +1258,19 @@ packages:
   text-decoder@1.2.7:
     resolution: {integrity: sha512-vlLytXkeP4xvEq2otHeJfSQIRyWxo/oZGEbXrtEEF9Hnmrdly59sUbzZ/QgyWuLYHctCHxFF4tRQZNQ9k60ExQ==}
 
-  three-bvh-csg@0.0.18:
-    resolution: {integrity: sha512-M3GCZMmGFgASGuDf+YMamM83nVlD/vdwzVHcYbFxgW+g1S7/nKPiuY00YVHOMbjmJPh8mLevGZL65ItHUuGt2w==}
+  three-bvh-csg@0.0.17:
+    resolution: {integrity: sha512-iEkHDF8GRfGM6593Cuw8SnF1vfENCp46gIAtRzuL4nGXGWPcR1sbTBwM9ptDONb5twqlZp5WkAKya5aBKe2qcA==}
     peerDependencies:
-      three: '>=0.179.0'
-      three-mesh-bvh: '>=0.9.7'
+      three: '>=0.151.0'
+      three-mesh-bvh: '>=0.6.6'
 
   three-mesh-bvh@0.9.8:
     resolution: {integrity: sha512-YphYvdXEZSXdz6iNdWJo1RB6qvSCRyiXPEVSvNU6xVWbLDOdSrfEIsJOpgFOnefdmVEvZ6M+sY0cjh9gl7MvdA==}
     peerDependencies:
       three: '>= 0.159.0'
 
-  three@0.183.0:
-    resolution: {integrity: sha512-G6SH2jfefIVa2YI4JL2VbgQhrrbp1A8dRc7lr3PW827kdVyaX2RgH6M5FmjmdVFLgSHppyg3OYOZdTfWElle+g==}
+  three@0.182.0:
+    resolution: {integrity: sha512-GbHabT+Irv+ihI1/f5kIIsZ+Ef9Sl5A1Y7imvS5RQjWgtTPfPnZ43JmlYI7NtCRDK9zir20lQpfg8/9Yd02OvQ==}
 
   tinyglobby@0.2.15:
     resolution: {integrity: sha512-j2Zq4NyQYG5XMST4cbs02Ak8iJUdxRM0XI5QyxXuZOzKOINmWurp3smXu3y5wDcJrptwpSjgXHzIQxR0omXljQ==}
@@ -1381,9 +1373,6 @@ packages:
     engines: {node: '>=8'}
     hasBin: true
 
-  web-vitals@5.1.0:
-    resolution: {integrity: sha512-ArI3kx5jI0atlTtmV0fWU3fjpLmq/nD3Zr1iFFlJLaqa5wLBkUSzINwBPySCX/8jRyjlmy1Volw1kz1g9XE4Jg==}
-
   webdriver-bidi-protocol@0.4.1:
     resolution: {integrity: sha512-ARrjNjtWRRs2w4Tk7nqrf2gBI0QXWuOmMCx2hU+1jUt6d00MjMxURrhxhGbrsoiZKJrhTSTzbIrc554iKI10qw==}
 
@@ -1437,11 +1426,6 @@ packages:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
 snapshots:
-
-  '@axe-core/puppeteer@4.11.1(puppeteer@24.37.4(typescript@5.9.3))':
-    dependencies:
-      axe-core: 4.11.1
-      puppeteer: 24.37.4(typescript@5.9.3)
 
   '@babel/code-frame@7.29.0':
     dependencies:
@@ -1545,9 +1529,9 @@ snapshots:
 
   '@flo-audio/reflo@0.1.2': {}
 
-  '@imagemagick/magick-wasm@0.0.38': {}
+  '@imagemagick/magick-wasm@0.0.37': {}
 
-  '@jsr/std__yaml@1.0.11': {}
+  '@jsr/std__yaml@1.0.12': {}
 
   '@protobufjs/aspromise@1.1.2': {}
 
@@ -1692,6 +1676,17 @@ snapshots:
 
   '@types/estree@1.0.8': {}
 
+  '@types/jszip@3.4.1':
+    dependencies:
+      jszip: 3.10.1
+
+  '@types/meyda@5.3.0(rollup@4.57.1)':
+    dependencies:
+      meyda: 5.6.3(rollup@4.57.1)
+    transitivePeerDependencies:
+      - rollup
+      - supports-color
+
   '@types/node@25.3.0':
     dependencies:
       undici-types: 7.18.2
@@ -1702,7 +1697,7 @@ snapshots:
 
   '@types/stats.js@0.17.4': {}
 
-  '@types/three@0.183.0':
+  '@types/three@0.182.0':
     dependencies:
       '@dimforge/rapier3d-compat': 0.12.0
       '@tweenjs/tween.js': 23.1.3
@@ -1710,7 +1705,7 @@ snapshots:
       '@types/webxr': 0.5.24
       '@webgpu/types': 0.1.69
       fflate: 0.8.2
-      meshoptimizer: 1.0.1
+      meshoptimizer: 0.22.0
 
   '@types/webxr@0.5.24': {}
 
@@ -1743,8 +1738,6 @@ snapshots:
   ast-types@0.13.4:
     dependencies:
       tslib: 2.8.1
-
-  axe-core@4.11.1: {}
 
   b4a@1.7.5: {}
 
@@ -1788,7 +1781,8 @@ snapshots:
       bare-path: 3.0.0
     optional: true
 
-  base64-js@1.5.1: {}
+  base64-js@1.5.1:
+    optional: true
 
   basic-ftp@5.1.0: {}
 
@@ -1823,11 +1817,6 @@ snapshots:
       base64-js: 1.5.1
       ieee754: 1.2.1
     optional: true
-
-  buffer@6.0.3:
-    dependencies:
-      base64-js: 1.5.1
-      ieee754: 1.2.1
 
   bun-types@1.3.9:
     dependencies:
@@ -2075,7 +2064,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  ieee754@1.2.1: {}
+  ieee754@1.2.1:
+    optional: true
 
   imagetracer@0.2.2: {}
 
@@ -2144,7 +2134,7 @@ snapshots:
 
   lru-cache@7.18.3: {}
 
-  meshoptimizer@1.0.1: {}
+  meshoptimizer@0.22.0: {}
 
   meyda@5.6.3(rollup@4.57.1):
     dependencies:
@@ -2577,16 +2567,16 @@ snapshots:
     transitivePeerDependencies:
       - react-native-b4a
 
-  three-bvh-csg@0.0.18(three-mesh-bvh@0.9.8(three@0.183.0))(three@0.183.0):
+  three-bvh-csg@0.0.17(three-mesh-bvh@0.9.8(three@0.182.0))(three@0.182.0):
     dependencies:
-      three: 0.183.0
-      three-mesh-bvh: 0.9.8(three@0.183.0)
+      three: 0.182.0
+      three-mesh-bvh: 0.9.8(three@0.182.0)
 
-  three-mesh-bvh@0.9.8(three@0.183.0):
+  three-mesh-bvh@0.9.8(three@0.182.0):
     dependencies:
-      three: 0.183.0
+      three: 0.182.0
 
-  three@0.183.0: {}
+  three@0.182.0: {}
 
   tinyglobby@0.2.15:
     dependencies:
@@ -2662,8 +2652,6 @@ snapshots:
       - supports-color
 
   wavefile@11.0.0: {}
-
-  web-vitals@5.1.0: {}
 
   webdriver-bidi-protocol@0.4.1: {}
 
