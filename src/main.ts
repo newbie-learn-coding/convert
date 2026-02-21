@@ -460,22 +460,35 @@ ui.modeToggleButton.addEventListener("click", () => {
   buildOptionList();
 });
 
-let deadEndAttempts: ConvertPathNode[][];
+type ConvertPathNodeKey = string;
+let deadEndAttempts: ConvertPathNodeKey[][];
+
+function nodeKey(node: ConvertPathNode): ConvertPathNodeKey {
+  const handlerName = node.handler?.name ?? "unknown-handler";
+  const mime = node.format?.mime ?? "unknown-mime";
+  const fmt = node.format?.format ?? "unknown-format";
+  return `${handlerName}|${mime}|${fmt}`;
+}
 
 async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
 
   const pathString = path.map(c => c.format.format).join(" → ");
+  const pathKeys = path.map(nodeKey);
 
   // Exit early if we've encountered a known dead end
   for (const deadEnd of deadEndAttempts) {
+    if (pathKeys.length < deadEnd.length) continue;
     let isDeadEnd = true;
     for (let i = 0; i < deadEnd.length; i++) {
-      if (path[i] === deadEnd[i]) continue;
+      if (pathKeys[i] === deadEnd[i]) continue;
       isDeadEnd = false;
       break;
     }
     if (isDeadEnd) {
-      const deadEndString = deadEnd.slice(-2).map(c => c.format.format).join(" → ");
+      const deadEndString = deadEnd
+        .slice(-2)
+        .map((key) => key.split("|")[2] ?? key)
+        .join(" → ");
       console.warn(`Skipping ${pathString} due to dead end near ${deadEndString}.`);
       return null;
     }
@@ -489,9 +502,7 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
     try {
       let supportedFormats = window.supportedFormatCache.get(handler.name);
       if (!handler.ready) {
-        try {
-          await handler.init();
-        } catch (_) { return null; }
+        await handler.init();
         if (handler.supportedFormats) {
           window.supportedFormatCache.set(handler.name, handler.supportedFormats);
           supportedFormats = handler.supportedFormats;
@@ -514,8 +525,15 @@ async function attemptConvertPath (files: FileData[], path: ConvertPathNode[]) {
       // The graph may still have old paths queued from before they were
       // marked as dead ends, so we catch that here.
       const deadEndPath = path.slice(0, i + 2);
-      deadEndAttempts.push(deadEndPath);
+      deadEndAttempts.push(deadEndPath.map(nodeKey));
       window.traversionGraph.addDeadEndPath(path.slice(0, i + 2));
+
+      // If initialization failed, disable the handler for the remainder of this session
+      // to avoid repeatedly re-trying routes that can never work in this browser.
+      const errText = e instanceof Error ? e.message : String(e);
+      if (errText.includes("Failed to initialize handler") || errText.includes("initialization timed out")) {
+        window.traversionGraph.disableHandler(handler.name);
+      }
 
       ui.popupBox.innerHTML = `<h2>Finding conversion route...</h2>
         <p>Looking for a valid path...</p>`;

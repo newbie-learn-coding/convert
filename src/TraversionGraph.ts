@@ -68,7 +68,24 @@ export class TraversionGraph {
         { categories: ["audio", "video", "image"], cost: 10000 }, // Converting from audio to image through video is especially lossy
     ];
     // Keeps track of path segments that have failed when attempted during the last run
-    private temporaryDeadEnds: ConvertPathNode[][] = [];
+    private temporaryDeadEnds: string[][] = [];
+    // Tracks handlers that are known-broken for the current session (e.g. init failure).
+    private disabledHandlers: Set<string> = new Set();
+
+    private nodeKey(node: ConvertPathNode): string {
+        const handlerName = node.handler?.name ?? "unknown-handler";
+        const mime = node.format?.mime ?? "unknown-mime";
+        const fmt = node.format?.format ?? "unknown-format";
+        return `${handlerName}|${mime}|${fmt}`;
+    }
+
+    public disableHandler(handlerName: string) {
+        this.disabledHandlers.add(handlerName.toLowerCase());
+    }
+
+    public clearDisabledHandlers() {
+        this.disabledHandlers.clear();
+    }
 
     public addCategoryChangeCost(from: string, to: string, cost: number, handler?: string, updateIfExists: boolean = true) : boolean {
         if (this.hasCategoryChangeCost(from, to, handler)) {
@@ -122,7 +139,7 @@ export class TraversionGraph {
     }
 
     public addDeadEndPath (pathFragment: ConvertPathNode[]) {
-        this.temporaryDeadEnds.push(pathFragment);
+        this.temporaryDeadEnds.push(pathFragment.map(node => this.nodeKey(node)));
     }
     public clearDeadEndPaths () {
         this.temporaryDeadEnds.length = 0;
@@ -290,11 +307,22 @@ export class TraversionGraph {
         let toIndex = this.nodes.findIndex(node => node.mime === to.format.mime);
         if (fromIndex === -1 || toIndex === -1) return []; // If either format is not in the graph, return empty array
         queue.add({index: fromIndex, cost: 0, path: [from], visitedBorder: visited.length });
-        console.log(`Starting path search from ${from.format.mime}(${from.handler?.name}) to ${to.format.mime}(${to.handler?.name}) (simple mode: ${simpleMode})`);
+        debugLog(`Starting path search from ${from.format.mime}(${from.handler?.name}) to ${to.format.mime}(${to.handler?.name}) (simple mode: ${simpleMode})`);
         let iterations = 0;
         let pathsFound = 0;
+        const startTime = performance.now();
+        const TIME_BUDGET_MS = 15000;
+        const YIELD_EVERY = 250;
         while (queue.size() > 0) {
             iterations++;
+            if (iterations % YIELD_EVERY === 0) {
+                // Yield to the event loop so UI can update (prevents "stuck" modal).
+                await new Promise(resolve => setTimeout(resolve, 0));
+                if (performance.now() - startTime > TIME_BUDGET_MS) {
+                    debugLog(`Path search aborted after ${iterations} iterations (time budget ${TIME_BUDGET_MS}ms exceeded).`);
+                    return;
+                }
+            }
             // Get the node with the lowest cost
             let current = queue.poll()!;
             const indexInVisited = visited.indexOf(current.index);
@@ -310,13 +338,13 @@ export class TraversionGraph {
                     to.format.format === foundPathLast?.format.format &&
                     (simpleMode || !to.handler || to.handler.name === foundPathLast?.handler.name)
                 ) {
-                    console.log(`Found path at iteration ${logString}`);
+                    debugLog(`Found path at iteration ${logString}`);
                     this.dispatchEvent("found", current.path);
                     yield current.path;
                     pathsFound++;
                 }
                 else {
-                    console.log(`Unvalid path at iteration ${logString}`);
+                    debugLog(`Invalid path at iteration ${logString}`);
                     this.dispatchEvent("skipped", current.path);
                 }
                 continue;
@@ -331,6 +359,7 @@ export class TraversionGraph {
                 ) return;
                 const indexInVisited = visited.indexOf(edge.to.index);
                 if (indexInVisited >= 0 && indexInVisited < current.visitedBorder) return;
+                if (this.disabledHandlers.has(edge.handler.toLowerCase())) return;
                 const handler = this.handlers.find(h => h.name === edge.handler);
                 if (!handler) return; // If the handler for this edge is not found, skip it
 
@@ -343,17 +372,18 @@ export class TraversionGraph {
                 });
             });
             if (iterations % LOG_FREQUENCY === 0) {
-                console.log(`Still searching... Iterations: ${iterations}, Paths found: ${pathsFound}, Queue length: ${queue.size()}`);
+                debugLog(`Still searching... Iterations: ${iterations}, Paths found: ${pathsFound}, Queue length: ${queue.size()}`);
             }
         }
-        console.log(`Path search completed. Total iterations: ${iterations}, Total paths found: ${pathsFound}`);
+        debugLog(`Path search completed. Total iterations: ${iterations}, Total paths found: ${pathsFound}`);
     }
 
     private calculateAdaptiveCost(path: ConvertPathNode[]) : number {
         for (const deadEnd of this.temporaryDeadEnds) {
+            if (path.length < deadEnd.length) continue;
             let isDeadEnd = true;
             for (let i = 0; i < deadEnd.length; i ++) {
-                if (path[i] === deadEnd[i]) continue;
+                if (this.nodeKey(path[i]) === deadEnd[i]) continue;
                 isDeadEnd = false;
                 break;
             }
