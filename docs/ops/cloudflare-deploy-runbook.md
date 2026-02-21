@@ -1,6 +1,6 @@
 # Cloudflare Production Operations Runbook (Authoritative)
 
-Last updated: 2026-02-20
+Last updated: 2026-02-21
 
 This is the single source of truth for:
 
@@ -168,3 +168,19 @@ Typical blockers:
 - Missing `CLOUDFLARE_ACCOUNT_ID`
 - Missing local `wrangler.toml` (create via `cp wrangler.toml.example wrangler.toml`)
 - Invalid `CF_DEPLOY_BASE_URL` / wrong host for production gate
+
+## 9) Frontend cache/WASM troubleshooting (post-release)
+
+If users report frontend runtime errors after deploy (for example stale bundle ids or wasm loader failures), run this quick check:
+
+```bash
+curl -fsS https://converttoit.com/ | rg 'index-.*\\.js'
+curl -fsS https://converttoit.com/sw.js | rg 'CACHE_VERSION'
+curl -fsS https://converttoit.com/_ops/version
+```
+
+Guidance:
+
+- If bundle id is new but user still sees old logs, it's usually client cache drift.
+- Bump `public/sw.js` `CACHE_VERSION` for forced cache rotation when needed.
+- Ask affected users to hard refresh once (`Cmd/Ctrl + Shift + R`) after rollout.
