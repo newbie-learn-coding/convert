@@ -27,6 +27,10 @@ invocation_logs = true
 directory = "./dist"
 binding = "ASSETS"
 
+[[r2_buckets]]
+binding = "WASM_BUCKET"
+bucket_name = "converttoit-wasm"
+
 [[durable_objects.bindings]]
 name = "GLOBAL_RATE_LIMITER"
 class_name = "GlobalRateLimiter"

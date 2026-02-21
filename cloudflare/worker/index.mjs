@@ -34,6 +34,8 @@ const CACHE_CONFIG = {
   }
 };
 
+const PANDOC_WASM_OBJECT_KEY = "pandoc.wasm";
+
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
   "cache-control": "no-store",
@@ -137,6 +139,139 @@ function mergeDefaultHeaders(headers, defaults) {
       headers.set(key, value);
     }
   }
+}
+
+async function handlePandocWasmRoute(request, env, pathname, ctx, requestId, startTime, cf) {
+  if (pathname !== "/wasm/pandoc.wasm") return null;
+
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return withHeaders(
+      new Response("Method Not Allowed", {
+        status: 405,
+        headers: {
+          allow: "GET, HEAD",
+          "content-type": "text/plain; charset=utf-8"
+        }
+      }),
+      DEFAULT_SECURITY_HEADERS
+    );
+  }
+
+  const cacheKey = new Request(request.url, {
+    headers: request.headers,
+    method: request.method
+  });
+
+  const cachedResponse = await caches.default.match(cacheKey);
+  if (cachedResponse) {
+    recordMetric(env, "cache_hit", 1, {
+      path_type: "wasm",
+      colo: cf?.colo || "unknown"
+    });
+
+    const duration = Date.now() - startTime;
+    recordMetric(env, "response_time_ms", duration, {
+      type: "wasm",
+      cached: "true"
+    });
+
+    const response = withCacheHeaders(cachedResponse, pathname, { skipCacheHeader: true });
+    const finalResponse = withHeaders(response, DEFAULT_SECURITY_HEADERS);
+    finalResponse.headers.set("x-cf-cache-status", "HIT");
+    finalResponse.headers.set("x-request-id", requestId);
+    finalResponse.headers.set("x-response-time", `${duration}ms`);
+    return finalResponse;
+  }
+
+  recordMetric(env, "cache_miss", 1, {
+    path_type: "wasm",
+    colo: cf?.colo || "unknown"
+  });
+
+  let responseToReturn = null;
+
+  if (env.WASM_BUCKET && typeof env.WASM_BUCKET.get === "function") {
+    try {
+      const object = await env.WASM_BUCKET.get(PANDOC_WASM_OBJECT_KEY);
+      if (object) {
+        const headers = new Headers();
+        headers.set("content-type", "application/wasm");
+        if (object.httpEtag) headers.set("etag", object.httpEtag);
+        if (Number.isFinite(object.size)) headers.set("content-length", String(object.size));
+
+        responseToReturn = new Response(request.method === "HEAD" ? null : object.body, {
+          status: 200,
+          headers
+        });
+      }
+    } catch (error) {
+      recordMetric(env, "error", 1, { type: "pandoc_wasm_r2_error" });
+      logError(env, error, { requestId, pathname, type: "pandoc_wasm_r2_error" });
+    }
+  }
+
+  if (!responseToReturn) {
+    const fallbackUrl = `${env.PANDOC_WASM_FALLBACK_URL || ""}`.trim();
+    if (fallbackUrl.length > 0) {
+      try {
+        const upstreamResponse = await fetch(fallbackUrl, {
+          cf: {
+            cacheTtl: CACHE_CONFIG.WASM.edgeTTL,
+            cacheEverything: true
+          }
+        });
+        if (upstreamResponse.ok) {
+          const headers = new Headers(upstreamResponse.headers);
+          headers.set("content-type", "application/wasm");
+          responseToReturn = new Response(
+            request.method === "HEAD" ? null : upstreamResponse.body,
+            { status: 200, headers }
+          );
+        }
+      } catch (error) {
+        recordMetric(env, "error", 1, { type: "pandoc_wasm_fallback_error" });
+        logError(env, error, { requestId, pathname, type: "pandoc_wasm_fallback_error" });
+      }
+    }
+  }
+
+  if (!responseToReturn) {
+    recordMetric(env, "not_found", 1, { path_type: "wasm" });
+    return withHeaders(
+      new Response("Not Found", { status: 404, headers: { "content-type": "text/plain" } }),
+      DEFAULT_SECURITY_HEADERS
+    );
+  }
+
+  const responseWithCache = withCacheHeaders(responseToReturn, pathname);
+
+  if (ctx?.waitUntil && responseWithCache.status === 200) {
+    ctx.waitUntil(
+      (async () => {
+        try {
+          await caches.default.put(cacheKey, responseWithCache.clone());
+        } catch (cacheError) {
+          logError(env, cacheError, { requestId, pathname, type: "cache_write" });
+        }
+      })()
+    );
+  }
+
+  const duration = Date.now() - startTime;
+  const finalResponse = withHeaders(responseWithCache, DEFAULT_SECURITY_HEADERS);
+  finalResponse.headers.set("x-cf-edge-colo", cf?.colo || "unknown");
+  finalResponse.headers.set("x-cf-cache-status", "MISS");
+  finalResponse.headers.set("x-request-id", requestId);
+  finalResponse.headers.set("x-response-time", `${duration}ms`);
+
+  recordMetric(env, "response_time_ms", duration, {
+    type: "wasm",
+    cached: "false",
+    status: responseToReturn.status.toString()
+  });
+  logPerformance(env, duration, pathname, responseToReturn.status, { type: "wasm" });
+
+  return finalResponse;
 }
 
 function mapIncrement(map, key, delta = 1) {
@@ -1579,6 +1714,19 @@ export default {
         });
         logPerformance(env, duration, pathname, opsResponse.status, { type: "ops" });
         return opsResponse;
+      }
+
+      const wasmResponse = await handlePandocWasmRoute(
+        request,
+        env,
+        pathname,
+        ctx,
+        requestId,
+        startTime,
+        cf
+      );
+      if (wasmResponse) {
+        return wasmResponse;
       }
 
       if (!env.ASSETS || typeof env.ASSETS.fetch !== "function") {

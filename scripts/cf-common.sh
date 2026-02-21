@@ -18,10 +18,16 @@ ensure_wrangler_config() {
     return 0
   fi
 
-  echo "[cf-common] Wrangler config not found: $WRANGLER_CONFIG_PATH" >&2
   if [ "$WRANGLER_CONFIG_PATH" = "$ROOT_DIR/wrangler.toml" ] && [ -f "$ROOT_DIR/wrangler.toml.example" ]; then
-    echo "[cf-common] Create it from template: cp wrangler.toml.example wrangler.toml" >&2
+    echo "[cf-common] Wrangler config not found: $WRANGLER_CONFIG_PATH" >&2
+    echo "[cf-common] Falling back to template config (read-only): $ROOT_DIR/wrangler.toml.example" >&2
+    echo "[cf-common] Tip for local ops: cp wrangler.toml.example wrangler.toml" >&2
+    WRANGLER_CONFIG_PATH="$ROOT_DIR/wrangler.toml.example"
+    export WRANGLER_CONFIG_PATH
+    return 0
   fi
+
+  echo "[cf-common] Wrangler config not found: $WRANGLER_CONFIG_PATH" >&2
   return 1
 }
 

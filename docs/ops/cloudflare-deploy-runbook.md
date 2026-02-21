@@ -36,6 +36,28 @@ source .env.local
 
 Do not commit `wrangler.toml` or any secret-bearing `.env*` file.
 
+### Pandoc WASM delivery (required for pandoc-based formats)
+
+`pandoc.wasm` is ~56 MiB and exceeds Cloudflare static asset upload limits (default policy in this repo is 25 MiB),
+so production serves it via a Worker route (`/wasm/pandoc.wasm`) backed by an R2 bucket (`converttoit-wasm`).
+
+One-time setup (per Cloudflare account):
+
+```bash
+# Create bucket (safe to re-run; if it already exists, just keep going)
+npx --yes wrangler@4.11.1 r2 bucket info converttoit-wasm >/dev/null 2>&1 || \
+  npx --yes wrangler@4.11.1 r2 bucket create converttoit-wasm
+
+# Upload pandoc.wasm
+npx --yes wrangler@4.11.1 r2 object put converttoit-wasm/pandoc.wasm \
+  --file src/handlers/pandoc/pandoc.wasm \
+  --content-type application/wasm \
+  --cache-control "public, max-age=604800"
+
+# Verify without downloading the entire file
+curl -fsSI https://converttoit.com/wasm/pandoc.wasm | rg -i 'HTTP/|content-type|etag|cache-control'
+```
+
 ## 3) Environment variables
 
 ### Required for non-interactive deploy/rollback

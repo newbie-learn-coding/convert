@@ -37,8 +37,6 @@ import {
 } from "@bjorn3/browser_wasi_shim";
 import { wasmAssetPath, withBasePath } from "../../assetPath.ts";
 
-const DEFAULT_PANDOC_WASM_URL = "https://raw.githubusercontent.com/p2r3/convert/master/src/handlers/pandoc/pandoc.wasm";
-
 function resolveWasmUrl(value) {
   const trimmed = `${value ?? ""}`.trim();
   if (!trimmed) return wasmAssetPath("pandoc.wasm");
@@ -53,7 +51,6 @@ async function instantiatePandocWasm() {
   // Keep safe fallbacks even when an explicit URL is configured.
   const candidates = Array.from(new Set([
     configuredUrl,
-    DEFAULT_PANDOC_WASM_URL,
     "wasm/pandoc.wasm",
   ].filter((value) => `${value ?? ""}`.trim().length > 0)));
 
