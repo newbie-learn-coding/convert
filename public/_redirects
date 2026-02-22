@@ -1,5 +1,9 @@
 /index.html / 301
 
+# Prefer extensionless API docs page URL
+/api.html /api 301
+/api/ /api 301
+
 # Deprecated compare slugs (content retired from sitemap/keyword map)
 /compare/heic-vs-jpg /compare/png-vs-jpg/ 301
 /compare/heic-vs-jpg/ /compare/png-vs-jpg/ 301
