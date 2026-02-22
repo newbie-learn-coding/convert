@@ -57,8 +57,8 @@
         <ul class="api-pills" aria-label="API highlights">
           <li>No API key</li>
           <li>Read-only metadata</li>
-          <li>CORS enabled</li>
-          <li>Rate limit: 60 req/min/IP</li>
+          <li>GET / HEAD / OPTIONS</li>
+          <li>Rate limit: 60 requests / 60s / IP</li>
         </ul>
       </section>
 
@@ -113,8 +113,65 @@
         </ol>
       </section>
 
+      <section class="api-section api-rate-limit" aria-label="Rate limits">
+        <h2>Rate limits (exact behavior)</h2>
+        <p class="api-section-intro">
+          The API limiter is enforced inside the worker and keyed by <code>cf-connecting-ip</code>. All
+          <code>/api/v1/*</code> endpoints share one bucket.
+        </p>
+
+        <div class="api-rate-grid">
+          <article class="api-rate-card">
+            <h3>Quota</h3>
+            <p><strong>60 requests per 60 seconds</strong> for each client IP.</p>
+            <p class="api-muted">The window starts on your first request and resets 60 seconds later.</p>
+          </article>
+
+          <article class="api-rate-card">
+            <h3>Which methods count</h3>
+            <ul class="api-checklist">
+              <li><code>GET</code>: counted</li>
+              <li><code>HEAD</code>: counted</li>
+              <li><code>OPTIONS</code> preflight: not counted</li>
+            </ul>
+          </article>
+
+          <article class="api-rate-card">
+            <h3>When the limit is hit</h3>
+            <p>Server responds with <code>429</code> and JSON error <code>rate_limited</code>.</p>
+            <p class="api-muted">Use the <code>retry-after</code> header to decide when to retry.</p>
+          </article>
+        </div>
+
+        <article class="api-rate-headers">
+          <h3>Headers returned on 429 responses</h3>
+          <dl class="api-header-list">
+            <div>
+              <dt><code>retry-after</code></dt>
+              <dd>Seconds to wait before retrying.</dd>
+            </div>
+            <div>
+              <dt><code>x-ratelimit-limit</code></dt>
+              <dd>Current limit value (<code>60</code>).</dd>
+            </div>
+            <div>
+              <dt><code>x-ratelimit-remaining</code></dt>
+              <dd>Always <code>0</code> on <code>429</code>.</dd>
+            </div>
+            <div>
+              <dt><code>x-ratelimit-source</code></dt>
+              <dd>Current source is <code>isolate</code>.</dd>
+            </div>
+          </dl>
+          <pre class="api-code"><code>curl -i https://converttoit.com/api/v1/status</code></pre>
+        </article>
+      </section>
+
       <section class="api-section" aria-label="API endpoints">
         <h2>Endpoints</h2>
+        <p class="api-section-intro">
+          These endpoints are read-only and share the same rate-limit bucket described above.
+        </p>
 
         <article class="api-endpoint">
           <h3><code>GET /api/v1/status</code></h3>
@@ -213,6 +270,19 @@
             <button class="api-btn" type="submit">Run request</button>
           </form>
         </div>
+
+        <article class="api-rate-live" aria-label="Rate-limit snapshot">
+          <h3>Rate-limit snapshot (from last response)</h3>
+          <ul class="api-rate-live-list">
+            <li><span>Limit</span><code id="api-rate-limit">N/A</code></li>
+            <li><span>Remaining</span><code id="api-rate-remaining">N/A</code></li>
+            <li><span>Retry-After</span><code id="api-rate-retry-after">N/A</code></li>
+            <li><span>Source</span><code id="api-rate-source">N/A</code></li>
+          </ul>
+          <p id="api-rate-hint" class="api-muted">
+            <code>x-ratelimit-*</code> headers are guaranteed on <code>429</code> responses.
+          </p>
+        </article>
 
         <div class="api-output-wrap" aria-label="Playground output">
           <div class="api-output-header">

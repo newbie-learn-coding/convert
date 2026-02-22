@@ -1,14 +1,50 @@
 const OUTPUT = document.getElementById("api-output");
 const REQUEST_URL = document.getElementById("api-request-url");
+const RATE_LIMIT = document.getElementById("api-rate-limit");
+const RATE_REMAINING = document.getElementById("api-rate-remaining");
+const RATE_RETRY_AFTER = document.getElementById("api-rate-retry-after");
+const RATE_SOURCE = document.getElementById("api-rate-source");
+const RATE_HINT = document.getElementById("api-rate-hint");
 
 function setOutput(value) {
   if (!OUTPUT) return;
   OUTPUT.textContent = value;
 }
 
+function setOutputState(status) {
+  if (!OUTPUT) return;
+  OUTPUT.classList.remove("is-http-error", "is-rate-limited");
+  if (status === 429) {
+    OUTPUT.classList.add("is-rate-limited");
+    return;
+  }
+  if (typeof status === "number" && status >= 400) {
+    OUTPUT.classList.add("is-http-error");
+  }
+}
+
 function setRequestUrl(value) {
   if (!REQUEST_URL) return;
   REQUEST_URL.textContent = value;
+}
+
+function setRateField(element, value, fallback = "N/A") {
+  if (!element) return;
+  element.textContent = value || fallback;
+}
+
+function setRateSnapshot({ limit, remaining, retryAfter, source, status }) {
+  setRateField(RATE_LIMIT, limit);
+  setRateField(RATE_REMAINING, remaining);
+  setRateField(RATE_RETRY_AFTER, retryAfter);
+  setRateField(RATE_SOURCE, source);
+
+  if (!RATE_HINT) return;
+  if (status === 429) {
+    RATE_HINT.innerHTML = "Rate limit reached. Wait the <code>retry-after</code> seconds, then retry.";
+    return;
+  }
+  RATE_HINT.innerHTML = "<code>x-ratelimit-*</code> headers are guaranteed on <code>429</code> responses.";
 }
 
 function buildFormatsQuery(form) {
@@ -31,6 +67,7 @@ function buildFormatsQuery(form) {
 async function runApiRequest(path) {
   const url = new URL(path, window.location.origin);
   setRequestUrl(`${url.pathname}${url.search}`);
+  setOutputState(null);
   setOutput("Loading...");
 
   try {
@@ -62,8 +99,21 @@ async function runApiRequest(path) {
       data: jsonValue
     };
 
+    setOutputState(response.status);
+    setRateSnapshot({
+      ...meta.rateLimit,
+      status: response.status
+    });
     setOutput(JSON.stringify(meta, null, 2));
   } catch (error) {
+    setOutputState(500);
+    setRateSnapshot({
+      limit: null,
+      remaining: null,
+      retryAfter: null,
+      source: null,
+      status: 500
+    });
     setOutput(
       JSON.stringify(
         {
@@ -101,14 +151,23 @@ registerForm('form[data-api-form="formats"]', async (form) => {
 });
 
 setRequestUrl("/api/v1/status");
+setRateSnapshot({
+  limit: null,
+  remaining: null,
+  retryAfter: null,
+  source: null,
+  status: null
+});
 setOutput(
   JSON.stringify(
     {
       note: "Use the playground buttons above to call /api/v1/* endpoints.",
-      tips: ["Try formats: category=image&from=true&q=png"]
+      tips: [
+        "Try formats: category=image&from=true&q=png",
+        "Run requests repeatedly to test rate-limit behavior"
+      ]
     },
     null,
     2
   )
 );
-
