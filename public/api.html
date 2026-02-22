@@ -44,62 +44,147 @@
       <section class="api-hero" aria-label="API overview">
         <h1>Convert To It Free API (v1)</h1>
         <p>
-          A simple, public, read-only API for developers. No API key required.
-          Use it to discover supported formats and conversion handlers.
+          This API is for reading format metadata (what can be converted), not for uploading files.
+          If you want to convert a file right now, use the main converter UI.
         </p>
+
+        <p class="api-alert" role="note">
+          <strong>Not technical?</strong> Use the
+          <a href="/#file-area">converter page</a>
+          instead of the API.
+        </p>
+
         <ul class="api-pills" aria-label="API highlights">
-          <li>Public + no key</li>
+          <li>No API key</li>
+          <li>Read-only metadata</li>
           <li>CORS enabled</li>
-          <li>Rate-limited (60 req/min/IP)</li>
+          <li>Rate limit: 60 req/min/IP</li>
         </ul>
+      </section>
+
+      <section class="api-section" aria-label="API plain English guide">
+        <h2>API in plain English</h2>
+
+        <div class="api-plain-grid">
+          <article class="api-plain-card">
+            <h3>What you can do</h3>
+            <ul class="api-checklist">
+              <li>Check API status and version</li>
+              <li>List supported input/output formats</li>
+              <li>See which handlers power each format</li>
+            </ul>
+          </article>
+
+          <article class="api-plain-card">
+            <h3>What you cannot do</h3>
+            <ul class="api-checklist">
+              <li>No direct file conversion API endpoint</li>
+              <li>No authentication or user account endpoints</li>
+              <li>No write/update/delete operations</li>
+            </ul>
+          </article>
+
+          <article class="api-plain-card">
+            <h3>Who this is for</h3>
+            <ul class="api-checklist">
+              <li>Developers building format pickers</li>
+              <li>Automation scripts that validate format support</li>
+              <li>Teams that want live metadata from converttoit.com</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="api-section" aria-label="Quick start">
+        <h2>Quick start (3 steps)</h2>
+        <ol class="api-steps">
+          <li>
+            Check service status:
+            <pre class="api-code"><code>curl -s https://converttoit.com/api/v1/status | jq</code></pre>
+          </li>
+          <li>
+            List image formats:
+            <pre class="api-code"><code>curl -s "https://converttoit.com/api/v1/formats?category=image" | jq</code></pre>
+          </li>
+          <li>
+            See available handlers:
+            <pre class="api-code"><code>curl -s https://converttoit.com/api/v1/handlers | jq</code></pre>
+          </li>
+        </ol>
       </section>
 
       <section class="api-section" aria-label="API endpoints">
         <h2>Endpoints</h2>
 
-        <div class="api-endpoint">
+        <article class="api-endpoint">
           <h3><code>GET /api/v1/status</code></h3>
-          <p>Service version &amp; environment info.</p>
+          <p>Returns basic service health, API version, and environment metadata.</p>
+          <p class="api-muted">Use this when: you want a quick uptime or smoke check.</p>
           <pre class="api-code"><code>curl -s https://converttoit.com/api/v1/status | jq</code></pre>
-        </div>
+        </article>
 
-        <div class="api-endpoint">
+        <article class="api-endpoint">
           <h3><code>GET /api/v1/formats</code></h3>
-          <p>List supported formats (aggregated across handlers).</p>
-          <p class="api-muted">Query params: <code>category</code>, <code>from</code>, <code>to</code>, <code>q</code></p>
-          <pre class="api-code"><code>curl -s "https://converttoit.com/api/v1/formats?category=image&amp;from=true&amp;q=png" | jq</code></pre>
-        </div>
+          <p>Returns supported formats aggregated across handlers.</p>
+          <p class="api-muted">Use this when: you need dynamic dropdowns or validation logic.</p>
 
-        <div class="api-endpoint">
+          <dl class="api-param-list">
+            <div>
+              <dt><code>category</code></dt>
+              <dd>Filter by format category (for example: <code>image</code>, <code>audio</code>, <code>video</code>).</dd>
+            </div>
+            <div>
+              <dt><code>from</code></dt>
+              <dd><code>true</code> = only valid source/input formats.</dd>
+            </div>
+            <div>
+              <dt><code>to</code></dt>
+              <dd><code>true</code> = only valid target/output formats.</dd>
+            </div>
+            <div>
+              <dt><code>q</code></dt>
+              <dd>Text search by extension, MIME, or format name.</dd>
+            </div>
+          </dl>
+
+          <pre class="api-code"><code>curl -s "https://converttoit.com/api/v1/formats?category=image&amp;from=true&amp;q=png" | jq</code></pre>
+        </article>
+
+        <article class="api-endpoint">
           <h3><code>GET /api/v1/handlers</code></h3>
-          <p>List handlers and their supported formats.</p>
+          <p>Returns handler definitions and the formats each handler supports.</p>
+          <p class="api-muted">Use this when: you need debugging or capability transparency.</p>
           <pre class="api-code"><code>curl -s https://converttoit.com/api/v1/handlers | jq</code></pre>
-        </div>
+        </article>
       </section>
 
       <section class="api-section" aria-label="API playground">
-        <h2>Playground</h2>
+        <h2>Interactive playground</h2>
         <p class="api-muted">
           This playground only calls <code>/api/v1/*</code> on <code>converttoit.com</code>.
+          No data is uploaded.
         </p>
 
         <div class="api-playground-grid" role="group" aria-label="Playground actions">
           <form class="api-card" data-api-form="status">
             <h3>Status</h3>
-            <button class="api-btn" type="submit">Run</button>
+            <p class="api-muted">Check API health and version.</p>
+            <button class="api-btn" type="submit">Run request</button>
           </form>
 
           <form class="api-card" data-api-form="handlers">
             <h3>Handlers</h3>
-            <button class="api-btn" type="submit">Run</button>
+            <p class="api-muted">See all handler capabilities.</p>
+            <button class="api-btn" type="submit">Run request</button>
           </form>
 
           <form class="api-card" data-api-form="formats">
             <h3>Formats</h3>
+            <p class="api-muted">Filter formats with optional query parameters.</p>
 
             <label class="api-field">
               <span>category</span>
-              <input name="category" type="text" placeholder="image,document">
+              <input name="category" type="text" placeholder="image">
             </label>
 
             <label class="api-field">
@@ -125,18 +210,18 @@
               <input name="q" type="text" placeholder="png">
             </label>
 
-            <button class="api-btn" type="submit">Run</button>
+            <button class="api-btn" type="submit">Run request</button>
           </form>
         </div>
 
         <div class="api-output-wrap" aria-label="Playground output">
           <div class="api-output-header">
-            <p class="api-muted">Request</p>
+            <p class="api-muted">Last request URL</p>
             <pre class="api-code"><code id="api-request-url">/api/v1/status</code></pre>
           </div>
 
           <div class="api-output-header">
-            <p class="api-muted">Response</p>
+            <p class="api-muted">Response JSON</p>
             <pre class="api-output" id="api-output" aria-live="polite">{}</pre>
           </div>
         </div>

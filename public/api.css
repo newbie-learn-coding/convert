@@ -118,8 +118,23 @@ a {
   padding: 2rem 1.25rem 3rem;
 }
 
+.api-hero {
+  border: 1px solid var(--api-border);
+  background: linear-gradient(180deg, var(--api-surface), var(--api-surface-soft));
+  border-radius: 14px;
+  padding: 1.25rem;
+}
+
 .api-hero h1 {
   margin: 0 0 0.5rem;
+}
+
+.api-alert {
+  margin: 0.9rem 0 0;
+  border: 1px solid rgba(28, 119, 255, 0.35);
+  background: rgba(28, 119, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.7rem 0.8rem;
 }
 
 .api-pills {
@@ -143,6 +158,44 @@ a {
   margin-top: 2.5rem;
 }
 
+.api-plain-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.9rem;
+}
+
+.api-plain-card {
+  border: 1px solid var(--api-border);
+  background: var(--api-surface);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.api-plain-card h3 {
+  margin: 0;
+}
+
+.api-checklist {
+  margin: 0.75rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.api-steps {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.api-steps li {
+  border: 1px solid var(--api-border);
+  background: var(--api-surface);
+  border-radius: 12px;
+  padding: 0.8rem 0.85rem;
+}
+
 .api-endpoint {
   border: 1px solid var(--api-border);
   background: var(--api-surface);
@@ -152,6 +205,28 @@ a {
 }
 
 .api-muted {
+  color: var(--api-muted);
+}
+
+.api-param-list {
+  margin: 0.75rem 0 0.95rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.api-param-list div {
+  border: 1px solid var(--api-border);
+  background: var(--api-surface-soft);
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+}
+
+.api-param-list dt {
+  font-weight: 700;
+}
+
+.api-param-list dd {
+  margin: 0.35rem 0 0;
   color: var(--api-muted);
 }
 
@@ -187,6 +262,10 @@ a {
 }
 
 .api-card h3 {
+  margin: 0;
+}
+
+.api-card p {
   margin: 0;
 }
 
@@ -264,6 +343,14 @@ a {
     align-items: flex-start;
     flex-direction: column;
   }
+
+  .api-page {
+    padding: 1.5rem 1rem 2.5rem;
+  }
+
+  .api-hero {
+    padding: 1rem;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -275,5 +362,10 @@ a {
     --api-text: #e6eefc;
     --api-muted: #b6c5df;
     --api-link: #84b1ff;
+  }
+
+  .api-alert {
+    border-color: rgba(132, 177, 255, 0.45);
+    background: rgba(132, 177, 255, 0.18);
   }
 }
