@@ -1,0 +1,124 @@
+.api-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3rem;
+}
+
+.api-hero h1 {
+  margin: 0 0 0.5rem;
+}
+
+.api-pills {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.api-pills li {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.9rem;
+}
+
+.api-section {
+  margin-top: 2.5rem;
+}
+
+.api-endpoint {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 1rem 1rem;
+  margin-top: 1rem;
+}
+
+.api-muted {
+  opacity: 0.85;
+}
+
+.api-code {
+  overflow-x: auto;
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 10px;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.api-code code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.9rem;
+}
+
+.api-playground-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  align-items: start;
+  margin-top: 1rem;
+}
+
+.api-card {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.api-card h3 {
+  margin: 0;
+}
+
+.api-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.api-field span {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.api-field input,
+.api-field select {
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+}
+
+.api-btn {
+  justify-self: start;
+  padding: 0.55rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(28, 119, 255, 0.2);
+  color: inherit;
+  cursor: pointer;
+}
+
+.api-btn:focus-visible {
+  outline: 2px solid rgba(28, 119, 255, 0.9);
+  outline-offset: 2px;
+}
+
+.api-output-wrap {
+  margin-top: 1.25rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.api-output {
+  overflow-x: auto;
+  max-height: 480px;
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 10px;
+  padding: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  white-space: pre;
+}
+

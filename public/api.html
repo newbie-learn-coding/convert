@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Convert To It Free API: formats and handler metadata endpoints with no API key required.">
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+    <meta name="theme-color" content="#1C77FF">
+    <meta name="author" content="Convert To It">
+    <link rel="canonical" href="https://converttoit.com/api.html">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/api.css">
+    <link rel="icon" href="/icons/icon-192x192.png" type="image/png" sizes="192x192">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="/favicon.ico" sizes="32x32">
+    <title>Free API (v1) | Convert To It</title>
+  </head>
+  <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <header class="site-header" aria-label="Site header">
+      <div class="site-header-inner">
+        <a class="site-brand" href="/" aria-label="Convert To It home">
+          <img
+            class="site-brand-logo"
+            src="/favicon.svg"
+            alt=""
+            aria-hidden="true"
+            width="24"
+            height="24"
+            decoding="async"
+          >
+          <span class="site-brand-text">Convert To It</span>
+        </a>
+
+        <nav class="site-nav" aria-label="Primary navigation">
+          <a href="/">Home</a>
+          <a href="/#file-area">Converter</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main-content" class="api-page">
+      <section class="api-hero" aria-label="API overview">
+        <h1>Convert To It Free API (v1)</h1>
+        <p>
+          A simple, public, read-only API for developers. No API key required.
+          Use it to discover supported formats and conversion handlers.
+        </p>
+        <ul class="api-pills" aria-label="API highlights">
+          <li>Public + no key</li>
+          <li>CORS enabled</li>
+          <li>Rate-limited (60 req/min/IP)</li>
+        </ul>
+      </section>
+
+      <section class="api-section" aria-label="API endpoints">
+        <h2>Endpoints</h2>
+
+        <div class="api-endpoint">
+          <h3><code>GET /api/v1/status</code></h3>
+          <p>Service version &amp; environment info.</p>
+          <pre class="api-code"><code>curl -s https://converttoit.com/api/v1/status | jq</code></pre>
+        </div>
+
+        <div class="api-endpoint">
+          <h3><code>GET /api/v1/formats</code></h3>
+          <p>List supported formats (aggregated across handlers).</p>
+          <p class="api-muted">Query params: <code>category</code>, <code>from</code>, <code>to</code>, <code>q</code></p>
+          <pre class="api-code"><code>curl -s "https://converttoit.com/api/v1/formats?category=image&amp;from=true&amp;q=png" | jq</code></pre>
+        </div>
+
+        <div class="api-endpoint">
+          <h3><code>GET /api/v1/handlers</code></h3>
+          <p>List handlers and their supported formats.</p>
+          <pre class="api-code"><code>curl -s https://converttoit.com/api/v1/handlers | jq</code></pre>
+        </div>
+      </section>
+
+      <section class="api-section" aria-label="API playground">
+        <h2>Playground</h2>
+        <p class="api-muted">
+          This playground only calls <code>/api/v1/*</code> on <code>converttoit.com</code>.
+        </p>
+
+        <div class="api-playground-grid" role="group" aria-label="Playground actions">
+          <form class="api-card" data-api-form="status">
+            <h3>Status</h3>
+            <button class="api-btn" type="submit">Run</button>
+          </form>
+
+          <form class="api-card" data-api-form="handlers">
+            <h3>Handlers</h3>
+            <button class="api-btn" type="submit">Run</button>
+          </form>
+
+          <form class="api-card" data-api-form="formats">
+            <h3>Formats</h3>
+
+            <label class="api-field">
+              <span>category</span>
+              <input name="category" type="text" placeholder="image,document">
+            </label>
+
+            <label class="api-field">
+              <span>from</span>
+              <select name="from">
+                <option value="">(any)</option>
+                <option value="true">true</option>
+                <option value="false">false</option>
+              </select>
+            </label>
+
+            <label class="api-field">
+              <span>to</span>
+              <select name="to">
+                <option value="">(any)</option>
+                <option value="true">true</option>
+                <option value="false">false</option>
+              </select>
+            </label>
+
+            <label class="api-field">
+              <span>q</span>
+              <input name="q" type="text" placeholder="png">
+            </label>
+
+            <button class="api-btn" type="submit">Run</button>
+          </form>
+        </div>
+
+        <div class="api-output-wrap" aria-label="Playground output">
+          <div class="api-output-header">
+            <p class="api-muted">Request</p>
+            <pre class="api-code"><code id="api-request-url">/api/v1/status</code></pre>
+          </div>
+
+          <div class="api-output-header">
+            <p class="api-muted">Response</p>
+            <pre class="api-output" id="api-output" aria-live="polite">{}</pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer" aria-label="Footer links">
+      <a href="/">Home</a>
+      <a href="/api.html" aria-current="page">API</a>
+    </footer>
+
+    <script type="module" src="/api-playground.js"></script>
+  </body>
+</html>
+

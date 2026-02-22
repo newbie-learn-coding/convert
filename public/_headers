@@ -25,6 +25,8 @@
   Cache-Control: public, max-age=0, must-revalidate
 /terms.html
   Cache-Control: public, max-age=0, must-revalidate
+/api.html
+  Cache-Control: public, max-age=0, must-revalidate
 
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
@@ -36,6 +38,10 @@
   Cache-Control: public, max-age=86400, stale-while-revalidate=86400
 /pseo.css
   Cache-Control: public, max-age=86400, stale-while-revalidate=86400
+/api.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=86400
+/api-playground.js
+  Cache-Control: public, max-age=0, must-revalidate
 
 # Icons - long cache with versioning
 /favicon.ico

@@ -66,6 +66,24 @@ const TELEMETRY_RATE_LIMIT_CONFIG = {
   window: 60
 };
 
+const API_RATE_LIMIT_CONFIG = {
+  requests: 60,
+  window: 60
+};
+const API_CACHE_TTL_MS = 5 * 60 * 1000;
+const API_ROUTE_PREFIX = "/api/v1";
+const API_ALLOWED_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+const API_CORS_HEADERS = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, HEAD, OPTIONS",
+  "access-control-allow-headers": "content-type, accept",
+  "access-control-max-age": "86400"
+};
+const API_SECURITY_OVERRIDES = {
+  "cross-origin-opener-policy": "unsafe-none",
+  "cross-origin-resource-policy": "cross-origin"
+};
+
 const GLOBAL_RATE_LIMIT_PROVIDER = {
   durableObject: "durable_object",
   kv: "kv"
@@ -131,6 +149,12 @@ const OPS_OBSERVABILITY = {
   durationBucketByEndpoint: new Map(),
   rejectionsTotal: new Map(),
   shadowRateLimitedTotal: new Map()
+};
+
+const API_CACHE_STATE = {
+  expiresAt: 0,
+  data: null,
+  inFlight: null
 };
 
 function mergeDefaultHeaders(headers, defaults) {
@@ -939,7 +963,8 @@ export class GlobalRateLimiter {
 
 const SHARED_RATE_LIMITERS = {
   ops: new RateLimiter(RATE_LIMIT_CONFIG.requests, RATE_LIMIT_CONFIG.window),
-  telemetry: new RateLimiter(TELEMETRY_RATE_LIMIT_CONFIG.requests, TELEMETRY_RATE_LIMIT_CONFIG.window)
+  telemetry: new RateLimiter(TELEMETRY_RATE_LIMIT_CONFIG.requests, TELEMETRY_RATE_LIMIT_CONFIG.window),
+  api: new RateLimiter(API_RATE_LIMIT_CONFIG.requests, API_RATE_LIMIT_CONFIG.window)
 };
 
 function maybeCleanupRateLimiters(now = Date.now()) {
@@ -949,6 +974,7 @@ function maybeCleanupRateLimiters(now = Date.now()) {
 
   SHARED_RATE_LIMITERS.ops.cleanup(now);
   SHARED_RATE_LIMITERS.telemetry.cleanup(now);
+  SHARED_RATE_LIMITERS.api.cleanup(now);
 }
 
 function getClientIdentifier(request) {
@@ -1211,6 +1237,432 @@ function textResponse(payload, init = {}, requestMethod = "GET") {
     ...init,
     headers
   });
+}
+
+function apiJsonResponse(payload, init = {}, requestMethod = "GET") {
+  const headers = new Headers(init.headers || {});
+  mergeDefaultHeaders(headers, {
+    "content-type": "application/json; charset=utf-8",
+    "cache-control": "no-store",
+    "x-robots-tag": "noindex, nofollow, noarchive"
+  });
+  mergeDefaultHeaders(headers, DEFAULT_SECURITY_HEADERS);
+  mergeDefaultHeaders(headers, API_CORS_HEADERS);
+
+  for (const [key, value] of Object.entries(API_SECURITY_OVERRIDES)) {
+    headers.set(key, value);
+  }
+
+  const body = requestMethod === "HEAD" ? null : JSON.stringify(payload);
+  return new Response(body, {
+    ...init,
+    headers
+  });
+}
+
+function apiPreflightResponse() {
+  const headers = new Headers({
+    "cache-control": "no-store",
+    "x-robots-tag": "noindex, nofollow, noarchive"
+  });
+  mergeDefaultHeaders(headers, DEFAULT_SECURITY_HEADERS);
+  mergeDefaultHeaders(headers, API_CORS_HEADERS);
+  for (const [key, value] of Object.entries(API_SECURITY_OVERRIDES)) {
+    headers.set(key, value);
+  }
+
+  return new Response(null, {
+    status: 204,
+    headers
+  });
+}
+
+function createApiRateLimit429({ requestId, requestMethod, resetAt }) {
+  const safeResetAt = Number.isFinite(resetAt) ? resetAt : Date.now() + 1000;
+  const retryAfter = Math.max(1, Math.ceil((safeResetAt - Date.now()) / 1000));
+
+  return apiJsonResponse({
+    error: "rate_limited",
+    requestId,
+    retryAfter,
+    source: "isolate"
+  }, {
+    status: 429,
+    headers: {
+      "retry-after": retryAfter.toString(),
+      "x-ratelimit-limit": String(API_RATE_LIMIT_CONFIG.requests),
+      "x-ratelimit-remaining": "0",
+      "x-ratelimit-source": "isolate"
+    }
+  }, requestMethod);
+}
+
+function normalizeFormatCategories(value) {
+  const categories = new Set();
+  const values = Array.isArray(value) ? value : [value];
+
+  for (const rawCategory of values) {
+    if (typeof rawCategory !== "string") {
+      continue;
+    }
+
+    const normalized = rawCategory.trim().toLowerCase();
+    if (normalized) {
+      categories.add(normalized);
+    }
+  }
+
+  return Array.from(categories).sort();
+}
+
+function normalizeApiFormat(rawFormat) {
+  if (!rawFormat || typeof rawFormat !== "object") {
+    return null;
+  }
+
+  const categories = normalizeFormatCategories(rawFormat.category);
+  const normalized = {
+    name: typeof rawFormat.name === "string" ? rawFormat.name : "",
+    format: typeof rawFormat.format === "string" ? rawFormat.format.toLowerCase() : "",
+    extension: typeof rawFormat.extension === "string" ? rawFormat.extension.toLowerCase() : "",
+    mime: typeof rawFormat.mime === "string" ? rawFormat.mime.toLowerCase() : "",
+    internal: typeof rawFormat.internal === "string" ? rawFormat.internal : "",
+    from: rawFormat.from === true,
+    to: rawFormat.to === true,
+    lossless: rawFormat.lossless === true,
+    categories
+  };
+
+  if (!normalized.name && !normalized.format && !normalized.extension && !normalized.mime) {
+    return null;
+  }
+
+  return normalized;
+}
+
+function normalizeApiCatalog(rawPayload) {
+  if (!Array.isArray(rawPayload)) {
+    throw new Error("Invalid cache.json payload");
+  }
+
+  const handlers = [];
+  const formatMap = new Map();
+
+  for (const entry of rawPayload) {
+    if (!Array.isArray(entry) || entry.length < 2) {
+      continue;
+    }
+
+    const [rawHandlerName, rawFormats] = entry;
+    if (typeof rawHandlerName !== "string" || !Array.isArray(rawFormats)) {
+      continue;
+    }
+
+    const handlerName = rawHandlerName.trim();
+    if (!handlerName) {
+      continue;
+    }
+
+    let handlerFormatCount = 0;
+    const handlerCategories = new Set();
+    const handlerFormats = [];
+
+    for (const rawFormat of rawFormats) {
+      const normalized = normalizeApiFormat(rawFormat);
+      if (!normalized) {
+        continue;
+      }
+
+      handlerFormatCount += 1;
+      for (const category of normalized.categories) {
+        handlerCategories.add(category);
+      }
+
+      handlerFormats.push({
+        name: normalized.name,
+        format: normalized.format,
+        extension: normalized.extension,
+        mime: normalized.mime,
+        category: normalized.categories.length <= 1 ? (normalized.categories[0] || null) : normalized.categories,
+        internal: normalized.internal,
+        from: normalized.from,
+        to: normalized.to,
+        lossless: normalized.lossless
+      });
+
+      const key = [
+        normalized.format,
+        normalized.extension,
+        normalized.mime,
+        normalized.name.toLowerCase()
+      ].join("\u0000");
+
+      let aggregate = formatMap.get(key);
+      if (!aggregate) {
+        aggregate = {
+          ...normalized,
+          handlers: new Set(),
+          categories: new Set(normalized.categories)
+        };
+        formatMap.set(key, aggregate);
+      } else {
+        aggregate.from = aggregate.from || normalized.from;
+        aggregate.to = aggregate.to || normalized.to;
+        aggregate.lossless = aggregate.lossless || normalized.lossless;
+        for (const category of normalized.categories) {
+          aggregate.categories.add(category);
+        }
+      }
+
+      aggregate.handlers.add(handlerName);
+    }
+
+    handlers.push({
+      handler: handlerName,
+      formatCount: handlerFormatCount,
+      categories: Array.from(handlerCategories).sort(),
+      formats: handlerFormats
+    });
+  }
+
+  handlers.sort((a, b) => a.handler.localeCompare(b.handler));
+  const formats = Array.from(formatMap.values())
+    .map((entry) => {
+      const categories = Array.from(entry.categories).sort();
+      const handlersForFormat = Array.from(entry.handlers).sort();
+      return {
+        name: entry.name,
+        format: entry.format,
+        extension: entry.extension,
+        mime: entry.mime,
+        internal: entry.internal,
+        from: entry.from,
+        to: entry.to,
+        lossless: entry.lossless,
+        category: categories.length <= 1 ? (categories[0] || null) : categories,
+        categories,
+        handlers: handlersForFormat
+      };
+    })
+    .sort((a, b) => {
+      const left = `${a.format}:${a.extension}:${a.mime}`;
+      const right = `${b.format}:${b.extension}:${b.mime}`;
+      return left.localeCompare(right);
+    });
+
+  return {
+    loadedAt: new Date().toISOString(),
+    handlers,
+    formats
+  };
+}
+
+async function loadApiCatalog(request, env) {
+  const now = Date.now();
+  if (API_CACHE_STATE.data && now < API_CACHE_STATE.expiresAt) {
+    return API_CACHE_STATE.data;
+  }
+
+  if (API_CACHE_STATE.inFlight) {
+    return API_CACHE_STATE.inFlight;
+  }
+
+  if (!env.ASSETS || typeof env.ASSETS.fetch !== "function") {
+    throw new Error("ASSETS binding is required for API catalog");
+  }
+
+  const cacheUrl = new URL("/cache.json", request.url);
+  API_CACHE_STATE.inFlight = (async () => {
+    const response = await env.ASSETS.fetch(new Request(cacheUrl.toString(), { method: "GET" }));
+    if (!response.ok) {
+      throw new Error(`Unable to load cache.json (${response.status})`);
+    }
+
+    const parsed = await response.json();
+    const normalizedCatalog = normalizeApiCatalog(parsed);
+    API_CACHE_STATE.data = normalizedCatalog;
+    API_CACHE_STATE.expiresAt = Date.now() + API_CACHE_TTL_MS;
+    return normalizedCatalog;
+  })();
+
+  try {
+    return await API_CACHE_STATE.inFlight;
+  } finally {
+    API_CACHE_STATE.inFlight = null;
+  }
+}
+
+function parseOptionalBooleanQuery(value) {
+  if (value === null) {
+    return { provided: false, valid: true, value: null };
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) {
+    return { provided: true, valid: true, value: true };
+  }
+  if (["0", "false", "no", "off"].includes(normalized)) {
+    return { provided: true, valid: true, value: false };
+  }
+
+  return { provided: true, valid: false, value: null };
+}
+
+function parseCategoryFilter(value) {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      value
+        .split(",")
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean)
+    )
+  );
+}
+
+function matchesFormatSearch(format, query) {
+  const searchableValues = [
+    format.name,
+    format.format,
+    format.extension,
+    format.mime,
+    format.internal,
+    ...(format.categories || []),
+    ...(format.handlers || [])
+  ];
+
+  return searchableValues.some((value) =>
+    typeof value === "string" && value.toLowerCase().includes(query)
+  );
+}
+
+async function handleApiRoute(request, env, pathname) {
+  if (!pathname.startsWith(`${API_ROUTE_PREFIX}/`) && pathname !== API_ROUTE_PREFIX) {
+    return null;
+  }
+
+  const requestId = makeRequestId(request);
+
+  if (request.method === "OPTIONS") {
+    return apiPreflightResponse();
+  }
+
+  if (!API_ALLOWED_METHODS.has(request.method)) {
+    return apiJsonResponse({
+      error: "method_not_allowed",
+      requestId
+    }, {
+      status: 405,
+      headers: {
+        allow: "GET, HEAD, OPTIONS"
+      }
+    }, request.method);
+  }
+
+  const clientId = getGlobalClientIdentifier(request);
+  const isolateRateLimitResult = SHARED_RATE_LIMITERS.api.check(clientId);
+  if (!isolateRateLimitResult.allowed) {
+    return createApiRateLimit429({
+      requestId,
+      requestMethod: request.method,
+      resetAt: isolateRateLimitResult.resetAt
+    });
+  }
+
+  if (pathname === `${API_ROUTE_PREFIX}/status`) {
+    return apiJsonResponse({
+      ok: true,
+      requestId,
+      timestamp: new Date().toISOString(),
+      ...readVersion(env)
+    }, {}, request.method);
+  }
+
+  let catalog;
+  try {
+    catalog = await loadApiCatalog(request, env);
+  } catch (error) {
+    logError(env, error, { requestId, pathname, type: "api_cache_load_error" });
+    return apiJsonResponse({
+      error: "service_unavailable",
+      requestId
+    }, { status: 503 }, request.method);
+  }
+
+  if (pathname === `${API_ROUTE_PREFIX}/handlers`) {
+    return apiJsonResponse({
+      ok: true,
+      requestId,
+      count: catalog.handlers.length,
+      items: catalog.handlers
+    }, {}, request.method);
+  }
+
+  if (pathname === `${API_ROUTE_PREFIX}/formats`) {
+    const url = new URL(request.url);
+    const categoryFilters = parseCategoryFilter(url.searchParams.get("category"));
+    const fromFilter = parseOptionalBooleanQuery(url.searchParams.get("from"));
+    const toFilter = parseOptionalBooleanQuery(url.searchParams.get("to"));
+    const query = (url.searchParams.get("q") || "").trim().toLowerCase();
+
+    if (!fromFilter.valid || !toFilter.valid) {
+      return apiJsonResponse({
+        error: "invalid_filter",
+        requestId,
+        message: "Query parameters from/to must be boolean values"
+      }, { status: 400 }, request.method);
+    }
+
+    let filteredFormats = catalog.formats;
+
+    if (categoryFilters.length > 0) {
+      filteredFormats = filteredFormats.filter((format) =>
+        format.categories.some((category) => categoryFilters.includes(category))
+      );
+    }
+
+    if (fromFilter.provided) {
+      filteredFormats = filteredFormats.filter((format) => format.from === fromFilter.value);
+    }
+    if (toFilter.provided) {
+      filteredFormats = filteredFormats.filter((format) => format.to === toFilter.value);
+    }
+    if (query) {
+      filteredFormats = filteredFormats.filter((format) => matchesFormatSearch(format, query));
+    }
+
+    return apiJsonResponse({
+      ok: true,
+      requestId,
+      count: filteredFormats.length,
+      total: catalog.formats.length,
+      filters: {
+        category: categoryFilters.length > 0 ? categoryFilters : null,
+        from: fromFilter.provided ? fromFilter.value : null,
+        to: toFilter.provided ? toFilter.value : null,
+        q: query || null
+      },
+      items: filteredFormats.map((format) => ({
+        name: format.name,
+        format: format.format,
+        extension: format.extension,
+        mime: format.mime,
+        category: format.category,
+        from: format.from,
+        to: format.to,
+        lossless: format.lossless,
+        handlers: format.handlers
+      }))
+    }, {}, request.method);
+  }
+
+  return apiJsonResponse({
+    error: "not_found",
+    requestId
+  }, { status: 404 }, request.method);
 }
 
 function readVersion(env) {
@@ -1716,6 +2168,11 @@ export default {
         return opsResponse;
       }
 
+      const apiResponse = await handleApiRoute(request, env, pathname);
+      if (apiResponse) {
+        return apiResponse;
+      }
+
       const wasmResponse = await handlePandocWasmRoute(
         request,
         env,
@@ -1860,6 +2317,7 @@ function getPathType(pathname) {
   if (pathname.startsWith("/assets/")) return "static_asset";
   if (pathname.startsWith("/wasm/")) return "wasm";
   if (pathname.startsWith("/_ops/")) return "ops";
+  if (pathname.startsWith(`${API_ROUTE_PREFIX}/`)) return "api";
   if (pathname.endsWith(".html")) return "html";
   return "other";
 }
